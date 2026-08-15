@@ -4,8 +4,9 @@
 
 ## Giai đoạn 0 — Audit & đóng gói code AI Studio
 - [x] Audit theo PRD 7.4: màu hardcode = 0, pre-select Auto đúng, icon thao tác đủ (ghi DECISIONS.md)
-- [ ] Đóng gói vào Next.js app router, chạy `npm run dev` không lỗi console
-- [ ] 3 file quản lý dự án tồn tại (ARCHITECTURE/DECISIONS/DEFINITION_OF_DONE)
+- [x] Đóng gói vào Next.js app router — `next build` pass (compile + TS + prerender), `next start` HTTP 200, UI render đúng (commit 3294988)
+- [x] 3 file quản lý dự án tồn tại (ARCHITECTURE/DECISIONS/DEFINITION_OF_DONE)
+- [x] Fix lỗi type ẩn: TranslationKey thiếu 18 keys (vi/en), t() trả string[], setSettingsActiveTab thiếu 'appearance', localStorage SSR guard
 
 ## Tuần 1-2 — Nền tảng
 - [ ] Supabase Auth thật: email/password + Google OAuth + forgot password (reset link)
