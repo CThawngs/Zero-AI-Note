@@ -233,7 +233,7 @@ export const LoginScreen: React.FC = () => {
             <div className="w-full border-t border-[var(--border-color)]" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="px-3 font-semibold text-[11px] bg-[var(--bg-card)] text-[var(--text-muted)]">
+            <span className="px-3 font-semibold text-xs bg-[var(--bg-card)] text-[var(--text-muted)]">
               {language === 'vi' ? 'Hoặc tiếp tục với' : 'Or continue with'}
             </span>
           </div>

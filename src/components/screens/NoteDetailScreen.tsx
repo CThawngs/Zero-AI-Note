@@ -170,7 +170,7 @@ export const NoteDetailScreen: React.FC = () => {
               {isPlayingAudio ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3 fill-current" />}
             </button>
             <div className="flex flex-col">
-              <span className={`text-[10px] font-semibold ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
+              <span className={`text-xs font-semibold ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
                 {t('audioSummary')}
               </span>
               <div className={`w-20 lg:w-24 h-1.5 rounded-full overflow-hidden mt-0.5 ${
@@ -323,7 +323,7 @@ export const NoteDetailScreen: React.FC = () => {
           {/* Note Title & Header */}
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] border border-[var(--accent-primary)]/30">
+              <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] border border-[var(--accent-primary)]/30">
                 {activeNote.category} • {activeNote.method.toUpperCase()} NOTE
               </span>
               <span className={`text-xs ${isDark ? 'text-[var(--text-muted)]' : 'text-[var(--text-muted)]'}`}>
@@ -458,7 +458,7 @@ export const NoteDetailScreen: React.FC = () => {
                 {t('askNoteTitle')}
               </h4>
             </div>
-            <span className="text-[10px] bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] px-2 py-0.5 rounded font-mono font-bold">
+            <span className="text-xs bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] px-2 py-0.5 rounded font-mono font-bold">
               AI Copilot
             </span>
           </div>
@@ -480,7 +480,7 @@ export const NoteDetailScreen: React.FC = () => {
                     isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-primary)]' : 'bg-white border-[var(--border-color)] text-[var(--text-primary)]'
                   }`}>
                     <p className="leading-relaxed">{item.a}</p>
-                    <div className="flex items-center justify-between pt-1 text-[10px] text-[var(--text-muted)]">
+                    <div className="flex items-center justify-between pt-1 text-xs text-[var(--text-muted)]">
                       <span>{item.time}</span>
                       <button
                         onClick={() => {

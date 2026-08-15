@@ -181,7 +181,7 @@ export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ note, isOpen, onCl
                         isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)]' : 'bg-white border-[var(--border-color)]'
                       }`}
                     >
-                      <p className={`text-[11px] font-bold uppercase tracking-wider ${
+                      <p className={`text-xs font-bold uppercase tracking-wider ${
                         isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'
                       }`}>
                         {language === 'vi' ? 'Chọn định dạng xuất' : 'Choose Export Format'}
@@ -209,7 +209,7 @@ export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ note, isOpen, onCl
                             />
                             <div>
                               <p className={`text-xs font-semibold ${isDark ? 'text-[var(--text-primary)]' : 'text-[var(--text-primary)]'}`}>{fmt.label}</p>
-                              <p className={`text-[10px] ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-muted)]'}`}>{fmt.desc}</p>
+                              <p className={`text-xs ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-muted)]'}`}>{fmt.desc}</p>
                             </div>
                           </label>
                         ))}
@@ -266,7 +266,7 @@ export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ note, isOpen, onCl
               {/* Note Header */}
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-lg bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] border border-[var(--accent-primary)]/35">
+                  <span className="text-xs uppercase font-bold tracking-wider px-2 py-0.5 rounded-lg bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] border border-[var(--accent-primary)]/35">
                     {note.method.toUpperCase()} NOTE
                   </span>
                   <span className={`text-xs ${isDark ? 'text-[var(--text-muted)]' : 'text-[var(--text-muted)]'}`}>
@@ -283,7 +283,7 @@ export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ note, isOpen, onCl
                 <div className={`flex flex-wrap gap-2 p-2.5 rounded-2xl border ${
                   isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)]' : 'bg-[var(--bg-app)] border-[var(--border-color)]'
                 }`}>
-                  <span className={`text-[11px] font-semibold self-center mr-1 ${
+                  <span className={`text-xs font-semibold self-center mr-1 ${
                     isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'
                   }`}>
                     {language === 'vi' ? 'Nguồn:' : 'Sources:'}
@@ -291,7 +291,7 @@ export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ note, isOpen, onCl
                   {note.sources.map((src, idx) => (
                     <span
                       key={idx}
-                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] border ${
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs border ${
                         isDark ? 'bg-[var(--bg-hover)] text-[var(--text-primary)] border-[var(--border-color)]' : 'bg-white text-[var(--text-secondary)] border-[var(--border-color)] shadow-2xs'
                       }`}
                     >
@@ -369,7 +369,7 @@ export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ note, isOpen, onCl
                         </span>
                       </p>
                       {hoveredTooltip && (
-                        <div className="mt-2 text-[10px] bg-[var(--accent-primary)] text-white p-2 rounded-lg shadow-lg flex items-center gap-1.5">
+                        <div className="mt-2 text-xs bg-[var(--accent-primary)] text-white p-2 rounded-lg shadow-lg flex items-center gap-1.5">
                           <HelpCircle className="w-3.5 h-3.5 text-white shrink-0" />
                           <span>{sec.lowConfidenceReason || (language === 'vi' ? 'Dữ liệu cần xác minh thêm từ nguồn gốc' : 'Data requires source verification')}</span>
                         </div>

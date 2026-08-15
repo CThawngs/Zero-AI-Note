@@ -61,7 +61,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ showModeToggle = t
                       className="w-2.5 h-2.5 rounded-full shadow-xs shrink-0" 
                       style={{ backgroundColor: opt.darkAccent }}
                     />
-                    <span className="text-[8px] font-bold tracking-tight text-[var(--accent-text)]/70 uppercase">
+                    <span className="text-xs font-bold tracking-tight text-[var(--accent-text)]/70 uppercase">
                       {language === 'vi' ? 'Tối' : 'Dark'}
                     </span>
                   </div>
@@ -81,7 +81,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ showModeToggle = t
                   style={{ backgroundColor: opt.lightBg }}
                 >
                   <div className="flex items-center gap-1 justify-end">
-                    <span className="text-[8px] font-bold tracking-tight text-[var(--text-primary)]/70 uppercase">
+                    <span className="text-xs font-bold tracking-tight text-[var(--text-primary)]/70 uppercase">
                       {language === 'vi' ? 'Sáng' : 'Light'}
                     </span>
                     <span 
@@ -105,14 +105,14 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ showModeToggle = t
                   {themeName}
                 </span>
                 {isSelected && (
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--accent-primary)] bg-[var(--accent-primary)]/15 px-1.5 py-0.2 rounded-md">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--accent-primary)] bg-[var(--accent-primary)]/15 px-1.5 py-0.2 rounded-md">
                     {language === 'vi' ? 'Dùng' : 'ON'}
                   </span>
                 )}
               </div>
 
               {/* Theme Description */}
-              <p className="text-[10px] line-clamp-2 mt-1 leading-snug text-[var(--text-muted)]">
+              <p className="text-xs line-clamp-2 mt-1 leading-snug text-[var(--text-muted)]">
                 {themeDesc}
               </p>
             </button>
@@ -131,7 +131,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ showModeToggle = t
               <h4 className="text-xs font-bold text-[var(--text-primary)]">
                 {t('themeModeLabel')}
               </h4>
-              <p className="text-[11px] text-[var(--text-muted)] mt-0.5">
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">
                 {t('themeModeDesc')}
               </p>
             </div>

@@ -115,7 +115,7 @@ export const ArchivesScreen: React.FC = () => {
                         <h4 className={`text-sm font-bold truncate ${'text-[var(--text-primary)]'}`}>
                           {note.title}
                         </h4>
-                        <span className={`text-[10px] px-2 py-0.5 rounded-lg font-semibold ${
+                        <span className={`text-xs px-2 py-0.5 rounded-lg font-semibold ${
                           isDark ? 'bg-[var(--bg-hover)] text-[var(--text-secondary)]' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)]'
                         }`}>
                           {note.category}

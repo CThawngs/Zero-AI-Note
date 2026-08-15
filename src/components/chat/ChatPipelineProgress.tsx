@@ -31,14 +31,14 @@ export const ChatPipelineProgress: React.FC<ChatPipelineProgressProps> = ({ curr
             <h4 className={`text-xs font-bold uppercase tracking-wider ${'text-[var(--text-primary)]'}`}>
               {language === 'vi' ? 'Quy trình trích xuất & cấu trúc AI' : 'AI Extraction & Synthesis Pipeline'}
             </h4>
-            <p className={`text-[11px] ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
+            <p className={`text-xs ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
               {language === 'vi' ? 'Đang thực thi các bước phân tích dữ liệu chuyên sâu' : 'Executing deep multi-modal parsing stages'}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {isAuto && (
-            <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] px-2 py-0.5 rounded-lg border border-[var(--accent-primary)]/30">
+            <span className="inline-flex items-center gap-1 text-xs font-bold bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] px-2 py-0.5 rounded-lg border border-[var(--accent-primary)]/30">
               <Zap className="w-3 h-3 fill-[var(--accent-primary)] text-[var(--accent-primary)]" />
               Auto Mode
             </span>
@@ -86,7 +86,7 @@ export const ChatPipelineProgress: React.FC<ChatPipelineProgressProps> = ({ curr
           }`}>
             {language === 'vi' ? '1. Đọc & Trích xuất nội dung nguồn' : '1. Parsing & Multi-modal Extraction'}
           </p>
-          <p className={`text-[11px] mt-0.5 ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
+          <p className={`text-xs mt-0.5 ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
             {language === 'vi' ? 'Phân tích tài liệu PDF, bóc tách phụ đề video YouTube, lọc tạp âm và phân đoạn transcript.' : 'Extracting PDF layout, transcribing audio streams, removing noise artifacts.'}
           </p>
         </div>
@@ -107,7 +107,7 @@ export const ChatPipelineProgress: React.FC<ChatPipelineProgressProps> = ({ curr
           }`}>
             {language === 'vi' ? '2. Phân tích ngữ nghĩa & Tạo dàn bài' : '2. Semantic Analysis & Blueprinting'}
           </p>
-          <p className={`text-[11px] mt-0.5 ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
+          <p className={`text-xs mt-0.5 ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
             {language === 'vi' ? 'Tổng hợp các luận điểm chính, bảng so sánh và định vị các câu hỏi then chốt.' : 'Structuring key arguments, cross-referencing metrics, generating core questions.'}
           </p>
         </div>
@@ -128,7 +128,7 @@ export const ChatPipelineProgress: React.FC<ChatPipelineProgressProps> = ({ curr
           }`}>
             {language === 'vi' ? '3. Cấu trúc ghi chú chuẩn hoá' : '3. Note Standardization & Export'}
           </p>
-          <p className={`text-[11px] mt-0.5 ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
+          <p className={`text-xs mt-0.5 ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
             {language === 'vi' ? 'Định dạng Markdown, bảng biểu, điểm tự tin AI và tải sang Artifact Panel.' : 'Compiling markdown tables, calculating confidence scores, syncing artifact panel.'}
           </p>
         </div>

@@ -144,7 +144,7 @@ export const PricingScreen: React.FC = () => {
         {/* Pro Plan */}
         <div className="p-6 sm:p-8 rounded-3xl border-2 border-[var(--accent-primary)] flex flex-col justify-between space-y-8 relative shadow-lg shadow-[var(--accent-primary)]/10 bg-[var(--bg-card)]">
           {/* Popular Tag */}
-          <div className="absolute -top-3.5 right-6 px-3 py-1 rounded-full bg-[var(--accent-primary)] text-[var(--accent-text)] text-[10px] font-extrabold uppercase tracking-wider shadow-sm">
+          <div className="absolute -top-3.5 right-6 px-3 py-1 rounded-full bg-[var(--accent-primary)] text-[var(--accent-text)] text-xs font-extrabold uppercase tracking-wider shadow-sm">
             {language === 'vi' ? 'PHỔ BIẾN NHẤT' : 'MOST POPULAR'}
           </div>
 

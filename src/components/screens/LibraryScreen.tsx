@@ -400,12 +400,12 @@ export const LibraryScreen: React.FC = () => {
                   {/* Card Header badges & 3-dots */}
                   <div className="flex items-center justify-between mb-2.5">
                     <div className="flex items-center gap-1.5">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border ${
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-lg border ${
                         isDark ? 'bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border-color)]' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border-color)]'
                       }`}>
                         {note.category}
                       </span>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] uppercase">
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-lg bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] uppercase">
                         {note.method}
                       </span>
                     </div>
@@ -506,10 +506,10 @@ export const LibraryScreen: React.FC = () => {
                       </span>
                     ))}
                     {note.sources.length > 3 && (
-                      <span className="text-[10px] font-mono">+{note.sources.length - 3}</span>
+                      <span className="text-xs font-mono">+{note.sources.length - 3}</span>
                     )}
                   </div>
-                  <span className="text-[11px]">{note.updatedAt}</span>
+                  <span className="text-xs">{note.updatedAt}</span>
                 </div>
               </motion.div>
             ))}
@@ -538,7 +538,7 @@ export const LibraryScreen: React.FC = () => {
                       }`}>
                         {note.title}
                       </h3>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg shrink-0 ${
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-lg shrink-0 ${
                         isDark ? 'bg-[var(--bg-hover)] text-[var(--text-secondary)]' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)]'
                       }`}>
                         {note.category}
@@ -556,7 +556,7 @@ export const LibraryScreen: React.FC = () => {
                       <span key={idx}>{getSourceIcon(s.type)}</span>
                     ))}
                   </div>
-                  <span className="text-[11px] hidden md:inline">{note.updatedAt}</span>
+                  <span className="text-xs hidden md:inline">{note.updatedAt}</span>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();

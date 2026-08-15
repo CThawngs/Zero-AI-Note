@@ -142,7 +142,7 @@ export const TemplatesScreen: React.FC = () => {
                     <div className="w-10 h-10 rounded-xl bg-[var(--accent-subtle)] border border-[var(--accent-primary)]/30 flex items-center justify-center">
                       {getTemplateIcon(template.iconType)}
                     </div>
-                    <span className="text-[10px] bg-[var(--accent-subtle)] text-[var(--accent-primary)] px-2 py-0.5 rounded-lg font-bold">
+                    <span className="text-xs bg-[var(--accent-subtle)] text-[var(--accent-primary)] px-2 py-0.5 rounded-lg font-bold">
                       {language === 'vi' ? 'Tùy biến' : 'Custom'}
                     </span>
                   </div>
@@ -185,7 +185,7 @@ export const TemplatesScreen: React.FC = () => {
               <p className="text-xs font-bold text-[var(--text-primary)]">
                 {t('createTemplate')}
               </p>
-              <p className="text-[11px] mt-1 max-w-[200px] text-[var(--text-muted)]">
+              <p className="text-xs mt-1 max-w-[200px] text-[var(--text-muted)]">
                 {language === 'vi' ? 'Định nghĩa cấu trúc cho ngành nghề hoặc môn học của bạn' : 'Define personalized frameworks for your specific workflow'}
               </p>
             </div>

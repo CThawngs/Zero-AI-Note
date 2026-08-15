@@ -88,7 +88,7 @@ export function Dropdown<T extends string = string>({
               <div className="truncate flex-1">
                 <p className="truncate">{option.label}</p>
                 {option.description && (
-                  <p className="text-[10px] truncate text-[var(--text-muted)]">
+                  <p className="text-xs truncate text-[var(--text-muted)]">
                     {option.description}
                   </p>
                 )}

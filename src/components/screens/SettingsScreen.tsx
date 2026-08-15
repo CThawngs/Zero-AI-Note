@@ -202,7 +202,7 @@ export const SettingsScreen: React.FC = () => {
                     <h4 className={`text-base font-bold ${isDark ? 'text-[var(--text-primary)]' : 'text-[var(--text-primary)]'}`}>{user.name}</h4>
                     <p className={`text-xs ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>{user.email}</p>
                     <div className="mt-1 flex items-center gap-2">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded ${
                         user.plan === 'PRO' 
                           ? 'bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] border border-[var(--accent-primary)]/30' 
                           : isDark ? 'bg-[var(--bg-hover)] text-[var(--text-secondary)]' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)]'
@@ -271,7 +271,7 @@ export const SettingsScreen: React.FC = () => {
                     <Crown className="w-4 h-4 text-[var(--accent-primary)]" />
                     <span>{language === 'vi' ? 'Ngày gia hạn tiếp theo: ' : 'Next renewal date: '}<strong>{user.nextBillingDate}</strong></span>
                   </div>
-                  <span className="text-[11px] font-mono font-bold">199.000đ / {language === 'vi' ? 'tháng' : 'month'}</span>
+                  <span className="text-xs font-mono font-bold">199.000đ / {language === 'vi' ? 'tháng' : 'month'}</span>
                 </div>
               )}
 
@@ -352,7 +352,7 @@ export const SettingsScreen: React.FC = () => {
               </h3>
               <div className={`rounded-xl border overflow-x-auto ${isDark ? 'border-[var(--border-color)]' : 'border-[var(--border-color)]'}`}>
                 <table className="w-full text-xs text-left">
-                  <thead className={`font-semibold uppercase text-[10px] border-b ${
+                  <thead className={`font-semibold uppercase text-xs border-b ${
                     isDark ? 'bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border-color)]' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border-color)]'
                   }`}>
                     <tr>
@@ -366,11 +366,11 @@ export const SettingsScreen: React.FC = () => {
                   <tbody className={`divide-y ${isDark ? 'divide-[var(--border-color)] text-[var(--text-primary)]' : 'divide-[var(--border-color)] text-[var(--text-primary)]'}`}>
                     {paymentHistory.map((pay) => (
                       <tr key={pay.id} className={isDark ? 'hover:bg-[var(--bg-hover)]/40' : 'hover:bg-[var(--bg-hover)]/40'}>
-                        <td className="px-4 py-3 font-mono text-[11px]">{pay.invoiceId}</td>
+                        <td className="px-4 py-3 font-mono text-xs">{pay.invoiceId}</td>
                         <td className="px-4 py-3">{pay.date}</td>
                         <td className={`px-4 py-3 font-bold ${isDark ? 'text-[var(--text-primary)]' : 'text-[var(--text-primary)]'}`}>{pay.amount}</td>
                         <td className="px-4 py-3">
-                          <span className="inline-flex items-center gap-1 text-[11px] text-[var(--status-success)] font-bold">
+                          <span className="inline-flex items-center gap-1 text-xs text-[var(--status-success)] font-bold">
                             <span className="w-1.5 h-1.5 rounded-full bg-[var(--status-success)]" />
                             <span>{language === 'vi' ? 'Thành công' : 'Paid'}</span>
                           </span>
@@ -554,7 +554,7 @@ export const SettingsScreen: React.FC = () => {
                     <div className="space-y-1">
                       <div className="flex items-center gap-2.5">
                         <h4 className={`text-sm font-bold ${isDark ? 'text-[var(--text-primary)]' : 'text-[var(--text-primary)]'}`}>{prov.name}</h4>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded ${
                           prov.status === 'active' 
                             ? 'bg-[var(--status-success)]/20 text-[var(--status-success)] border border-[var(--status-success)]/30 font-bold' 
                             : isDark ? 'bg-[var(--bg-hover)] text-[var(--text-muted)]' : 'bg-[var(--bg-hover)] text-[var(--text-muted)]'
@@ -567,7 +567,7 @@ export const SettingsScreen: React.FC = () => {
                         <span>•</span>
                         <span>{language === 'vi' ? 'Độ trễ:' : 'Latency:'} <strong className="text-[var(--status-success)]">{prov.latencyMs}ms</strong></span>
                         <span>•</span>
-                        <span className="font-mono text-[11px]">{prov.apiKeyMasked}</span>
+                        <span className="font-mono text-xs">{prov.apiKeyMasked}</span>
                       </div>
                     </div>
 
@@ -645,7 +645,7 @@ export const SettingsScreen: React.FC = () => {
                 }`}>
                   <div className="pr-4">
                     <h4 className={`text-xs font-semibold ${isDark ? 'text-[var(--text-primary)]' : 'text-[var(--text-primary)]'}`}>{item.title}</h4>
-                    <p className={`text-[11px] mt-0.5 ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>{item.desc}</p>
+                    <p className={`text-xs mt-0.5 ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>{item.desc}</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input

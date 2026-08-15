@@ -102,7 +102,7 @@ export const Sidebar: React.FC = () => {
               <h1 className="text-sm font-bold tracking-tight flex items-center gap-1.5 text-[var(--text-primary)]">
                 {t('brandName')}
               </h1>
-              <span className="text-[9px] uppercase tracking-wider font-semibold block leading-tight text-[var(--accent-primary)]">
+              <span className="text-xs uppercase tracking-wider font-semibold block leading-tight text-[var(--accent-primary)]">
                 {t('brandTagline')}
               </span>
             </div>
@@ -180,10 +180,10 @@ export const Sidebar: React.FC = () => {
         {/* Recent Notes History (Scrollable) */}
         <div className="pt-3 border-t border-[var(--border-color)]">
           <div className="flex items-center justify-between px-2 mb-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
               {t('recentNotes')}
             </span>
-            <span className="text-[10px] font-mono text-[var(--text-muted)]">
+            <span className="text-xs font-mono text-[var(--text-muted)]">
               {notes.length}
             </span>
           </div>
@@ -265,7 +265,7 @@ export const Sidebar: React.FC = () => {
             <ShieldCheck className="w-4 h-4 text-[var(--status-success)]" />
             <span>{t('navAdminArea')}</span>
           </div>
-          <span className="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold bg-[var(--status-success)]/20 text-[var(--status-success)]">
+          <span className="text-xs px-1.5 py-0.5 rounded font-mono font-bold bg-[var(--status-success)]/20 text-[var(--status-success)]">
             {currentScreen === 'admin-coupons' ? 'Active' : 'Portal'}
           </span>
         </button>
@@ -292,7 +292,7 @@ export const Sidebar: React.FC = () => {
               <p className="text-xs font-semibold truncate transition-colors text-[var(--text-primary)] group-hover:text-[var(--accent-primary)]">
                 {user.name}
               </p>
-              <span className={`inline-block text-[9px] font-bold px-1.5 py-0.2 rounded ${
+              <span className={`inline-block text-xs font-bold px-1.5 py-0.2 rounded ${
                 user.plan === 'PRO' 
                   ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] border border-[var(--accent-primary)]/30' 
                   : 'bg-[var(--bg-hover)] text-[var(--text-muted)]'

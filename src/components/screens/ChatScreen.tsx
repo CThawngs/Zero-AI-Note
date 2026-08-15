@@ -224,7 +224,7 @@ export const ChatScreen: React.FC = () => {
                                 }`}>
                                   {targetNote.title}
                                 </h4>
-                                <p className={`text-[11px] ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
+                                <p className={`text-xs ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
                                   {language === 'vi' ? 'Xem chi tiết bài ghi chú trích xuất' : 'View full structured note'}
                                 </p>
                               </div>
@@ -236,7 +236,7 @@ export const ChatScreen: React.FC = () => {
                     </div>
                   )}
 
-                  <span className={`block text-[10px] px-1 ${isDark ? 'text-[var(--text-muted)]' : 'text-[var(--text-muted)]'}`}>
+                  <span className={`block text-xs px-1 ${isDark ? 'text-[var(--text-muted)]' : 'text-[var(--text-muted)]'}`}>
                     {msg.timestamp}
                   </span>
                 </div>

@@ -48,7 +48,7 @@ export const FilesScreen: React.FC = () => {
   const getStatusBadge = (status: string, text: string) => {
     if (status === 'processed') {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[var(--accent-subtle)] text-[var(--accent-primary)] border border-[var(--accent-primary)]/20">
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[var(--accent-subtle)] text-[var(--accent-primary)] border border-[var(--accent-primary)]/20">
           <CheckCircle2 className="w-3 h-3" />
           <span>{text}</span>
         </span>
@@ -56,14 +56,14 @@ export const FilesScreen: React.FC = () => {
     }
     if (status === 'auto-delete') {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[var(--status-warning)]/15 text-[var(--status-warning)] border border-[var(--status-warning)]/20">
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[var(--status-warning)]/15 text-[var(--status-warning)] border border-[var(--status-warning)]/20">
           <Clock className="w-3 h-3" />
           <span>{text}</span>
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[var(--status-error)]/15 text-[var(--status-error)] border border-[var(--status-error)]/20">
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[var(--status-error)]/15 text-[var(--status-error)] border border-[var(--status-error)]/20">
         <AlertCircle className="w-3 h-3" />
         <span>{text}</span>
       </span>
@@ -104,7 +104,7 @@ export const FilesScreen: React.FC = () => {
             </div>
             <div>
               <p className="text-xs font-bold text-[var(--text-primary)]">{t('cloudStorageUsage')}</p>
-              <p className="text-[11px] text-[var(--text-secondary)]">
+              <p className="text-xs text-[var(--text-secondary)]">
                 {language === 'vi' ? 'Đã dùng 1.2 GB trên tổng số 5.0 GB (24%)' : 'Used 1.2 GB of 5.0 GB available (24%)'}
               </p>
             </div>
@@ -113,7 +113,7 @@ export const FilesScreen: React.FC = () => {
             <div className="w-full h-2 rounded-full overflow-hidden bg-[var(--bg-hover)]">
               <div className="h-full bg-[var(--accent-primary)] w-[24%]" />
             </div>
-            <div className="flex justify-between text-[10px] text-[var(--text-muted)]">
+            <div className="flex justify-between text-xs text-[var(--text-muted)]">
               <span>0 GB</span>
               <span>5.0 GB</span>
             </div>
@@ -190,7 +190,7 @@ export const FilesScreen: React.FC = () => {
                         <h4 className="text-sm font-bold truncate text-[var(--text-primary)]">
                           {file.name}
                         </h4>
-                        <span className="text-[11px] font-mono text-[var(--text-muted)]">
+                        <span className="text-xs font-mono text-[var(--text-muted)]">
                           {file.size} • {file.uploadDate}
                         </span>
                       </div>
@@ -257,7 +257,7 @@ export const FilesScreen: React.FC = () => {
             {/* Desktop Table (md+) */}
             <div className="hidden md:block rounded-2xl border overflow-x-auto border-[var(--border-color)] bg-[var(--bg-card)] shadow-xs">
               <table className="w-full text-left text-xs min-w-[600px]">
-                <thead className="border-b font-semibold uppercase text-[10px] tracking-wider bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-secondary)]">
+                <thead className="border-b font-semibold uppercase text-xs tracking-wider bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-secondary)]">
                   <tr>
                     <th className="px-5 py-3.5">{language === 'vi' ? 'Tên Tệp' : 'File Name'}</th>
                     <th className="px-4 py-3.5">{language === 'vi' ? 'Kích Thước' : 'Size'}</th>
@@ -283,7 +283,7 @@ export const FilesScreen: React.FC = () => {
                       </td>
 
                       {/* Size */}
-                      <td className="px-4 py-3.5 font-mono text-[11px] text-[var(--text-muted)]">
+                      <td className="px-4 py-3.5 font-mono text-xs text-[var(--text-muted)]">
                         {file.size}
                       </td>
 

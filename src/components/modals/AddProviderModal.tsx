@@ -153,7 +153,7 @@ export const AddProviderModal: React.FC<AddProviderModalProps> = ({ isOpen, onCl
               {language === 'vi' ? 'Default Model (Mô hình mặc định)' : 'Default Model'}
               <span className="text-[var(--status-error)] ml-0.5">*</span>
             </label>
-            <span className="text-[10px] text-[var(--text-muted)]">
+            <span className="text-xs text-[var(--text-muted)]">
               {language === 'vi' ? '2 cách nhập song song' : '2 simultaneous inputs'}
             </span>
           </div>
@@ -161,7 +161,7 @@ export const AddProviderModal: React.FC<AddProviderModalProps> = ({ isOpen, onCl
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Cách 1: Dropdown chọn từ model đã Discover */}
             <div>
-              <span className="block text-[11px] font-medium mb-1 text-[var(--text-secondary)]">
+              <span className="block text-xs font-medium mb-1 text-[var(--text-secondary)]">
                 {language === 'vi' ? 'Chọn từ Discover:' : 'Select Discovered:'}
               </span>
               <select
@@ -183,7 +183,7 @@ export const AddProviderModal: React.FC<AddProviderModalProps> = ({ isOpen, onCl
 
             {/* Cách 2: Ô gõ tay tên model tự do */}
             <div>
-              <span className="block text-[11px] font-medium mb-1 text-[var(--text-secondary)]">
+              <span className="block text-xs font-medium mb-1 text-[var(--text-secondary)]">
                 {language === 'vi' ? 'Hoặc gõ tay tên model:' : 'Or type custom model:'}
               </span>
               <input
@@ -205,7 +205,7 @@ export const AddProviderModal: React.FC<AddProviderModalProps> = ({ isOpen, onCl
             <label className="block text-xs font-medium text-[var(--text-primary)]">
               {language === 'vi' ? 'API Key' : 'API Key'}
             </label>
-            <span className="text-[10px] text-[var(--text-muted)]">
+            <span className="text-xs text-[var(--text-muted)]">
               {language === 'vi' ? 'Tuỳ chọn — để trống nếu endpoint không cần key' : 'Optional — leave empty if endpoint doesn\'t require a key'}
             </span>
           </div>
@@ -254,12 +254,12 @@ export const AddProviderModal: React.FC<AddProviderModalProps> = ({ isOpen, onCl
               {language === 'vi' ? 'Kiểm tra kết nối' : 'Connection Test'}
             </p>
             {testResult ? (
-              <p className="text-[11px] text-[var(--status-success)] font-medium flex items-center gap-1 mt-0.5">
+              <p className="text-xs text-[var(--status-success)] font-medium flex items-center gap-1 mt-0.5">
                 <Check className="w-3 h-3" />
                 <span>{language === 'vi' ? `Kết nối thành công (${testResult.latency}ms)` : `Connected successfully (${testResult.latency}ms)`}</span>
               </p>
             ) : (
-              <p className="text-[11px] mt-0.5 text-[var(--text-muted)]">
+              <p className="text-xs mt-0.5 text-[var(--text-muted)]">
                 {language === 'vi' ? 'Cần kiểm tra thành công trước khi lưu' : 'Must pass ping test before saving'}
               </p>
             )}

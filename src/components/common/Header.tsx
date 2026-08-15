@@ -121,9 +121,9 @@ export const Header: React.FC = () => {
                     isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)]' : 'bg-white border-[var(--border-color)]'
                   }`}
                 >
-                  <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] flex items-center justify-between">
+                  <div className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] flex items-center justify-between">
                     <span>{t('modelSelectorLabel')}</span>
-                    <span className="text-[9px] font-normal text-[var(--text-muted)]">
+                    <span className="text-xs font-normal text-[var(--text-muted)]">
                       {configuredModels.length} {language === 'vi' ? 'nhà cung cấp' : 'providers'}
                     </span>
                   </div>
@@ -138,7 +138,7 @@ export const Header: React.FC = () => {
                         <p className="text-xs font-semibold text-[var(--text-primary)]">
                           {language === 'vi' ? 'Chưa có Provider AI nào' : 'No AI Providers configured'}
                         </p>
-                        <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
+                        <p className="text-xs text-[var(--text-muted)] leading-relaxed">
                           {language === 'vi' 
                             ? 'Thêm Provider AI trong Cài đặt để bắt đầu' 
                             : 'Add an AI Provider in Settings to start'}
@@ -187,10 +187,10 @@ export const Header: React.FC = () => {
                           >
                             <div className="text-left min-w-0 pr-2">
                               <p className="font-semibold truncate">{m.name}</p>
-                              <p className="text-[10px] text-[var(--text-muted)] truncate">{m.provider}</p>
+                              <p className="text-xs text-[var(--text-muted)] truncate">{m.provider}</p>
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
-                              <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${
+                              <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
                                 isInactive 
                                   ? 'bg-[var(--bg-app)] text-[var(--text-muted)]'
                                   : 'bg-[var(--bg-hover)] text-[var(--accent-primary)]'
@@ -213,7 +213,7 @@ export const Header: React.FC = () => {
                           setCurrentScreen('settings');
                           setSettingsActiveTab('ai-providers');
                         }}
-                        className="w-full flex items-center justify-center gap-1 py-1.5 text-[11px] text-[var(--accent-primary)] hover:underline cursor-pointer"
+                        className="w-full flex items-center justify-center gap-1 py-1.5 text-xs text-[var(--accent-primary)] hover:underline cursor-pointer"
                       >
                         <PlusCircle className="w-3 h-3" />
                         <span>{language === 'vi' ? 'Quản lý AI Providers trong Cài đặt' : 'Manage Providers in Settings'}</span>
@@ -290,7 +290,7 @@ export const Header: React.FC = () => {
           <span className={`w-2 h-2 rounded-full ${
             isProcessingChat ? 'bg-[var(--accent-primary)] animate-ping' : 'bg-[var(--status-success)]'
           }`} />
-          <span className="text-[11px] font-medium text-[var(--text-primary)]">
+          <span className="text-xs font-medium text-[var(--text-primary)]">
             {isProcessingChat ? t('processing') : t('ready')}
           </span>
         </div>

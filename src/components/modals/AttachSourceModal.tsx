@@ -143,9 +143,9 @@ export const AttachSourceModal: React.FC<AttachSourceModalProps> = ({ isOpen, on
               >
                 <div className="truncate mr-2">
                   <p className="text-xs font-medium truncate text-[var(--text-primary)]">{f.name}</p>
-                  <p className="text-[10px] text-[var(--text-muted)]">{f.size}</p>
+                  <p className="text-xs text-[var(--text-muted)]">{f.size}</p>
                 </div>
-                <span className="text-[10px] bg-[var(--accent-subtle)] text-[var(--accent-primary)] px-2 py-0.5 rounded font-medium shrink-0">
+                <span className="text-xs bg-[var(--accent-subtle)] text-[var(--accent-primary)] px-2 py-0.5 rounded font-medium shrink-0">
                   {language === 'vi' ? 'Dùng thử' : 'Sample'}
                 </span>
               </button>
@@ -172,7 +172,7 @@ export const AttachSourceModal: React.FC<AttachSourceModalProps> = ({ isOpen, on
                 className="w-full border rounded-xl pl-10 pr-4 py-2.5 text-xs sm:text-sm focus:outline-none focus:border-[var(--accent-primary)] transition-colors bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
               />
             </div>
-            <p className="text-[11px] mt-1.5 text-[var(--text-muted)]">
+            <p className="text-xs mt-1.5 text-[var(--text-muted)]">
               {language === 'vi' ? 'Hệ thống tự động trích xuất phụ đề, transcript và tóm tắt nội dung chính xác.' : 'System automatically extracts transcripts and provides accurate summaries.'}
             </p>
           </div>
