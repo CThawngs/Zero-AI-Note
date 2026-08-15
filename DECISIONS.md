@@ -28,7 +28,25 @@ Zero chốt: **3 gói — Free / Pro 99k / Ultra 199k**. Hermes phân bổ tính
 | Thư viện không giới hạn | ✅ | ✅ | ✅ |
 | Share link (view-only) | ✅ | ✅ | ✅ |
 
-**Lưu ý quan trọng**: PRD gốc đề xuất "BYOK giới hạn ở Paid" — mình đặt BYOK ở **Pro trở lên** (đúng tinh thần PRD: Free không BYOK để chặn né giới hạn xử lý). Free giữ thư viện + chat tiếp (giữ chân).
+### Q9 — Xóa file gốc sau khi transcribe [CHỐT THEO ZERO]
+[HERMES QUYẾT ĐỊNH: **Option α — XÓA SẠCH 100%** ngay sau khi transcribe xong — lý do: (1) Zero yêu cầu "free 100% hiện tại" + "nghe xong xóa"; (2) Pipeline regenerate từ transcript (PRD đã có) không cần file gốc; (3) User upload lại nếu cần — UX rõ ràng; (4) Storage cost = 0, R2 free 10GB đủ buffer.]
+→ Lưu transcript (~50-200KB/video 10h) vào DB + lưu ngắn gọn content_structured
+→ File gốc MP4 chỉ tồn tại **trong thời gian transcribe** (1-2h) trên R2, rồi xóa vĩnh viễn
+
+### Database chốt [NHẤT QUÁN]
+[HERMES QUYẾT ĐỊNH: Giữ **B — Neon Postgres** làm database chính — RLS đầy đủ, schema Postgres match PRD mục 6 nguyên trạng, tooling migration chuẩn (drizzle-kit) — lý do: (1) PRD bắt buộc RLS trên mọi bảng cá nhân; (2) Kinht nghiệm ZeroLLM dùng Postgres đã thành công; (3) Free 0.5GB đủ 20 user active (~25MB/user metadata).]
+
+## Storage cho file nguồn (upload tạm) [HERMES QUYẾT ĐỊNH]
+[HERMES QUYẾT ĐỊNH: **Cloudflare R2** — free 10GB/tháng + không tính egress — lý do: (1) File gốc chỉ tồn tại tạm trong pipeline transcribe (1-2h), sau đó xóa; (2) 10GB free đủ buffer cho nhiều user upload hàng loạt; (3) S3-compatible API, dùng chung signer với Vercel Blob lib nếu cần.]
+
+## Kiểm tra free tier STT/TTS API options [KHÁM PHÁ]
+- **Google Gemini 2.5-3.1 Flash TTS (preview)**: 100% free, 8K context, 15 RPM — đủ cho note tóm tắt ngắn
+- **Fish Audio S2.1 Pro Free**: OpenRouter, 116M weekly tokens free — model TTS chất lượng cao
+- **Deepgram Flux TTS (free)**: OpenRouter, 857K weekly tokens — backup TTS
+- **Gemini 2.0 Flash (audio input)**: free tier 15 RPM — STT chính cho pipeline transcribe (nhận audio URL từ R2, không cần file local)
+- **Whisper via Groq**: free 30 req/min — backup STT nếu Gemini hết quota
+
+[HERMES QUYẾT ĐỊNH: STT chính = Gemini Flash audio input (free 15RPM) + backup Whisper Groq (30 RPM) — 2 lớp nếu 1 bị lỗi.]
 
 ### Q2 — Giới hạn giờ xử lý/phiên [HERMES QUYẾT ĐỊNH]
 [HERMES QUYẾT ĐỊNH: Free = 2 giờ/tháng, Paid = 20 giờ/tháng — lý do: (1) Free 2h đủ cho 1-2 bài giảng dài để dùng thử sản phẩm thật, đủ thấp để chặn abuse/chi phí API âm; (2) Paid 20h hào phóng cho use case học tập thật (sinh viên xử lý 3-5 bài giảng/tháng), vẫn có chặn trên tránh phí API ngoài tầm kiểm soát; (3) Con số dễ truyền thông: "2 giờ miễn phí mỗi tháng"; (4) Lưu vào `profiles.processing_minutes_used` + `processing_minutes_limit`, reset theo tháng — tương lai dễ chỉnh qua config không cần đổi schema.]
