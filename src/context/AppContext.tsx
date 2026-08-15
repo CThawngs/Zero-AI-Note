@@ -53,6 +53,7 @@ interface AppContextType {
   user: UserProfile;
   setUser: React.Dispatch<React.SetStateAction<UserProfile>>;
   upgradeToPro: () => void;
+  upgradeToUltra: () => void;
   downgradePlan: () => void;
   
   // Notes
@@ -608,6 +609,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }, 1200);
   };
 
+  const upgradeToUltra = () => {
+    addToast(
+      language === 'vi' ? 'Đang chuyển tới trang thanh toán...' : 'Redirecting to payment...', 
+      language === 'vi' ? 'Vui lòng chờ trong giây lát...' : 'Please wait a moment...',
+      'info'
+    );
+    setTimeout(() => {
+      setUser(prev => ({
+        ...prev,
+        plan: 'ULTRA',
+        nextBillingDate: '20/12/2026'
+      }));
+      confetti({
+        particleCount: 120,
+        spread: 90,
+        origin: { y: 0.6 }
+      });
+      addToast(
+        language === 'vi' ? 'Nâng cấp thành công!' : 'Upgrade Successful!', 
+        language === 'vi' ? 'Tài khoản của bạn đã được nâng cấp lên gói Ultra.' : 'Your account is now Ultra tier.',
+        'success'
+      );
+      setCurrentScreen('settings');
+      setSettingsActiveTab('account');
+    }, 1200);
+  };
+
   const downgradePlan = () => {
     setUser(prev => ({
       ...prev,
@@ -799,6 +827,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       user,
       setUser,
       upgradeToPro,
+      upgradeToUltra,
       downgradePlan,
       notes,
       archivedNotes,

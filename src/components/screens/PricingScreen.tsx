@@ -5,6 +5,7 @@ import {
   X, 
   Sparkles, 
   Crown, 
+  Rocket,
   ArrowRight, 
   HelpCircle, 
   ChevronDown, 
@@ -16,12 +17,72 @@ import {
 import { useApp } from '../../context/AppContext';
 
 export const PricingScreen: React.FC = () => {
-  const { user, upgradeToPro, applyCouponCode, addToast, theme, language, t } = useApp();
+  const { user, upgradeToPro, upgradeToUltra, applyCouponCode, addToast, theme, language, t } = useApp();
   const [couponCode, setCouponCode] = useState('');
   const [isApplying, setIsApplying] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
   const isDark = theme === 'dark';
+
+  const plans = [
+    {
+      id: 'FREE',
+      name: language === 'vi' ? 'Free' : 'Free',
+      desc: language === 'vi' ? 'Bắt đầu trải nghiệm ghi chú AI' : 'Start exploring AI notes',
+      price: '0đ',
+      period: language === 'vi' ? 'vĩnh viễn' : 'lifetime',
+      features: [
+        { text: language === 'vi' ? '2 giờ xử lý mỗi tháng' : '2 hours processing / month', included: true },
+        { text: language === 'vi' ? '15 ghi chú trích xuất / tháng' : '15 note extractions / month', included: true },
+        { text: language === 'vi' ? 'Mẫu Cornell, Outline, Tóm tắt nhanh' : 'Cornell, Outline, Quick Summary templates', included: true },
+        { text: language === 'vi' ? 'Xuất file Markdown' : 'Markdown export', included: true },
+        { text: language === 'vi' ? 'Lưu trữ đám mây 500MB' : '500 MB cloud storage', included: true },
+        { text: language === 'vi' ? 'Thư viện không giới hạn' : 'Unlimited library', included: true },
+        { text: language === 'vi' ? 'Chat tiếp theo nguồn' : 'Chat with your sources', included: true },
+        { text: language === 'vi' ? 'Tóm tắt bằng âm thanh (TTS)' : 'AI Voice TTS summary', included: false },
+        { text: language === 'vi' ? 'Tích hợp API Key riêng (BYOK)' : 'Custom API Key (BYOK)', included: false },
+        { text: language === 'vi' ? 'Mô hình cao cấp (Claude, GPT-4o)' : 'Premium models (Claude, GPT-4o)', included: false },
+      ]
+    },
+    {
+      id: 'PRO',
+      name: language === 'vi' ? 'Pro' : 'Pro',
+      desc: language === 'vi' ? 'Toàn bộ sức mạnh cho người dùng hằng ngày' : 'Full power for daily users',
+      price: '99.000đ',
+      period: language === 'vi' ? 'tháng' : 'month',
+      popular: true,
+      features: [
+        { text: language === 'vi' ? '20 giờ xử lý mỗi tháng' : '20 hours processing / month', included: true },
+        { text: language === 'vi' ? '200 ghi chú trích xuất / tháng' : '200 note extractions / month', included: true },
+        { text: language === 'vi' ? 'Mọi template: Q&A, Flashcard' : 'All templates: Q&A, Flashcard', included: true },
+        { text: language === 'vi' ? 'Xuất file DOCX & PDF' : 'DOCX & PDF export', included: true },
+        { text: language === 'vi' ? 'Lưu trữ đám mây 5GB' : '5 GB cloud storage', included: true },
+        { text: language === 'vi' ? 'File dài tối đa 4 giờ' : 'Files up to 4 hours', included: true },
+        { text: language === 'vi' ? 'Tóm tắt bằng âm thanh (TTS)' : 'AI Voice TTS summary', included: true },
+        { text: language === 'vi' ? 'Tích hợp API Key riêng (BYOK)' : 'Custom API Key (BYOK)', included: true },
+        { text: language === 'vi' ? 'Mô hình cao cấp (Claude, GPT-4o)' : 'Premium models (Claude, GPT-4o)', included: true },
+      ]
+    },
+    {
+      id: 'ULTRA',
+      name: language === 'vi' ? 'Ultra' : 'Ultra',
+      desc: language === 'vi' ? 'Cho chuyên gia, nhóm và xử lý nặng' : 'For pros, teams & heavy workloads',
+      price: '199.000đ',
+      period: language === 'vi' ? 'tháng' : 'month',
+      features: [
+        { text: language === 'vi' ? '100 giờ xử lý mỗi tháng' : '100 hours processing / month', included: true },
+        { text: language === 'vi' ? 'Không giới hạn ghi chú' : 'Unlimited note extractions', included: true },
+        { text: language === 'vi' ? 'Auto mode + Custom template' : 'Auto mode + Custom templates', included: true },
+        { text: language === 'vi' ? 'Xuất mọi định dạng: HTML, DOCX, PDF' : 'All exports: HTML, DOCX, PDF', included: true },
+        { text: language === 'vi' ? 'Lưu trữ đám mây 50GB' : '50 GB cloud storage', included: true },
+        { text: language === 'vi' ? 'File dài 12 giờ+ (ưu tiên hàng đợi)' : '12h+ files (priority queue)', included: true },
+        { text: language === 'vi' ? 'Mind map & biểu đồ trực quan' : 'Mind maps & visual diagrams', included: true },
+        { text: language === 'vi' ? 'Tóm tắt bằng âm thanh (TTS)' : 'AI Voice TTS summary', included: true },
+        { text: language === 'vi' ? 'Tích hợp API Key riêng (BYOK)' : 'Custom API Key (BYOK)', included: true },
+        { text: language === 'vi' ? 'Ưu tiên tốc độ xử lý' : 'Priority processing speed', included: true },
+      ]
+    }
+  ];
 
   const faqs = [
     {
@@ -37,10 +98,10 @@ export const PricingScreen: React.FC = () => {
         : 'Zero AI Note uses state-of-the-art neural voice models to convert structured outlines and key definitions into 3-5 min audio recaps.'
     },
     {
-      q: language === 'vi' ? 'Gói Pro hỗ trợ những mô hình AI nào?' : 'Which AI models are supported on Pro?',
+      q: language === 'vi' ? 'Gói Pro và Ultra khác nhau như thế nào?' : 'How are Pro and Ultra different?',
       a: language === 'vi' 
-        ? 'Gói Pro hỗ trợ các mô hình tân tiến nhất hiện nay gồm Claude 3.5 Sonnet, GPT-4o, Gemini 2.0 Flash, DeepSeek R1 cùng tính năng kết nối API Key riêng (BYOK).' 
-        : 'Pro tier gives full access to Claude 3.5 Sonnet, GPT-4o, Gemini 2.0 Flash, DeepSeek R1, plus Bring Your Own Key (BYOK) custom endpoints.'
+        ? 'Pro phù hợp người dùng hằng ngày: 20 giờ xử lý/tháng, xuất DOCX/PDF, BYOK. Ultra dành cho chuyên gia/nhóm: 100 giờ, không giới hạn ghi chú, file 12h+, mind map, ưu tiên hàng đợi — gấp 5 lần tài nguyên với giá chỉ hơn 2 lần.' 
+        : 'Pro fits daily users: 20h/month, DOCX/PDF export, BYOK. Ultra is for pros/teams: 100h, unlimited notes, 12h+ files, mind maps, priority queue — 5x resources at just 2x the price.'
     },
     {
       q: language === 'vi' ? 'Dữ liệu và ghi chú của tôi có được bảo mật không?' : 'Is my document and note data protected?',
@@ -66,6 +127,12 @@ export const PricingScreen: React.FC = () => {
     }
   };
 
+  const handleSelectPlan = (planId: string) => {
+    if (planId === 'FREE') return;
+    if (planId === 'PRO') upgradeToPro();
+    if (planId === 'ULTRA') upgradeToUltra();
+  };
+
   return (
     <div className="flex-1 flex flex-col h-full overflow-y-auto custom-scrollbar p-4 sm:p-6 md:p-10 space-y-10 sm:space-y-12 transition-colors duration-250 bg-[var(--bg-app)] text-[var(--text-primary)]">
       {/* Header */}
@@ -84,126 +151,83 @@ export const PricingScreen: React.FC = () => {
         </p>
       </div>
 
-      {/* Pricing Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-4xl mx-auto w-full items-stretch">
-        {/* Basic Plan */}
-        <div className="p-6 sm:p-8 rounded-3xl border flex flex-col justify-between space-y-8 relative transition-colors bg-[var(--bg-card)] border-[var(--border-color)] shadow-sm">
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-bold text-[var(--text-primary)]">{t('freePlan')}</h3>
-              <p className="text-xs mt-1 text-[var(--text-secondary)]">
-                {language === 'vi' ? 'Dành cho cá nhân bắt đầu trải nghiệm ghi chú AI' : 'For individuals discovering structured AI notes'}
-              </p>
+      {/* Pricing Cards — 3 columns */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-6 max-w-5xl mx-auto w-full items-stretch">
+        {plans.map((plan) => {
+          const isCurrent = user.plan === plan.id;
+          const isPopular = plan.id === 'PRO';
+          const Icon = plan.id === 'ULTRA' ? Rocket : plan.id === 'PRO' ? Crown : Sparkles;
+          return (
+            <div
+              key={plan.id}
+              className={`p-6 sm:p-7 rounded-3xl border flex flex-col justify-between space-y-7 relative transition-colors bg-[var(--bg-card)] ${
+                isPopular 
+                  ? 'border-2 border-[var(--accent-primary)] shadow-lg shadow-[var(--accent-primary)]/10' 
+                  : 'border-[var(--border-color)] shadow-sm'
+              }`}
+            >
+              {/* Popular Tag */}
+              {isPopular && (
+                <div className="absolute -top-3.5 right-6 px-3 py-1 rounded-full bg-[var(--accent-primary)] text-[var(--accent-text)] text-xs font-extrabold uppercase tracking-wider shadow-sm">
+                  {language === 'vi' ? 'PHỔ BIẾN NHẤT' : 'MOST POPULAR'}
+                </div>
+              )}
+
+              <div className="space-y-5">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Icon className={`w-5 h-5 ${isPopular ? 'text-[var(--accent-primary)]' : 'text-[var(--text-secondary)]'}`} />
+                    <h3 className="text-lg font-bold text-[var(--text-primary)]">{plan.name}</h3>
+                  </div>
+                  <p className="text-xs mt-1 text-[var(--text-secondary)]">{plan.desc}</p>
+                </div>
+
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl sm:text-4xl font-extrabold text-[var(--text-primary)]">{plan.price}</span>
+                  <span className="text-xs font-medium text-[var(--text-muted)]">
+                    / {plan.period}
+                  </span>
+                </div>
+
+                {/* Feature List */}
+                <div className="space-y-2.5 pt-4 border-t text-xs border-[var(--border-color)]">
+                  {plan.features.map((f, idx) => (
+                    <div key={idx} className={`flex items-center gap-2.5 ${f.included ? 'text-[var(--text-primary)]' : 'line-through text-[var(--text-muted)]'}`}>
+                      {f.included 
+                        ? <Check className={`w-4 h-4 shrink-0 ${isPopular ? 'text-[var(--accent-primary)]' : 'text-[var(--status-success)]'}`} />
+                        : <X className="w-4 h-4 shrink-0" />}
+                      <span>{f.text}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                id={`btn-plan-${plan.id.toLowerCase()}`}
+                disabled={isCurrent || plan.id === 'FREE'}
+                onClick={() => handleSelectPlan(plan.id)}
+                className={`w-full py-3 rounded-2xl text-xs font-semibold text-center border transition-all cursor-pointer active:scale-97 ${
+                  isCurrent
+                    ? 'bg-[var(--bg-hover)] border-[var(--border-color)] text-[var(--text-muted)] cursor-not-allowed'
+                    : isPopular
+                      ? 'bg-[var(--accent-primary)] hover:opacity-90 text-[var(--accent-text)] shadow-md shadow-[var(--accent-primary)]/25'
+                      : plan.id === 'FREE'
+                        ? 'bg-[var(--bg-hover)] border-[var(--border-color)] text-[var(--text-muted)] cursor-not-allowed'
+                        : 'bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] border-[var(--border-color)] text-[var(--text-primary)]'
+                }`}
+              >
+                {isCurrent 
+                  ? (language === 'vi' ? 'Gói Đang Sử Dụng' : 'Current Plan') 
+                  : plan.id === 'FREE'
+                    ? (language === 'vi' ? 'Gói Miễn Phí' : 'Free Plan')
+                    : plan.id === 'PRO'
+                      ? (user.plan === 'ULTRA' ? (language === 'vi' ? 'Chuyển xuống Pro' : 'Downgrade to Pro') : (language === 'vi' ? 'Nâng cấp Pro' : 'Upgrade to Pro'))
+                      : (language === 'vi' ? 'Nâng cấp Ultra' : 'Upgrade to Ultra')}
+                {!isCurrent && plan.id !== 'FREE' && <ArrowRight className="w-4 h-4 inline ml-1" />}
+              </button>
             </div>
-
-            <div className="flex items-baseline gap-1">
-              <span className="text-3xl sm:text-4xl font-extrabold text-[var(--text-primary)]">0đ</span>
-              <span className="text-xs font-medium text-[var(--text-muted)]">
-                / {language === 'vi' ? 'vĩnh viễn' : 'lifetime'}
-              </span>
-            </div>
-
-            {/* Feature List */}
-            <div className="space-y-3 pt-4 border-t text-xs border-[var(--border-color)]">
-              <div className="flex items-center gap-2.5 text-[var(--text-primary)]">
-                <Check className="w-4 h-4 text-[var(--status-success)] shrink-0" />
-                <span>{language === 'vi' ? 'Tối đa 15 ghi chú trích xuất mỗi tháng' : 'Up to 15 note extractions / month'}</span>
-              </div>
-              <div className="flex items-center gap-2.5 text-[var(--text-primary)]">
-                <Check className="w-4 h-4 text-[var(--status-success)] shrink-0" />
-                <span>{language === 'vi' ? 'Mẫu Cornell & Outline cơ bản' : 'Basic Cornell & Outline templates'}</span>
-              </div>
-              <div className="flex items-center gap-2.5 text-[var(--text-primary)]">
-                <Check className="w-4 h-4 text-[var(--status-success)] shrink-0" />
-                <span>{language === 'vi' ? 'Lưu trữ đám mây 500MB' : '500 MB cloud storage'}</span>
-              </div>
-              <div className="flex items-center gap-2.5 line-through text-[var(--text-muted)]">
-                <X className="w-4 h-4 shrink-0" />
-                <span>{language === 'vi' ? 'Tóm tắt bằng âm thanh (AI Voice TTS)' : 'AI Neural Voice TTS summary'}</span>
-              </div>
-              <div className="flex items-center gap-2.5 line-through text-[var(--text-muted)]">
-                <X className="w-4 h-4 shrink-0" />
-                <span>{language === 'vi' ? 'Tích hợp API Key riêng (BYOK)' : 'Custom API Key (BYOK)'}</span>
-              </div>
-              <div className="flex items-center gap-2.5 line-through text-[var(--text-muted)]">
-                <X className="w-4 h-4 shrink-0" />
-                <span>{language === 'vi' ? 'Hỗ trợ mô hình Claude 3.5 & GPT-4o' : 'Claude 3.5 Sonnet & GPT-4o access'}</span>
-              </div>
-            </div>
-          </div>
-
-          <button
-            id="btn-current-free-plan"
-            disabled={user.plan === 'FREE'}
-            className="w-full py-3 rounded-2xl text-xs font-semibold text-center border cursor-not-allowed bg-[var(--bg-hover)] border-[var(--border-color)] text-[var(--text-muted)]"
-          >
-            {user.plan === 'FREE' ? (language === 'vi' ? 'Gói Đang Sử Dụng' : 'Current Active Plan') : t('freePlan')}
-          </button>
-        </div>
-
-        {/* Pro Plan */}
-        <div className="p-6 sm:p-8 rounded-3xl border-2 border-[var(--accent-primary)] flex flex-col justify-between space-y-8 relative shadow-lg shadow-[var(--accent-primary)]/10 bg-[var(--bg-card)]">
-          {/* Popular Tag */}
-          <div className="absolute -top-3.5 right-6 px-3 py-1 rounded-full bg-[var(--accent-primary)] text-[var(--accent-text)] text-xs font-extrabold uppercase tracking-wider shadow-sm">
-            {language === 'vi' ? 'PHỔ BIẾN NHẤT' : 'MOST POPULAR'}
-          </div>
-
-          <div className="space-y-6">
-            <div>
-              <div className="flex items-center gap-2">
-                <Crown className="w-5 h-5 text-[var(--accent-primary)]" />
-                <h3 className="text-lg font-bold text-[var(--text-primary)]">{t('proPlan')}</h3>
-              </div>
-              <p className="text-xs mt-1 text-[var(--text-secondary)]">
-                {language === 'vi' ? 'Toàn bộ sức mạnh trích xuất và lưu trữ không giới hạn' : 'Unlimited extractions, neural TTS, and multi-model power'}
-              </p>
-            </div>
-
-            <div className="flex items-baseline gap-1">
-              <span className="text-3xl sm:text-4xl font-extrabold text-[var(--text-primary)]">199.000đ</span>
-              <span className="text-xs font-medium text-[var(--text-secondary)]">
-                / {language === 'vi' ? 'tháng' : 'month'}
-              </span>
-            </div>
-
-            {/* Feature List */}
-            <div className="space-y-3 pt-4 border-t text-xs border-[var(--border-color)]">
-              <div className="flex items-center gap-2.5 font-medium text-[var(--text-primary)]">
-                <Check className="w-4 h-4 text-[var(--accent-primary)] shrink-0" />
-                <span>{language === 'vi' ? 'Không giới hạn số lượng ghi chú AI' : 'Unlimited AI note extractions'}</span>
-              </div>
-              <div className="flex items-center gap-2.5 font-medium text-[var(--text-primary)]">
-                <Check className="w-4 h-4 text-[var(--accent-primary)] shrink-0" />
-                <span>{language === 'vi' ? 'Mọi mô hình AI (Claude 3.5, GPT-4o, DeepSeek)' : 'All advanced LLMs (Claude 3.5, GPT-4o, DeepSeek)'}</span>
-              </div>
-              <div className="flex items-center gap-2.5 font-medium text-[var(--text-primary)]">
-                <Check className="w-4 h-4 text-[var(--accent-primary)] shrink-0" />
-                <span>{language === 'vi' ? 'Giọng đọc tóm tắt AI Voice TTS tự nhiên' : 'AI Neural Voice TTS natural summaries'}</span>
-              </div>
-              <div className="flex items-center gap-2.5 font-medium text-[var(--text-primary)]">
-                <Check className="w-4 h-4 text-[var(--accent-primary)] shrink-0" />
-                <span>{language === 'vi' ? 'Dung lượng lưu trữ đám mây 5.0 GB' : '5.0 GB cloud storage'}</span>
-              </div>
-              <div className="flex items-center gap-2.5 font-medium text-[var(--text-primary)]">
-                <Check className="w-4 h-4 text-[var(--accent-primary)] shrink-0" />
-                <span>{language === 'vi' ? 'Tùy biến cấu trúc và xuất đa định dạng (DOCX, PDF)' : 'Custom outlines & multi-export (PDF, DOCX)'}</span>
-              </div>
-              <div className="flex items-center gap-2.5 font-medium text-[var(--text-primary)]">
-                <Check className="w-4 h-4 text-[var(--accent-primary)] shrink-0" />
-                <span>{language === 'vi' ? 'Tích hợp Provider riêng (BYOK & Local LLM)' : 'Custom BYOK & local inference support'}</span>
-              </div>
-            </div>
-          </div>
-
-          <button
-            id="btn-upgrade-to-pro-action"
-            onClick={upgradeToPro}
-            className="w-full py-3.5 rounded-2xl bg-[var(--accent-primary)] hover:opacity-90 text-[var(--accent-text)] text-xs font-bold flex items-center justify-center gap-2 shadow-md shadow-[var(--accent-primary)]/25 transition-all cursor-pointer active:scale-97"
-          >
-            <span>{user.plan === 'PRO' ? (language === 'vi' ? 'Gia Hạn Gói Pro' : 'Renew Pro Plan') : t('upgradePro')}</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
+          );
+        })}
       </div>
 
       {/* Coupon promo bar */}

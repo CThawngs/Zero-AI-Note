@@ -4,10 +4,31 @@
 
 ## 2026-08-15 — Bước 1: Xác nhận điểm chưa chốt (PRD mục 9)
 
-### Q1 — Giá gói Paid/tháng [ĐANG CHỜ ZERO XÁC NHẬN]
-Đề xuất của Hermes: **149.000đ/tháng (~$6)**.
-- Lý do: (1) Thị trường VN — mức 99k-149k là vùng giá quen thuộc cho app học tập, dễ chuyển đổi từ Free; (2) So sánh đối thủ: Fathom free, Otter $16.99 (~430k), Notion AI $10 (~250k), ChatGPT Plus $20 (~500k) — 149k nằm dưới nhóm trả phí quốc tế nhưng vẫn đủ tạo giá trị; (3) Chi phí vận hành thật: 20h xử lý/tháng qua API (Gemini Flash rẻ + Whisper chunk) ước tính $2-5/user — 149k (~$6) đủ chi phí + biên lợi nhuận, không cần tăng giá sớm; (4) Định vị "cao hơn free tools, thấp hơn premium quốc tế" — đúng phân khúc sinh viên/nhà nghiên cứu VN.
-- **Cần Zero xác nhận trước khi code luồng billing** (ảnh hưởng bảng `subscriptions`, webhook ZeroInvoice, text Pricing).
+### Q1 — Giá gói Paid/tháng [CHỐT THEO ZERO + HERMES PHÂN BỔ]
+Zero chốt: **3 gói — Free / Pro 99k / Ultra 199k**. Hermes phân bổ tính năng:
+
+[HERMES QUYẾT ĐỊNH: **Phân bổ 3 gói dựa trên chi phí vận hành thật + giá trị cảm nhận** — chi tiết trong phần "Phân bổ 3 gói" bên dưới — lý do: (1) Free giữ tính năng giữ chân (thư viện, chat tiếp, share view-only) để tối đa engagement, đúng nguyên tắc PRD mục 5; (2) Pro 99k = gói "dùng thật mỗi ngày" giá thấp dễ chuyển đổi, chứa toàn bộ tính năng lõi + giới hạn vừa phải; (3) Ultra 199k = gói "prosumer/nhóm" giá cao hơn cho nhu cầu xử lý nặng (file dài, xuất đa định dạng cao cấp, BYOK, ưu tiên tốc độ) — chênh 100k đủ để kéo người dùng nặng lên Ultra mà không quá đắt so với ChatGPT Plus ($20).]
+
+**Phân bổ 3 gói (chi tiết)**:
+
+| Tính năng | Free (0đ) | Pro (99k) | Ultra (199k) |
+|---|---|---|---|
+| Giờ xử lý/tháng | 2h | 20h | 100h |
+| Số ghi chú/tháng | 15 | 200 | Không giới hạn |
+| Template | Cornell, Outline, Tóm tắt nhanh | + Q&A, Flashcard | + Auto mode, Custom template |
+| Xuất file | MD | MD, DOCX, PDF | MD, DOCX, PDF, HTML |
+| Lưu trữ đám mây | 500MB | 5GB | 50GB |
+| File dài tối đa | 1h | 4h | 12h+ (ưu tiên) |
+| TTS đọc note | ❌ | ✅ | ✅ |
+| Mind map/biểu đồ | ❌ | ❌ | ✅ |
+| BYOK (API key riêng) | ❌ | ✅ | ✅ |
+| Model cao cấp (Claude/GPT-4o) | ❌ | ✅ | ✅ |
+| Ưu tiên hàng đợi xử lý | ❌ | ❌ | ✅ |
+| Chat tiếp theo nguồn | ✅ | ✅ | ✅ |
+| Thư viện không giới hạn | ✅ | ✅ | ✅ |
+| Share link (view-only) | ✅ | ✅ | ✅ |
+
+**Lưu ý quan trọng**: PRD gốc đề xuất "BYOK giới hạn ở Paid" — mình đặt BYOK ở **Pro trở lên** (đúng tinh thần PRD: Free không BYOK để chặn né giới hạn xử lý). Free giữ thư viện + chat tiếp (giữ chân).
 
 ### Q2 — Giới hạn giờ xử lý/phiên [HERMES QUYẾT ĐỊNH]
 [HERMES QUYẾT ĐỊNH: Free = 2 giờ/tháng, Paid = 20 giờ/tháng — lý do: (1) Free 2h đủ cho 1-2 bài giảng dài để dùng thử sản phẩm thật, đủ thấp để chặn abuse/chi phí API âm; (2) Paid 20h hào phóng cho use case học tập thật (sinh viên xử lý 3-5 bài giảng/tháng), vẫn có chặn trên tránh phí API ngoài tầm kiểm soát; (3) Con số dễ truyền thông: "2 giờ miễn phí mỗi tháng"; (4) Lưu vào `profiles.processing_minutes_used` + `processing_minutes_limit`, reset theo tháng — tương lai dễ chỉnh qua config không cần đổi schema.]

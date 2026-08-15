@@ -32,7 +32,7 @@ export interface UserProfile {
   name: string;
   email: string;
   avatar: string;
-  plan: 'FREE' | 'PRO';
+  plan: 'FREE' | 'PRO' | 'ULTRA';
   nextBillingDate?: string;
   appliedCoupon?: {
     code: string;
