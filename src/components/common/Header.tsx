@@ -39,6 +39,17 @@ export const Header: React.FC = () => {
 
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [showAllNotifications, setShowAllNotifications] = useState(false);
+
+  const notifications = [
+    { id: 1, title: 'Server Upgrade', content: 'The AI server is undergoing an upgrade to enhance performance and stability.', time: '2 mins ago', flag: 'red' },
+    { id: 2, title: 'New Template', content: 'A new research template has been added to your library.', time: '1 hour ago', flag: 'green' },
+    { id: 3, title: 'Quota Warning', content: 'You have used 80% of your monthly AI quota. Consider upgrading to the Pro plan for more.', time: '3 hours ago', flag: 'orange' },
+    { id: 4, title: 'Export Ready', content: 'Your document export is processing and will be ready for download shortly.', time: '5 hours ago', flag: 'blue' },
+    { id: 5, title: 'Update Available', content: 'Version 2.1 is now available. Click to update for new features.', time: '1 day ago', flag: 'orange' },
+    { id: 6, title: 'Welcome', content: 'Welcome to Zero AI Note. Start by creating your first research project.', time: '2 days ago', flag: 'green' },
+  ];
 
   // Dynamic models derived exclusively from configured AI Providers
   const configuredModels = aiProviders.map(p => ({
@@ -321,15 +332,89 @@ export const Header: React.FC = () => {
         )}
 
         {/* Notifications */}
-        <button
-          id="header-notifications-btn"
-          onClick={() => setCurrentScreen('settings')}
-          className="p-2 rounded-xl border transition-colors relative cursor-pointer active:scale-95 bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
-          title={t('notifications')}
-        >
-          <Bell className="w-4 h-4" />
-          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full ring-2 bg-[var(--accent-primary)] ring-[var(--accent-primary)]/30" />
-        </button>
+        <div className="relative">
+          <button
+            id="header-notifications-btn"
+            onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+            className={`p-2 rounded-xl border transition-colors relative cursor-pointer active:scale-95 bg-[var(--bg-app)] border-[var(--border-color)] hover:bg-[var(--bg-hover)] ${
+              isNotificationsOpen ? 'text-[var(--text-primary)] border-[var(--accent-primary)]/50' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+            }`}
+            title={t('notifications')}
+          >
+            <Bell className="w-4 h-4" />
+            <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full ring-2 bg-[var(--accent-primary)] ring-[var(--accent-primary)]/30" />
+          </button>
+
+          <AnimatePresence>
+            {isNotificationsOpen && (
+              <>
+                <div 
+                  className="fixed inset-0 z-30" 
+                  onClick={() => {
+                    setIsNotificationsOpen(false);
+                    setShowAllNotifications(false);
+                  }} 
+                />
+                <motion.div 
+                  initial={{ opacity: 0, y: 6, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                  transition={{ duration: 0.15 }}
+                  className={`absolute right-0 mt-1.5 w-80 sm:w-96 rounded-2xl shadow-2xl p-4 z-40 border ${
+                    isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-primary)]' : 'bg-white border-[var(--border-color)] text-gray-800'
+                  }`}
+                >
+                  <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)] mb-3">
+                    <span className="text-sm font-bold tracking-tight">
+                      {language === 'vi' ? 'Thông báo' : 'Notifications'}
+                    </span>
+                    <button 
+                      onClick={() => {
+                        setIsNotificationsOpen(false);
+                        setShowAllNotifications(false);
+                      }}
+                      className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:underline"
+                    >
+                      {language === 'vi' ? 'Đóng' : 'Close'}
+                    </button>
+                  </div>
+
+                  <div className={`space-y-3 custom-scrollbar overflow-y-auto pr-1 ${
+                    showAllNotifications ? 'max-h-[350px]' : ''
+                  }`}>
+                    {(showAllNotifications ? notifications : notifications.slice(0, 5)).map((notif) => {
+                      // Color flag map
+                      let flagBg = 'bg-blue-500';
+                      if (notif.flag === 'red') flagBg = 'bg-[var(--status-error)]';
+                      else if (notif.flag === 'orange') flagBg = 'bg-amber-500';
+                      else if (notif.flag === 'green') flagBg = 'bg-[var(--status-success)]';
+
+                      return (
+                        <div key={notif.id} className="flex gap-2.5 p-2 rounded-xl transition-colors hover:bg-[var(--bg-hover)]">
+                          <span className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${flagBg}`} />
+                          <div className="space-y-0.5">
+                            <h4 className="text-xs font-bold leading-snug">{notif.title}</h4>
+                            <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{notif.content}</p>
+                            <span className="text-[10px] text-[var(--text-muted)] font-mono block">{notif.time}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {!showAllNotifications && notifications.length > 5 && (
+                    <button
+                      onClick={() => setShowAllNotifications(true)}
+                      className="w-full text-center py-2 mt-2 text-xs font-semibold text-[var(--accent-primary)] border border-dashed border-[var(--border-color)] rounded-xl hover:bg-[var(--bg-hover)] cursor-pointer"
+                    >
+                      {language === 'vi' ? 'Xem thêm' : 'View More'}
+                    </button>
+                  )}
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* Share Button */}
         <button

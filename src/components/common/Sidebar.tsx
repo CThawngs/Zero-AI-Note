@@ -12,10 +12,7 @@ import {
   ShieldCheck, 
   X,
   ChevronLeft,
-  ChevronRight,
-  Sun,
-  Moon,
-  Globe
+  ChevronRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useApp } from '../../context/AppContext';
@@ -31,13 +28,10 @@ export const Sidebar: React.FC = () => {
     startNewChatNote, 
     setLibrarySearchQuery,
     setFocusSearchInput,
-    theme,
-    toggleTheme,
-    language,
-    toggleLanguage,
     t,
     isMobileSidebarOpen,
-    setIsMobileSidebarOpen
+    setIsMobileSidebarOpen,
+    theme
   } = useApp();
 
   const navItems = [
@@ -212,42 +206,8 @@ export const Sidebar: React.FC = () => {
         </div>
       </div>
 
-      {/* Bottom section: Theme / Lang quick toggle & User & Admin switch (Sticky) */}
+      {/* Bottom section: Admin switch & User (Sticky) */}
       <div className="p-3 border-t shrink-0 flex flex-col gap-2 border-[var(--border-color)] bg-[var(--bg-sidebar)]">
-        {/* Quick Language and Theme Toggles */}
-        <div className="flex items-center gap-2">
-          {/* Theme Toggle Button */}
-          <button
-            id="sidebar-theme-toggle"
-            onClick={toggleTheme}
-            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-medium border transition-colors cursor-pointer active:scale-95 bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--accent-primary)] hover:bg-[var(--bg-hover)] shadow-2xs"
-            title={isDark ? t('lightMode') : t('darkMode')}
-          >
-            {isDark ? (
-              <>
-                <Sun className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
-                <span>Light</span>
-              </>
-            ) : (
-              <>
-                <Moon className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
-                <span>Dark</span>
-              </>
-            )}
-          </button>
-
-          {/* Language Toggle Button */}
-          <button
-            id="sidebar-lang-toggle"
-            onClick={toggleLanguage}
-            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-medium border transition-colors cursor-pointer active:scale-95 bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] shadow-2xs"
-            title="Switch language (EN / VI)"
-          >
-            <Globe className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
-            <span>{language === 'vi' ? 'EN' : 'VI'}</span>
-          </button>
-        </div>
-
         {/* Admin Portal Shortcut */}
         <button
           id="btn-switch-admin"
