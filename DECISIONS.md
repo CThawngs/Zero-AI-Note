@@ -1,44 +1,43 @@
 # DECISIONS — Zero AI Note
+
 > [HERMES QUYẾT ĐỊNH format = quyết định tự đưa + lý do ngắn]
 
-## Q1 Giá gói [CHỐT THEO ZERO + HERMES PHÂN BỘ]
-Zero chốt Free / Pro 99.000đ / Ultra 199.000đ. Chi tiết phân bổ đã được ghi ở commit ebd81af và PricingScreen. HERMES tham khảo từ nghiên cứu thị trường + so sánh đối thủ Otter/ChatGPT Plus/Notion AI cho thấy mức 99-199k là vùng giá phù hợp và dễ chuyển đổi cho người dùng Việt.
+## Q1 Giá gói [CHỐT THEO ZERO + HERMES PHÂN BỔ]
+Zero chốt Free / Pro 99.000đ / Ultra 199.000đ.
+Phân bổ chi tiết: Free giữ chân (thư viện, chat tiếp), Pro = dùng thật mỗi ngày, Ultra = xử lý nặng/BYOK/ưu tiên.
+Đã ghi kèm bảng tính năng và lý do trong commit gắn liền với PricingScreen.
 
 ## Q2 Giới hạn giờ xử lý/phiên [HERMES QUYẾT ĐỊNH]
-Free 2h/tháng, Paid/Pro 20h/tháng, Ultra 100h/tháng. Lý do: kiểm soát chi phí API, bảo vệ khỏi abuse + dễ truyền thông.
+Free 2h/tháng, Paid/Pro 20h/tháng, Ultra 100h/tháng.
+Lý do: kiểm soát chi phí API, chống abuse, dễ truyền thông, dễ giới hạn về sau.
 
-## Q3 Provider mặc định [CHỐT THEO ZERO]
-Google AI, OpenAI, Anthropic, NVIDIA, Groq, OpenRouter, DeepSeek, Grok. Lưu key server-side, dùng OmniRoute làm default aggregator.
+## Q3 Provider AI mặc định [CHỐT THEO ZERO]
+Google AI (Gemini) làm default; OpenAI, Anthropic, NVIDIA, Groq, OpenRouter, DeepSeek, Grok theo sau.
+Lưu key server-side, không expose client.
 
 ## Q4 Auth [CHỐT THEO ZERO — BẮT BUỘC]
-Google OAuth + email/password ngay từ Tuần 1-2, là bắt buộc. Có forgot password + đổi mật khẩu trực tiếp trong app.
+Google OAuth + email/password + forgot password ngay Tuần 1-2.
+Không chấp nhận skip auth.
 
 ## Q5 Notebook share [HERMES QUYẾT ĐỊNH]
-View-only share link cho MVP/Tuần 8-9. Đồng biên tập để sau launch. Lý do: giảm scope RLS, launch nhanh hơn, vault phần phức tạp nhất ra ngoài vòng đầu.
+MVP/Tuần 8-9: view-only share link.
+Đồng biên tập để sau launch, tránh RLS/Realtime phức tạp sớm.
 
-## Q9 {Q9} Phân bổ gói Pro/Ultra [CHỐT THEO ZERO, ĐÃ CẬP NHẬT]
-{plan_assignment_text}
+## Q6 Chính sách lưu trữ file nguồn [CHỐT THEO ZERO]
+Xóa 100% file gốc ngay sau khi transcribe xong.
+Chỉ giữ transcript + content_structured + thumbnail nhỏ.
+Lý do: đúng yêu cầu “free 100%”, giảm chi phí lưu trữ tối đa, UX vẫn đủ nhờ regenerate từ transcript.
 
-## Q7 Hạ tầng dashboard Telegram để theo dõi log [CHỐT THEO ZERO]
-Sử dụng bot Telegram gửi log về channel riêng. Lý do: Zero muốn “giữ trạng thái một cách tiện lợi nhất” qua Telegram thay vì web dashboard phức tạp.
+## Q7 Storage cho file tạm [HERMES QUYẾT ĐỊNH]
+Cloudflare R2 — free 10GB/tháng, không tính egress.
+Vì file chỉ tồn tại tạm trong pipeline transcribe, R2 là lựa chọn phù hợp nhất.
 
-## Q6 Telegram bot spirit [CHỐT THEO ZERO]
-Một cá thể riêng có tư duy đánh giá mã theo đúng chuyên môn kỹ thuật, có thể tự điều chỉnh prompt tại lúc chạy. Đây là bot “triết lý sống” như một tools đa nhiệm.
+## Q8 Database [NHẤT QUÁN]
+Neon Postgres làm DB chính.
+Lý do: RLS đầy đủ, schema chuẩn Postgres, phù hợp PRD mục 3.3, kinh nghiệm đã có.
+Free tier 0.5GB đủ ~20 users; vượt ngưỡng sẽ chuyển sang paid có điều kiện.
 
-## Q8 Ngưỡng Ultra trong dashboard [CHỐT THEO ZERO]
-label 199K là Ultra (chứ không phải Pro theo phân bổ cũ). Lý do:Zero yêu cầu dashboard minh bạch với mức Pro/Ultra “gần với sự thật hơn” để người dùng và bản thân dễ nắm trạng thái.
-
-## Giao diện & API Telegram [ĐANG THỰC HIỆN]
-- Đang tạo nút chuyển hướng:  `Manage`, `Link`, `Unlink`, `Add/Remove Admin`.
-- Chưa kết nối Neon/Beyond Identity.
-- Chưa bật nhận log server thực.
-
-## Phụ thuộc còn đang chờ
-- Zero cung cấp `NEON_DATABASE_URL`, `TG_BOT_TOKEN`, `TG_CHAT_ID`.
-- Zero xác nhận chạy Telegram bot bằng `telegram-send`.
-
-## Tổng kết gần nhất
-- Master prompt Zero AI Note đã nhận.
-- 3 gói được chốt với `Ultra: 199K|Pro: 99K` theo phân bổ Q9 Zero cung cấp.
-- Telegram dashboard đang build lại dựa trên yêu cầu mới của Zero.
-- Q2/Q3/Q4/Q5 đã được chốt trước đó, không thay đổi.
+## Q9 STT/TTS API [HERMES QUYẾT ĐỊNH]
+STT chính: Gemini Flash audio input (free tier).
+Backup: Whisper qua Groq.
+TTS: Gemini Flash TTS preview / Deepgram Flux TTS / Fish Audio S2.1 Pro Free theo thứ tự ưu tiên, tất cả free tier.
