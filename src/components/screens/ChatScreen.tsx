@@ -90,17 +90,17 @@ export const ChatScreen: React.FC = () => {
 
   return (
     <div className={`flex-1 flex h-full overflow-hidden relative transition-colors duration-200 ${
-      isDark ? 'bg-[#1F1B18] text-[#F7F4EE]' : 'bg-[#FAF7F2] text-[#26221D]'
+      isDark ? 'bg-[var(--bg-app)] text-[var(--text-primary)]' : 'bg-[var(--bg-app)] text-[var(--text-primary)]'
     }`}>
       {/* Left / Center: Chat Area */}
       <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
         {/* Chat Header for toggling artifact panel if closed */}
         <div className={`h-11 px-4 sm:px-6 flex items-center justify-between border-b shrink-0 ${
-          isDark ? 'bg-[#24201C]/90 border-[#38322B]' : 'bg-[#FCFAF7]/95 border-[#E6E0D6]'
+          isDark ? 'bg-[var(--bg-card)]/90 border-[var(--border-color)]' : 'bg-[var(--bg-surface)]/95 border-[var(--border-color)]'
         }`}>
           <div className="flex items-center gap-2">
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-            <span className={`text-xs font-semibold ${isDark ? 'text-[#EDE7DE]' : 'text-[#3A3229]'}`}>
+            <Sparkles className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
+            <span className={`text-xs font-semibold ${isDark ? 'text-[var(--text-primary)]' : 'text-[var(--text-primary)]'}`}>
               {language === 'vi' ? 'Hội thoại & Trích xuất ghi chú AI' : 'AI Research & Note Synthesis'}
             </span>
           </div>
@@ -110,8 +110,8 @@ export const ChatScreen: React.FC = () => {
               onClick={() => setIsArtifactOpen(!isArtifactOpen)}
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-medium border transition-colors cursor-pointer active:scale-95 ${
                 isArtifactOpen
-                  ? isDark ? 'bg-amber-600/20 border-amber-500/35 text-amber-400 font-semibold' : 'bg-amber-50 border-amber-300 text-amber-800 font-semibold'
-                  : isDark ? 'bg-[#2A241E] border-[#3E372E] text-[#D8D2C9]' : 'bg-white border-[#E2DBD0] text-[#4E463E] shadow-2xs'
+                  ? isDark ? 'bg-[var(--accent-primary)]/20 border-[var(--accent-primary)]/35 text-[var(--accent-primary)] font-semibold' : 'bg-[var(--accent-subtle)] border-[var(--accent-primary)] text-[var(--accent-primary)] font-semibold'
+                  : isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-secondary)]' : 'bg-white border-[var(--border-color)] text-[var(--text-secondary)] shadow-2xs'
               }`}
             >
               {isArtifactOpen ? <PanelRightClose className="w-3.5 h-3.5" /> : <PanelRightOpen className="w-3.5 h-3.5" />}
@@ -132,7 +132,7 @@ export const ChatScreen: React.FC = () => {
                 className={`flex gap-2.5 sm:gap-3.5 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 {msg.sender === 'ai' && (
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-tr from-amber-600 via-amber-500 to-orange-500 flex items-center justify-center shrink-0 shadow-md shadow-amber-600/25">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-tr from-[var(--accent-primary)] via-[var(--accent-primary)] to-[var(--accent-primary)] flex items-center justify-center shrink-0 shadow-md shadow-[var(--accent-primary)]/25">
                     <Sparkles className="w-4 h-4 text-white" />
                   </div>
                 )}
@@ -142,10 +142,10 @@ export const ChatScreen: React.FC = () => {
                   <div
                     className={`p-3.5 sm:p-4 rounded-2xl text-xs sm:text-sm leading-relaxed ${
                       msg.sender === 'user'
-                        ? 'bg-amber-600 text-white rounded-br-xs shadow-md shadow-amber-600/20 font-normal'
+                        ? 'bg-[var(--accent-primary)] text-white rounded-br-xs shadow-md shadow-[var(--accent-primary)]/20 font-normal'
                         : isDark 
-                          ? 'bg-[#28231E] text-[#F7F4EE] border border-[#3C352D] rounded-tl-xs shadow-sm' 
-                          : 'bg-white text-[#26221D] border border-[#E6E0D6] shadow-2xs rounded-tl-xs'
+                          ? 'bg-[var(--bg-card)] text-[var(--text-primary)] border border-[var(--border-color)] rounded-tl-xs shadow-sm' 
+                          : 'bg-white text-[var(--text-primary)] border border-[var(--border-color)] shadow-2xs rounded-tl-xs'
                     }`}
                   >
                     <p className="whitespace-pre-wrap">{msg.text}</p>
@@ -153,21 +153,21 @@ export const ChatScreen: React.FC = () => {
                     {/* Attached files preview in message */}
                     {msg.attachments && msg.attachments.length > 0 && (
                       <div className={`mt-3 flex flex-wrap gap-1.5 pt-2 border-t ${
-                        msg.sender === 'user' ? 'border-amber-400/30' : (isDark ? 'border-[#3C352D]' : 'border-[#EAE4D9]')
+                        msg.sender === 'user' ? 'border-[var(--accent-primary)]/30' : (isDark ? 'border-[var(--border-color)]' : 'border-[var(--border-subtle)]')
                       }`}>
                         {msg.attachments.map((att, i) => (
                           <span
                             key={i}
                             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${
                               msg.sender === 'user'
-                                ? 'bg-amber-700/60 text-amber-100'
-                                : (isDark ? 'bg-[#322B24] text-[#D8D2C9]' : 'bg-[#F2ECE3] text-[#4A4239]')
+                                ? 'bg-[var(--accent-primary)]/60 text-[var(--accent-text)]'
+                                : (isDark ? 'bg-[var(--bg-hover)] text-[var(--text-secondary)]' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)]')
                             }`}
                           >
                             {att.type === 'youtube' ? (
-                              <Youtube className="w-3.5 h-3.5 text-rose-400" />
+                              <Youtube className="w-3.5 h-3.5 text-[var(--status-error)]" />
                             ) : (
-                              <FileText className="w-3.5 h-3.5 text-amber-500" />
+                              <FileText className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
                             )}
                             <span className="truncate max-w-[180px]">{att.name}</span>
                           </span>
@@ -186,8 +186,8 @@ export const ChatScreen: React.FC = () => {
                           onClick={() => handleQuickQuestionClick(m as NoteMethod)}
                           className={`px-3 py-1.5 rounded-xl border text-xs font-medium transition-all cursor-pointer shadow-2xs active:scale-95 ${
                             isDark 
-                              ? 'bg-[#28231E] hover:bg-amber-600/20 border-[#3C352D] hover:border-amber-500/40 text-[#D8D2C9] hover:text-amber-300' 
-                              : 'bg-white hover:bg-amber-50 border-[#E2DBD0] hover:border-amber-400 text-[#4A4239] hover:text-amber-800'
+                              ? 'bg-[var(--bg-card)] hover:bg-[var(--accent-primary)]/20 border-[var(--border-color)] hover:border-[var(--accent-primary)]/40 text-[var(--text-secondary)] hover:text-[var(--accent-primary)]' 
+                              : 'bg-white hover:bg-[var(--accent-subtle)] border-[var(--border-color)] hover:border-[var(--accent-primary)] text-[var(--text-secondary)] hover:text-[var(--accent-primary)]'
                           }`}
                         >
                           ✨ {language === 'vi' ? 'Chọn' : 'Select'} {m.toUpperCase()}
@@ -210,42 +210,42 @@ export const ChatScreen: React.FC = () => {
                             }}
                             className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center justify-between group shadow-sm active:scale-[0.99] ${
                               isDark 
-                                ? 'bg-[#26211C] border-amber-500/35 hover:border-amber-500 hover:bg-[#2F2923]' 
-                                : 'bg-white border-amber-300 hover:border-amber-500 hover:bg-amber-50/40'
+                                ? 'bg-[var(--bg-card)] border-[var(--accent-primary)]/35 hover:border-[var(--accent-primary)] hover:bg-[var(--bg-hover)]' 
+                                : 'bg-white border-[var(--accent-primary)] hover:border-[var(--accent-primary)] hover:bg-[var(--accent-subtle)]/40'
                             }`}
                           >
                             <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-xl bg-amber-600/20 text-amber-500 flex items-center justify-center">
+                              <div className="w-8 h-8 rounded-xl bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] flex items-center justify-center">
                                 <FileText className="w-4 h-4" />
                               </div>
                               <div>
                                 <h4 className={`text-xs font-semibold transition-colors ${
-                                  isDark ? 'text-white group-hover:text-amber-400' : 'text-[#26221D] group-hover:text-amber-700'
+                                  'text-[var(--text-primary)] group-hover:text-[var(--accent-primary)]'
                                 }`}>
                                   {targetNote.title}
                                 </h4>
-                                <p className={`text-[11px] ${isDark ? 'text-[#A8A199]' : 'text-[#6E665D]'}`}>
+                                <p className={`text-[11px] ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
                                   {language === 'vi' ? 'Xem chi tiết bài ghi chú trích xuất' : 'View full structured note'}
                                 </p>
                               </div>
                             </div>
-                            <ChevronRight className="w-4 h-4 text-[#8C857B] group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all" />
+                            <ChevronRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--accent-primary)] group-hover:translate-x-0.5 transition-all" />
                           </div>
                         );
                       })()}
                     </div>
                   )}
 
-                  <span className={`block text-[10px] px-1 ${isDark ? 'text-[#8C857B]' : 'text-[#968D82]'}`}>
+                  <span className={`block text-[10px] px-1 ${isDark ? 'text-[var(--text-muted)]' : 'text-[var(--text-muted)]'}`}>
                     {msg.timestamp}
                   </span>
                 </div>
 
                 {msg.sender === 'user' && (
                   <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center shrink-0 border ${
-                    isDark ? 'bg-[#2E2822] border-[#3E372E]' : 'bg-[#EAE4D9] border-[#DDD5C8]'
+                    isDark ? 'bg-[var(--bg-hover)] border-[var(--border-color)]' : 'bg-[var(--bg-hover)] border-[var(--border-color)]'
                   }`}>
-                    <span className={`text-xs font-semibold ${isDark ? 'text-[#EDE7DE]' : 'text-[#3A3229]'}`}>ZU</span>
+                    <span className={`text-xs font-semibold ${isDark ? 'text-[var(--text-primary)]' : 'text-[var(--text-primary)]'}`}>ZU</span>
                   </div>
                 )}
               </motion.div>
@@ -262,7 +262,7 @@ export const ChatScreen: React.FC = () => {
 
         {/* Bottom Bar: Method Pills & Input Composer */}
         <div className={`p-2.5 sm:p-4 border-t backdrop-blur-md transition-colors shrink-0 ${
-          isDark ? 'border-[#38322B] bg-[#1F1B18]/95' : 'border-[#E6E0D6] bg-[#FCFAF7]/95'
+          isDark ? 'border-[var(--border-color)] bg-[var(--bg-app)]/95' : 'border-[var(--border-color)] bg-[var(--bg-surface)]/95'
         }`}>
           <div className="max-w-3xl mx-auto space-y-2">
             {/* Note Method Selection Pills (Extracted subcomponent) */}
@@ -277,25 +277,25 @@ export const ChatScreen: React.FC = () => {
             {/* Attached files preview chips */}
             {attachedSources.length > 0 && (
               <div className={`flex flex-wrap gap-2 p-2 border rounded-xl ${
-                isDark ? 'bg-[#26211C] border-[#38322B]' : 'bg-[#F5F0E6] border-[#E2DBD0]'
+                isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)]' : 'bg-[var(--bg-hover)] border-[var(--border-color)]'
               }`}>
                 {attachedSources.map((att, idx) => (
                   <span
                     key={idx}
                     className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs border ${
-                      isDark ? 'bg-[#302A24] text-[#EDE7DE] border-[#443C32]' : 'bg-white text-[#26221D] border-[#E2DBD0] shadow-2xs'
+                      isDark ? 'bg-[var(--bg-hover)] text-[var(--text-primary)] border-[var(--border-color)]' : 'bg-white text-[var(--text-primary)] border-[var(--border-color)] shadow-2xs'
                     }`}
                   >
                     {att.type === 'youtube' ? (
-                      <Youtube className="w-3.5 h-3.5 text-rose-500" />
+                      <Youtube className="w-3.5 h-3.5 text-[var(--status-error)]" />
                     ) : (
-                      <FileText className="w-3.5 h-3.5 text-amber-500" />
+                      <FileText className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
                     )}
                     <span className="truncate max-w-[180px]">{att.name}</span>
                     <button
                       type="button"
                       onClick={() => setAttachedSources(prev => prev.filter((_, i) => i !== idx))}
-                      className="text-[#8C857B] hover:text-rose-500 ml-1 cursor-pointer p-1"
+                      className="text-[var(--text-muted)] hover:text-[var(--status-error)] ml-1 cursor-pointer p-1"
                       aria-label="Remove source"
                     >
                       ×
@@ -313,7 +313,7 @@ export const ChatScreen: React.FC = () => {
                 id="btn-attach-source"
                 onClick={() => setIsAttachModalOpen(true)}
                 className={`absolute left-2 min-w-[36px] min-h-[36px] sm:min-w-[40px] sm:min-h-[40px] flex items-center justify-center p-2 rounded-xl transition-colors cursor-pointer active:scale-95 ${
-                  isDark ? 'text-[#A8A199] hover:text-white hover:bg-[#2F2923]' : 'text-[#6E665D] hover:text-[#26221D] hover:bg-[#EAE4D9]'
+                  isDark ? 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
                 }`}
                 title={t('attachSource')}
                 aria-label={t('attachSource')}
@@ -335,8 +335,8 @@ export const ChatScreen: React.FC = () => {
                 placeholder={t('chatPlaceholder')}
                 className={`w-full border rounded-2xl pl-12 pr-12 py-3 text-sm focus:outline-none transition-colors custom-scrollbar resize-none max-h-32 ${
                   isDark 
-                    ? 'bg-[#26211C] border-[#38322B] text-[#F7F4EE] placeholder-[#8A8177] focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30' 
-                    : 'bg-white border-[#E2DBD0] text-[#26221D] placeholder-[#9E958A] focus:border-amber-600 focus:ring-1 focus:ring-amber-600/20 shadow-xs'
+                    ? 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:ring-1 focus:ring-[var(--accent-primary)]/30' 
+                    : 'bg-white border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--accent-primary)] focus:ring-1 focus:ring-[var(--accent-primary)]/20 shadow-xs'
                 }`}
               />
 
@@ -347,8 +347,8 @@ export const ChatScreen: React.FC = () => {
                 disabled={!inputVal.trim() || isProcessingChat}
                 className={`absolute right-2 min-w-[36px] min-h-[36px] sm:min-w-[40px] sm:min-h-[40px] flex items-center justify-center p-2 rounded-xl transition-all cursor-pointer active:scale-95 ${
                   inputVal.trim() && !isProcessingChat
-                    ? 'bg-amber-600 text-white shadow-md shadow-amber-600/25 hover:bg-amber-500'
-                    : isDark ? 'text-[#7A7167] bg-[#241F1A] cursor-not-allowed' : 'text-[#9E958A] bg-[#EDE7DE] cursor-not-allowed'
+                    ? 'bg-[var(--accent-primary)] text-white shadow-md shadow-[var(--accent-primary)]/25 hover:bg-[var(--accent-primary)]'
+                    : isDark ? 'text-[var(--text-muted)] bg-[var(--bg-hover)] cursor-not-allowed' : 'text-[var(--text-muted)] bg-[var(--bg-hover)] cursor-not-allowed'
                 }`}
                 aria-label="Send message"
               >

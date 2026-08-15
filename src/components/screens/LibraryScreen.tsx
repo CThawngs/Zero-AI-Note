@@ -118,39 +118,39 @@ export const LibraryScreen: React.FC = () => {
 
   const getSourceIcon = (type: string) => {
     switch (type) {
-      case 'youtube': return <Youtube className="w-3.5 h-3.5 text-red-500" />;
-      case 'audio': return <Headphones className="w-3.5 h-3.5 text-emerald-500" />;
-      case 'image': return <ImageIcon className="w-3.5 h-3.5 text-purple-500" />;
-      default: return <FileText className="w-3.5 h-3.5 text-blue-500" />;
+      case 'youtube': return <Youtube className="w-3.5 h-3.5 text-[var(--status-error)]" />;
+      case 'audio': return <Headphones className="w-3.5 h-3.5 text-[var(--status-success)]" />;
+      case 'image': return <ImageIcon className="w-3.5 h-3.5 text-[var(--status-info)]" />;
+      default: return <FileText className="w-3.5 h-3.5 text-[var(--status-info)]" />;
     }
   };
 
   return (
     <div className={`flex-1 flex flex-col h-full overflow-hidden transition-colors ${
-      isDark ? 'bg-[#1F1B18] text-[#F7F4EE]' : 'bg-[#FAF7F2] text-[#26221D]'
+      isDark ? 'bg-[var(--bg-app)] text-[var(--text-primary)]' : 'bg-[var(--bg-app)] text-[var(--text-primary)]'
     }`}>
       {/* Top Controls Bar */}
       <div className={`p-4 sm:p-6 pb-4 border-b space-y-4 transition-colors ${
-        isDark ? 'border-[#38322B] bg-[#24201C]/80' : 'border-[#E6E0D6] bg-white'
+        isDark ? 'border-[var(--border-color)] bg-[var(--bg-card)]/80' : 'border-[var(--border-color)] bg-white'
       }`}>
         {/* Title & Tabs row */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
           <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-            <h2 className={`text-lg sm:text-xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-[#26221D]'}`}>
+            <h2 className={`text-lg sm:text-xl font-bold tracking-tight ${'text-[var(--text-primary)]'}`}>
               {t('libraryTitle')}
             </h2>
             
             {/* Tabs */}
             <div className={`flex p-0.5 rounded-xl border ${
-              isDark ? 'bg-[#1A1613] border-[#38322B]' : 'bg-[#EAE4D9] border-[#DDD5C8]'
+              isDark ? 'bg-[var(--bg-app)] border-[var(--border-color)]' : 'bg-[var(--bg-hover)] border-[var(--border-color)]'
             }`}>
               <button
                 id="library-tab-my-notes"
                 onClick={() => setLibraryActiveTab('my-notes')}
                 className={`px-3 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer active:scale-95 ${
                   libraryActiveTab === 'my-notes'
-                    ? isDark ? 'bg-[#322B24] text-white shadow-xs' : 'bg-white text-[#26221D] shadow-xs'
-                    : isDark ? 'text-[#A8A199] hover:text-[#EDE7DE]' : 'text-[#6E665D] hover:text-[#26221D]'
+                    ? isDark ? 'bg-[var(--bg-hover)] text-[var(--text-primary)] shadow-xs' : 'bg-white text-[var(--text-primary)] shadow-xs'
+                    : isDark ? 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 }`}
               >
                 {t('tabMyNotes')} ({notes.length})
@@ -160,8 +160,8 @@ export const LibraryScreen: React.FC = () => {
                 onClick={() => setLibraryActiveTab('shared')}
                 className={`px-3 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer active:scale-95 ${
                   libraryActiveTab === 'shared'
-                    ? isDark ? 'bg-[#322B24] text-white shadow-xs' : 'bg-white text-[#26221D] shadow-xs'
-                    : isDark ? 'text-[#A8A199] hover:text-[#EDE7DE]' : 'text-[#6E665D] hover:text-[#26221D]'
+                    ? isDark ? 'bg-[var(--bg-hover)] text-[var(--text-primary)] shadow-xs' : 'bg-white text-[var(--text-primary)] shadow-xs'
+                    : isDark ? 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 }`}
               >
                 {t('tabShared')}
@@ -172,7 +172,7 @@ export const LibraryScreen: React.FC = () => {
           <button
             id="btn-library-new-note"
             onClick={() => startNewChatNote()}
-            className="self-start sm:self-auto flex items-center gap-2 px-3.5 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-amber-600/25 active:scale-95 transition-all cursor-pointer"
+            className="self-start sm:self-auto flex items-center gap-2 px-3.5 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-white rounded-xl text-xs font-semibold shadow-md shadow-[var(--accent-primary)]/25 active:scale-95 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>{t('newNote')}</span>
@@ -184,7 +184,7 @@ export const LibraryScreen: React.FC = () => {
           {/* Search bar */}
           <div className="relative w-full sm:flex-1 sm:max-w-md">
             <Search className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 ${
-              isDark ? 'text-[#8C857B]' : 'text-[#9E958A]'
+              isDark ? 'text-[var(--text-muted)]' : 'text-[var(--text-muted)]'
             }`} />
             <input
               ref={searchInputRef}
@@ -195,14 +195,14 @@ export const LibraryScreen: React.FC = () => {
               placeholder={t('searchNotesPlaceholder')}
               className={`w-full rounded-xl pl-10 pr-8 py-2.5 sm:py-2 text-sm sm:text-xs transition-colors border ${
                 isDark 
-                  ? 'bg-[#26211C] border-[#38322B] text-[#F7F4EE] placeholder-[#8A8177] focus:border-amber-500' 
-                  : 'bg-[#FAF7F2] border-[#E2DBD0] text-[#26221D] placeholder-[#9E958A] focus:border-amber-600 shadow-2xs'
+                  ? 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--accent-primary)]' 
+                  : 'bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--accent-primary)] shadow-2xs'
               }`}
             />
             {librarySearchQuery && (
               <button
                 onClick={() => setLibrarySearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8C857B] hover:text-white text-sm cursor-pointer p-1"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] text-sm cursor-pointer p-1"
               >
                 ×
               </button>
@@ -218,11 +218,11 @@ export const LibraryScreen: React.FC = () => {
                 onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-medium transition-colors cursor-pointer whitespace-nowrap active:scale-95 ${
                   isDark 
-                    ? 'bg-[#26211C] border-[#38322B] hover:border-[#4E4437] text-[#D8D2C9] hover:text-white' 
-                    : 'bg-white border-[#E2DBD0] hover:border-[#CCC2B2] text-[#4A4239] hover:text-[#26221D] shadow-2xs'
+                    ? 'bg-[var(--bg-card)] border-[var(--border-color)] hover:border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]' 
+                    : 'bg-white border-[var(--border-color)] hover:border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-2xs'
                 }`}
               >
-                <Filter className="w-3.5 h-3.5 text-amber-500" />
+                <Filter className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
                 <span>{t('filter')}: {libraryFilter === 'all' ? t('all') : libraryFilter}</span>
               </button>
               <AnimatePresence>
@@ -234,7 +234,7 @@ export const LibraryScreen: React.FC = () => {
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.96, y: 4 }}
                       className={`absolute right-0 mt-1.5 w-48 rounded-xl shadow-2xl p-1.5 z-30 space-y-1 text-xs border ${
-                        isDark ? 'bg-[#26211C] border-[#38322B]' : 'bg-white border-[#E2DBD0]'
+                        isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)]' : 'bg-white border-[var(--border-color)]'
                       }`}
                     >
                       {[
@@ -253,8 +253,8 @@ export const LibraryScreen: React.FC = () => {
                           }}
                           className={`w-full text-left px-2.5 py-2 sm:py-1.5 rounded-lg transition-colors cursor-pointer ${
                             libraryFilter === f.id 
-                              ? isDark ? 'bg-amber-600/20 text-amber-400 font-semibold' : 'bg-amber-50 text-amber-800 font-semibold'
-                              : isDark ? 'text-[#D8D2C9] hover:bg-[#322B24]' : 'text-[#4A4239] hover:bg-[#FAF7F2]'
+                              ? isDark ? 'bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] font-semibold' : 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-semibold'
+                              : isDark ? 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-app)]'
                           }`}
                         >
                           {f.label}
@@ -273,11 +273,11 @@ export const LibraryScreen: React.FC = () => {
                 onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-medium transition-colors cursor-pointer whitespace-nowrap active:scale-95 ${
                   isDark 
-                    ? 'bg-[#26211C] border-[#38322B] hover:border-[#4E4437] text-[#D8D2C9] hover:text-white' 
-                    : 'bg-white border-[#E2DBD0] hover:border-[#CCC2B2] text-[#4A4239] hover:text-[#26221D] shadow-2xs'
+                    ? 'bg-[var(--bg-card)] border-[var(--border-color)] hover:border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]' 
+                    : 'bg-white border-[var(--border-color)] hover:border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-2xs'
                 }`}
               >
-                <ArrowUpDown className="w-3.5 h-3.5 text-amber-500" />
+                <ArrowUpDown className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
                 <span>{librarySort === 'recent' ? t('recent') : librarySort === 'az' ? t('nameAsc') : t('createdDate')}</span>
               </button>
               <AnimatePresence>
@@ -289,7 +289,7 @@ export const LibraryScreen: React.FC = () => {
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.96, y: 4 }}
                       className={`absolute right-0 mt-1.5 w-40 rounded-xl shadow-2xl p-1.5 z-30 space-y-1 text-xs border ${
-                        isDark ? 'bg-[#26211C] border-[#38322B]' : 'bg-white border-[#E2DBD0]'
+                        isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)]' : 'bg-white border-[var(--border-color)]'
                       }`}
                     >
                       {[
@@ -306,8 +306,8 @@ export const LibraryScreen: React.FC = () => {
                           }}
                           className={`w-full text-left px-2.5 py-2 sm:py-1.5 rounded-lg transition-colors cursor-pointer ${
                             librarySort === s.id 
-                              ? isDark ? 'bg-amber-600/20 text-amber-400 font-semibold' : 'bg-amber-50 text-amber-800 font-semibold'
-                              : isDark ? 'text-[#D8D2C9] hover:bg-[#322B24]' : 'text-[#4A4239] hover:bg-[#FAF7F2]'
+                              ? isDark ? 'bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] font-semibold' : 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-semibold'
+                              : isDark ? 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-app)]'
                           }`}
                         >
                           {s.label}
@@ -321,15 +321,15 @@ export const LibraryScreen: React.FC = () => {
 
             {/* View Mode Toggle */}
             <div className={`flex p-1 rounded-xl border shrink-0 ${
-              isDark ? 'bg-[#1A1613] border-[#38322B]' : 'bg-[#EAE4D9] border-[#DDD5C8]'
+              isDark ? 'bg-[var(--bg-app)] border-[var(--border-color)]' : 'bg-[var(--bg-hover)] border-[var(--border-color)]'
             }`}>
               <button
                 id="btn-view-grid"
                 onClick={() => setLibraryViewMode('grid')}
                 className={`p-1.5 rounded-lg transition-colors cursor-pointer active:scale-95 ${
                   libraryViewMode === 'grid' 
-                    ? isDark ? 'bg-[#322B24] text-white' : 'bg-white text-[#26221D] shadow-2xs' 
-                    : isDark ? 'text-[#8C857B] hover:text-[#EDE7DE]' : 'text-[#8C857B] hover:text-[#26221D]'
+                    ? isDark ? 'bg-[var(--bg-hover)] text-[var(--text-primary)]' : 'bg-white text-[var(--text-primary)] shadow-2xs' 
+                    : isDark ? 'text-[var(--text-muted)] hover:text-[var(--text-primary)]' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                 }`}
                 title={t('grid')}
               >
@@ -340,8 +340,8 @@ export const LibraryScreen: React.FC = () => {
                 onClick={() => setLibraryViewMode('list')}
                 className={`p-1.5 rounded-lg transition-colors cursor-pointer active:scale-95 ${
                   libraryViewMode === 'list' 
-                    ? isDark ? 'bg-[#322B24] text-white' : 'bg-white text-[#26221D] shadow-2xs' 
-                    : isDark ? 'text-[#8C857B] hover:text-[#EDE7DE]' : 'text-[#8C857B] hover:text-[#26221D]'
+                    ? isDark ? 'bg-[var(--bg-hover)] text-[var(--text-primary)]' : 'bg-white text-[var(--text-primary)] shadow-2xs' 
+                    : isDark ? 'text-[var(--text-muted)] hover:text-[var(--text-primary)]' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                 }`}
                 title={t('list')}
               >
@@ -362,13 +362,13 @@ export const LibraryScreen: React.FC = () => {
           </div>
         ) : filteredNotes.length === 0 ? (
           <div className={`h-64 flex flex-col items-center justify-center text-center p-6 border border-dashed rounded-2xl ${
-            isDark ? 'border-[#38322B] bg-[#26211C]' : 'border-[#DDD5C8] bg-white'
+            isDark ? 'border-[var(--border-color)] bg-[var(--bg-card)]' : 'border-[var(--border-color)] bg-white'
           }`}>
-            <FileText className="w-10 h-10 text-[#8C857B] mb-3" />
-            <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-[#26221D]'}`}>
+            <FileText className="w-10 h-10 text-[var(--text-muted)] mb-3" />
+            <h3 className={`text-sm font-semibold ${'text-[var(--text-primary)]'}`}>
               {language === 'vi' ? 'Không tìm thấy ghi chú nào' : 'No notes found'}
             </h3>
-            <p className={`text-xs mt-1 max-w-sm ${isDark ? 'text-[#A8A199]' : 'text-[#6E665D]'}`}>
+            <p className={`text-xs mt-1 max-w-sm ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
               {language === 'vi' ? 'Thử tìm kiếm với từ khóa khác hoặc tạo một ghi chú mới bằng AI.' : 'Try adjusting your search terms or create a new note with AI.'}
             </p>
             <button
@@ -376,7 +376,7 @@ export const LibraryScreen: React.FC = () => {
                 setLibrarySearchQuery('');
                 setLibraryFilter('all');
               }}
-              className="mt-4 px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer active:scale-95"
+              className="mt-4 px-4 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer active:scale-95"
             >
               {language === 'vi' ? 'Đặt lại bộ lọc' : 'Reset filters'}
             </button>
@@ -392,8 +392,8 @@ export const LibraryScreen: React.FC = () => {
                 onClick={() => openNoteDetail(note)}
                 className={`group relative p-5 rounded-2xl border transition-all flex flex-col justify-between cursor-pointer min-h-[220px] active:scale-[0.98] ${
                   isDark 
-                    ? 'bg-[#26211C] hover:bg-[#2C2620] border-[#38322B] hover:border-amber-500/40 hover:shadow-xl hover:shadow-amber-500/5 hover:-translate-y-0.5' 
-                    : 'bg-white hover:bg-[#FAF7F2] border-[#E6E0D6] hover:border-amber-400 hover:shadow-lg hover:shadow-amber-500/5 hover:-translate-y-0.5'
+                    ? 'bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] border-[var(--border-color)] hover:border-[var(--accent-primary)]/40 hover:shadow-xl hover:shadow-[var(--accent-primary)]/5 hover:-translate-y-0.5' 
+                    : 'bg-white hover:bg-[var(--bg-app)] border-[var(--border-color)] hover:border-[var(--accent-primary)] hover:shadow-lg hover:shadow-[var(--accent-primary)]/5 hover:-translate-y-0.5'
                 }`}
               >
                 <div>
@@ -401,11 +401,11 @@ export const LibraryScreen: React.FC = () => {
                   <div className="flex items-center justify-between mb-2.5">
                     <div className="flex items-center gap-1.5">
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border ${
-                        isDark ? 'bg-[#322B24] text-[#D8D2C9] border-[#443C32]' : 'bg-[#F2ECE3] text-[#4A4239] border-[#E2DBD0]'
+                        isDark ? 'bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border-color)]' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border-color)]'
                       }`}>
                         {note.category}
                       </span>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-500 uppercase">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] uppercase">
                         {note.method}
                       </span>
                     </div>
@@ -416,7 +416,7 @@ export const LibraryScreen: React.FC = () => {
                         id={`note-menu-btn-${note.id}`}
                         onClick={() => setOpenMenuNoteId(openMenuNoteId === note.id ? null : note.id)}
                         className={`p-1 rounded-lg transition-colors cursor-pointer ${
-                          isDark ? 'text-[#8C857B] hover:text-white hover:bg-[#322B24]' : 'text-[#8C857B] hover:text-[#26221D] hover:bg-[#EAE4D9]'
+                          isDark ? 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
                         }`}
                       >
                         <MoreVertical className="w-4 h-4" />
@@ -431,7 +431,7 @@ export const LibraryScreen: React.FC = () => {
                               animate={{ opacity: 1, scale: 1 }}
                               exit={{ opacity: 0, scale: 0.95 }}
                               className={`absolute right-0 mt-1 w-44 rounded-xl shadow-2xl p-1.5 z-40 space-y-0.5 text-xs border ${
-                                isDark ? 'bg-[#241F1A] border-[#38322B]' : 'bg-white border-[#E2DBD0]'
+                                isDark ? 'bg-[var(--bg-hover)] border-[var(--border-color)]' : 'bg-white border-[var(--border-color)]'
                               }`}
                             >
                               <button
@@ -440,37 +440,37 @@ export const LibraryScreen: React.FC = () => {
                                   openNoteDetail(note);
                                 }}
                                 className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                                  isDark ? 'text-[#EDE7DE] hover:text-white hover:bg-[#322B24]' : 'text-[#4A4239] hover:text-[#26221D] hover:bg-[#FAF7F2]'
+                                  isDark ? 'text-[var(--text-primary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-app)]'
                                 }`}
                               >
-                                <ExternalLink className="w-3.5 h-3.5 text-amber-500" />
+                                <ExternalLink className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
                                 <span>{language === 'vi' ? 'Mở chi tiết' : 'Open details'}</span>
                               </button>
                               <button
                                 onClick={() => handleOpenRename(note)}
                                 className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                                  isDark ? 'text-[#EDE7DE] hover:text-white hover:bg-[#322B24]' : 'text-[#4A4239] hover:text-[#26221D] hover:bg-[#FAF7F2]'
+                                  isDark ? 'text-[var(--text-primary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-app)]'
                                 }`}
                               >
-                                <Edit3 className="w-3.5 h-3.5 text-emerald-500" />
+                                <Edit3 className="w-3.5 h-3.5 text-[var(--status-success)]" />
                                 <span>{t('rename')}</span>
                               </button>
                               <button
                                 onClick={() => handleShareNote(note)}
                                 className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                                  isDark ? 'text-[#EDE7DE] hover:text-white hover:bg-[#322B24]' : 'text-[#4A4239] hover:text-[#26221D] hover:bg-[#FAF7F2]'
+                                  isDark ? 'text-[var(--text-primary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-app)]'
                                 }`}
                               >
-                                <Share2 className="w-3.5 h-3.5 text-amber-600" />
+                                <Share2 className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
                                 <span>{t('share')}</span>
                               </button>
-                              <div className={`border-t my-1 ${isDark ? 'border-[#38322B]' : 'border-[#EAE4D9]'}`} />
+                              <div className={`border-t my-1 ${isDark ? 'border-[var(--border-color)]' : 'border-[var(--border-subtle)]'}`} />
                               <button
                                 onClick={() => {
                                   setOpenMenuNoteId(null);
                                   archiveNote(note.id);
                                 }}
-                                className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 cursor-pointer"
+                                className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[var(--status-error)] hover:bg-[var(--status-error)]/10 cursor-pointer"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                                 <span>{t('delete')}</span>
@@ -484,12 +484,12 @@ export const LibraryScreen: React.FC = () => {
 
                   {/* Title & Preview */}
                   <h3 className={`text-sm font-bold transition-colors line-clamp-1 mb-1.5 ${
-                    isDark ? 'text-white group-hover:text-amber-400' : 'text-[#26221D] group-hover:text-amber-700'
+                    'text-[var(--text-primary)] group-hover:text-[var(--accent-primary)]'
                   }`}>
                     {note.title}
                   </h3>
                   <p className={`text-xs line-clamp-3 leading-relaxed ${
-                    isDark ? 'text-[#A8A199]' : 'text-[#6E665D]'
+                    isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'
                   }`}>
                     {note.summary}
                   </p>
@@ -497,7 +497,7 @@ export const LibraryScreen: React.FC = () => {
 
                 {/* Card Footer: Sources & Timestamp */}
                 <div className={`flex items-center justify-between pt-3 border-t text-xs ${
-                  isDark ? 'border-[#38322B] text-[#8C857B]' : 'border-[#EAE4D9] text-[#968D82]'
+                  isDark ? 'border-[var(--border-color)] text-[var(--text-muted)]' : 'border-[var(--border-subtle)] text-[var(--text-muted)]'
                 }`}>
                   <div className="flex items-center gap-1.5">
                     {note.sources.slice(0, 3).map((s, idx) => (
@@ -523,34 +523,34 @@ export const LibraryScreen: React.FC = () => {
                 onClick={() => openNoteDetail(note)}
                 className={`flex items-center justify-between p-4 rounded-xl border transition-all cursor-pointer group active:scale-[0.99] ${
                   isDark 
-                    ? 'bg-[#26211C] hover:bg-[#2C2620] border-[#38322B] hover:border-amber-500/40' 
-                    : 'bg-white hover:bg-[#FAF7F2] border-[#E6E0D6] hover:border-amber-300 shadow-2xs'
+                    ? 'bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] border-[var(--border-color)] hover:border-[var(--accent-primary)]/40' 
+                    : 'bg-white hover:bg-[var(--bg-app)] border-[var(--border-color)] hover:border-[var(--accent-primary)] shadow-2xs'
                 }`}
               >
                 <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
-                  <div className="w-8 h-8 rounded-xl bg-amber-600/15 text-amber-500 flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-xl bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] flex items-center justify-center shrink-0">
                     <FileText className="w-4 h-4" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <h3 className={`text-xs sm:text-sm font-semibold truncate transition-colors ${
-                        isDark ? 'text-white group-hover:text-amber-400' : 'text-[#26221D] group-hover:text-amber-700'
+                        'text-[var(--text-primary)] group-hover:text-[var(--accent-primary)]'
                       }`}>
                         {note.title}
                       </h3>
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg shrink-0 ${
-                        isDark ? 'bg-[#322B24] text-[#A8A199]' : 'bg-[#F2ECE3] text-[#6E665D]'
+                        isDark ? 'bg-[var(--bg-hover)] text-[var(--text-secondary)]' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)]'
                       }`}>
                         {note.category}
                       </span>
                     </div>
-                    <p className={`text-xs truncate mt-0.5 ${isDark ? 'text-[#A8A199]' : 'text-[#6E665D]'}`}>
+                    <p className={`text-xs truncate mt-0.5 ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
                       {note.summary}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 sm:gap-6 text-xs text-[#8C857B] shrink-0 ml-3 sm:ml-4">
+                <div className="flex items-center gap-4 sm:gap-6 text-xs text-[var(--text-muted)] shrink-0 ml-3 sm:ml-4">
                   <div className="hidden sm:flex items-center gap-1.5">
                     {note.sources.map((s, idx) => (
                       <span key={idx}>{getSourceIcon(s.type)}</span>
@@ -562,7 +562,7 @@ export const LibraryScreen: React.FC = () => {
                       e.stopPropagation();
                       archiveNote(note.id);
                     }}
-                    className="p-1 text-[#8C857B] hover:text-rose-500 rounded transition-colors cursor-pointer"
+                    className="p-1 text-[var(--text-muted)] hover:text-[var(--status-error)] rounded transition-colors cursor-pointer"
                     title={t('delete')}
                   >
                     <Trash2 className="w-4 h-4" />
@@ -584,7 +584,7 @@ export const LibraryScreen: React.FC = () => {
         >
           <form onSubmit={handleSaveRename} className="space-y-4">
             <div>
-              <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-[#EDE7DE]' : 'text-[#26221D]'}`}>
+              <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-[var(--text-primary)]' : 'text-[var(--text-primary)]'}`}>
                 {t('renameInputLabel')}
               </label>
               <input
@@ -592,8 +592,8 @@ export const LibraryScreen: React.FC = () => {
                 required
                 value={renameTitleInput}
                 onChange={(e) => setRenameTitleInput(e.target.value)}
-                className={`w-full rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-amber-500 border ${
-                  isDark ? 'bg-[#26211C] border-[#38322B] text-white' : 'bg-white border-[#E2DBD0] text-[#26221D]'
+                className={`w-full rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[var(--accent-primary)] border ${
+                  isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-primary)]' : 'bg-white border-[var(--border-color)] text-[var(--text-primary)]'
                 }`}
               />
             </div>
@@ -602,14 +602,14 @@ export const LibraryScreen: React.FC = () => {
                 type="button"
                 onClick={() => setRenameModalNote(null)}
                 className={`px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer active:scale-95 ${
-                  isDark ? 'bg-[#322B24] text-[#D8D2C9] hover:bg-[#3D352D]' : 'bg-[#EAE4D9] text-[#4A4239] hover:bg-[#DDD5C8]'
+                  isDark ? 'bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:bg-[var(--border-color)]'
                 }`}
               >
                 {t('cancel')}
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold cursor-pointer shadow-md shadow-amber-600/25 active:scale-95"
+                className="px-4 py-2 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-white text-xs font-semibold cursor-pointer shadow-md shadow-[var(--accent-primary)]/25 active:scale-95"
               >
                 {t('save')}
               </button>

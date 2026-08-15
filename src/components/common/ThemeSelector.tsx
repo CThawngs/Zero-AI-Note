@@ -61,7 +61,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ showModeToggle = t
                       className="w-2.5 h-2.5 rounded-full shadow-xs shrink-0" 
                       style={{ backgroundColor: opt.darkAccent }}
                     />
-                    <span className="text-[8px] font-bold tracking-tight text-[#FAF9F5]/70 uppercase">
+                    <span className="text-[8px] font-bold tracking-tight text-[var(--accent-text)]/70 uppercase">
                       {language === 'vi' ? 'Tối' : 'Dark'}
                     </span>
                   </div>
@@ -81,7 +81,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ showModeToggle = t
                   style={{ backgroundColor: opt.lightBg }}
                 >
                   <div className="flex items-center gap-1 justify-end">
-                    <span className="text-[8px] font-bold tracking-tight text-[#26221D]/70 uppercase">
+                    <span className="text-[8px] font-bold tracking-tight text-[var(--text-primary)]/70 uppercase">
                       {language === 'vi' ? 'Sáng' : 'Light'}
                     </span>
                     <span 

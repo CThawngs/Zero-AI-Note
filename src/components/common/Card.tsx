@@ -21,17 +21,17 @@ export const Card: React.FC<CardProps> = ({
     <div
       className={`rounded-2xl border transition-all duration-200 ease-out ${
         isDark 
-          ? 'bg-[#201D1A] border-[#36302A] text-[#F7F4EE]' 
-          : 'bg-white border-[#E6E0D6] text-[#26221D] shadow-sm'
+          ? 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-primary)]' 
+          : 'bg-white border-[var(--border-color)] text-[var(--text-primary)] shadow-sm'
       } ${
         hoverEffect 
           ? isDark 
-            ? 'hover:border-amber-500/40 hover:bg-[#26221E] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30' 
-            : 'hover:border-amber-600/40 hover:shadow-md hover:shadow-amber-900/5 hover:-translate-y-0.5 hover:bg-[#FDFBF7]' 
+            ? 'hover:border-[var(--accent-primary)]/40 hover:bg-[var(--bg-hover)] hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30' 
+            : 'hover:border-[var(--accent-primary)]/40 hover:shadow-md hover:shadow-[var(--accent-primary)]/5 hover:-translate-y-0.5 hover:bg-[var(--bg-hover)]' 
           : ''
       } ${
         selected 
-          ? 'border-amber-500 ring-2 ring-amber-500/30' 
+          ? 'border-[var(--accent-primary)] ring-2 ring-[var(--accent-primary)]/30' 
           : ''
       } ${className}`}
       {...props}

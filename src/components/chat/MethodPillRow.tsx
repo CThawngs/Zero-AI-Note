@@ -37,13 +37,13 @@ export const MethodPillRow: React.FC<MethodPillRowProps> = ({
               onClick={() => onSelectMethod('auto')}
               className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 ${
                 isSelected
-                  ? 'bg-gradient-to-r from-amber-600 to-amber-500 text-white shadow-xs shadow-amber-600/30 border border-amber-400/40 ring-1 ring-amber-500/30'
+                  ? 'bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary)] text-white shadow-xs shadow-[var(--accent-primary)]/30 border border-[var(--accent-primary)]/40 ring-1 ring-[var(--accent-primary)]/30'
                   : isDark 
-                    ? 'border border-dashed border-amber-500/50 text-amber-400 hover:text-white hover:bg-amber-500/10' 
-                    : 'border border-dashed border-amber-500/60 text-amber-700 hover:text-amber-900 hover:bg-amber-500/10'
+                    ? 'border border-dashed border-[var(--accent-primary)]/50 text-[var(--accent-primary)] hover:text-white hover:bg-[var(--accent-primary)]/10' 
+                    : 'border border-dashed border-[var(--accent-primary)]/60 text-[var(--accent-primary)] hover:text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10'
               }`}
             >
-              <Zap className={`w-3 h-3 ${isSelected ? 'fill-white text-white animate-pulse' : 'text-amber-500'}`} />
+              <Zap className={`w-3 h-3 ${isSelected ? 'fill-white text-white animate-pulse' : 'text-[var(--accent-primary)]'}`} />
               <span>{m.label}</span>
             </button>
           );
@@ -58,10 +58,10 @@ export const MethodPillRow: React.FC<MethodPillRowProps> = ({
             onClick={() => onSelectMethod(m.id)}
             className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer active:scale-95 ${
               isSelected
-                ? 'bg-amber-600 text-white shadow-xs shadow-amber-600/30'
+                ? 'bg-[var(--accent-primary)] text-white shadow-xs shadow-[var(--accent-primary)]/30'
                 : isDark 
-                  ? 'bg-[#2A241E] text-[#D8D2C9] hover:text-white border border-[#3E372E] hover:border-[#52493D]' 
-                  : 'bg-white text-[#4A4239] hover:text-[#26221D] border border-[#E2DBD0] hover:border-[#CCC2B2] shadow-2xs'
+                  ? 'bg-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-color)] hover:border-[var(--border-color)]' 
+                  : 'bg-white text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-color)] hover:border-[var(--border-color)] shadow-2xs'
             }`}
           >
             {m.label}
@@ -76,8 +76,8 @@ export const MethodPillRow: React.FC<MethodPillRowProps> = ({
         onClick={onOpenCustomTemplate}
         className={`px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap flex items-center gap-1 transition-all cursor-pointer border border-dashed active:scale-95 ${
           isDark 
-            ? 'border-[#443C32] text-[#A8A199] hover:text-white hover:border-amber-500/50' 
-            : 'border-[#CCC2B2] text-[#6E665D] hover:text-[#26221D] hover:border-amber-600/50'
+            ? 'border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent-primary)]/50' 
+            : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent-primary)]/50'
         }`}
       >
         <Plus className="w-3 h-3" />

@@ -29,21 +29,21 @@ export const Button: React.FC<ButtonProps> = ({
   const isDark = theme === 'dark';
 
   // Base classes for consistent sizing and tactile micro-interaction feedback
-  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-150 ease-out cursor-pointer select-none focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none active:scale-[0.97]';
+  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-150 ease-out cursor-pointer select-none focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/40 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none active:scale-[0.97]';
 
   // Warm amber / terracotta theme styling
   const variantClasses: Record<ButtonVariant, string> = {
-    primary: 'bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white shadow-md shadow-amber-600/20 border border-amber-500/30',
+    primary: 'bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] active:bg-[var(--accent-primary)] text-white shadow-md shadow-[var(--accent-primary)]/20 border border-[var(--accent-primary)]/30',
     secondary: isDark 
-      ? 'bg-[#25211D] hover:bg-[#302B25] text-[#EBE6DE] border border-[#3D362F]' 
-      : 'bg-[#F2ECE3] hover:bg-[#E7E0D3] text-[#2C2620] border border-[#DDD5C8] shadow-2xs',
+      ? 'bg-[var(--bg-hover)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border border-[var(--border-color)]' 
+      : 'bg-[var(--bg-hover)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border border-[var(--border-color)] shadow-2xs',
     outline: isDark 
-      ? 'bg-transparent border-[#3D362F] hover:border-amber-500/60 text-[#D4CCC2] hover:text-white hover:bg-[#25211D]/50' 
-      : 'bg-transparent border-[#DDD5C8] hover:border-amber-600 text-[#4E463E] hover:text-black hover:bg-amber-50/50',
+      ? 'bg-transparent border-[var(--border-color)] hover:border-[var(--accent-primary)]/60 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]/50' 
+      : 'bg-transparent border-[var(--border-color)] hover:border-[var(--accent-primary)] text-[var(--text-secondary)] hover:text-black hover:bg-[var(--accent-subtle)]/50',
     ghost: isDark 
-      ? 'bg-transparent hover:bg-[#25211D] text-[#A8A199] hover:text-[#FAF7F2]' 
-      : 'bg-transparent hover:bg-[#F2ECE3] text-[#6E665D] hover:text-[#1F1B16]',
-    danger: 'bg-rose-600/15 border border-rose-500/30 text-rose-500 hover:bg-rose-600/25 active:bg-rose-600/30'
+      ? 'bg-transparent hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]' 
+      : 'bg-transparent hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]',
+    danger: 'bg-[var(--status-error)]/15 border border-[var(--status-error)]/30 text-[var(--status-error)] hover:bg-[var(--status-error)]/25 active:bg-[var(--status-error)]/30'
   };
 
   // Size specifications

@@ -121,7 +121,7 @@ export const AdminCouponScreen: React.FC = () => {
   const getStatusBadge = (status: string) => {
     if (status === 'active') {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-500 border border-emerald-500/20">
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[var(--status-success)]/15 text-[var(--status-success)] border border-[var(--status-success)]/20">
           <CheckCircle2 className="w-3 h-3" />
           <span>{language === 'vi' ? 'Đang hoạt động' : 'Active'}</span>
         </span>
@@ -129,7 +129,7 @@ export const AdminCouponScreen: React.FC = () => {
     }
     if (status === 'expired') {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-500 border border-amber-500/20">
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] border border-[var(--accent-primary)]/20">
           <Clock className="w-3 h-3" />
           <span>{language === 'vi' ? 'Hết hạn' : 'Expired'}</span>
         </span>
@@ -147,17 +147,17 @@ export const AdminCouponScreen: React.FC = () => {
 
   return (
     <div className={`flex-1 flex flex-col h-full overflow-hidden transition-colors ${
-      isDark ? 'bg-[#1F1B18] text-[#F7F4EE]' : 'bg-[#FAF7F2] text-[#26221D]'
+      isDark ? 'bg-[var(--bg-app)] text-[var(--text-primary)]' : 'bg-[var(--bg-app)] text-[var(--text-primary)]'
     }`}>
       {/* Top Admin Navigation Banner */}
       <div className={`h-12 border-b px-4 sm:px-6 flex items-center justify-between shrink-0 transition-colors ${
-        isDark ? 'bg-[#24201C] border-[#38322B]' : 'bg-[#F4EFE6] border-[#E6E0D6]'
+        isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)]' : 'bg-[var(--bg-hover)] border-[var(--border-color)]'
       }`}>
         <div className="flex items-center gap-2.5">
-          <div className="p-1 rounded-lg bg-amber-500/20 text-amber-500">
+          <div className="p-1 rounded-lg bg-[var(--accent-primary)]/20 text-[var(--accent-primary)]">
             <ShieldCheck className="w-4 h-4" />
           </div>
-          <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-white' : 'text-[#26221D]'}`}>
+          <span className={`text-xs font-bold uppercase tracking-wider ${'text-[var(--text-primary)]'}`}>
             {language === 'vi' ? 'Cổng Quản Trị Hệ Thống (Admin Portal)' : 'Admin Management Portal'}
           </span>
         </div>
@@ -166,7 +166,7 @@ export const AdminCouponScreen: React.FC = () => {
           id="btn-return-to-app"
           onClick={() => setCurrentScreen('chat')}
           className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-colors cursor-pointer border active:scale-95 ${
-            isDark ? 'bg-[#322B24] hover:bg-[#3D352D] border-[#443C32] text-[#D8D2C9] hover:text-white' : 'bg-white hover:bg-[#FAF7F2] border-[#E2DBD0] text-[#4A4239] shadow-2xs'
+            isDark ? 'bg-[var(--bg-hover)] hover:bg-[var(--bg-hover)] border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]' : 'bg-white hover:bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-secondary)] shadow-2xs'
           }`}
         >
           <ArrowLeft className="w-3.5 h-3.5" />
@@ -177,10 +177,10 @@ export const AdminCouponScreen: React.FC = () => {
       <div className="flex-1 flex overflow-hidden">
         {/* Admin Left Sidebar */}
         <aside className={`w-56 border-r p-4 flex-col justify-between hidden md:flex shrink-0 transition-colors ${
-          isDark ? 'border-[#38322B] bg-[#24201C]' : 'border-[#E6E0D6] bg-white'
+          isDark ? 'border-[var(--border-color)] bg-[var(--bg-card)]' : 'border-[var(--border-color)] bg-white'
         }`}>
           <div className="space-y-1">
-            <div className={`px-3 py-2 text-[10px] font-bold uppercase tracking-wider ${isDark ? 'text-[#8C857B]' : 'text-[#968D82]'}`}>
+            <div className={`px-3 py-2 text-[10px] font-bold uppercase tracking-wider ${isDark ? 'text-[var(--text-muted)]' : 'text-[var(--text-muted)]'}`}>
               {language === 'vi' ? 'Menu Quản Trị' : 'Admin Navigation'}
             </div>
             {[
@@ -196,11 +196,11 @@ export const AdminCouponScreen: React.FC = () => {
                   key={i}
                   className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer active:scale-95 ${
                     item.active
-                      ? 'bg-amber-500/15 text-amber-500 border border-amber-500/30'
-                      : isDark ? 'text-[#A8A199] hover:text-white hover:bg-[#322B24]' : 'text-[#6E665D] hover:text-[#26221D] hover:bg-[#FAF7F2]'
+                      ? 'bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] border border-[var(--accent-primary)]/30'
+                      : isDark ? 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-app)]'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${item.active ? 'text-amber-500' : isDark ? 'text-[#8C857B]' : 'text-[#968D82]'}`} />
+                  <Icon className={`w-4 h-4 ${item.active ? 'text-[var(--accent-primary)]' : isDark ? 'text-[var(--text-muted)]' : 'text-[var(--text-muted)]'}`} />
                   <span>{item.label}</span>
                 </div>
               );
@@ -208,10 +208,10 @@ export const AdminCouponScreen: React.FC = () => {
           </div>
 
           <div className={`p-3 rounded-xl border text-xs ${
-            isDark ? 'bg-[#26211C] border-[#38322B] text-[#A8A199]' : 'bg-[#FAF7F2] border-[#E2DBD0] text-[#6E665D]'
+            isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-secondary)]' : 'bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-secondary)]'
           }`}>
-            <p className={`font-bold ${isDark ? 'text-white' : 'text-[#26221D]'}`}>{language === 'vi' ? 'Chế độ Quản trị' : 'Admin Mode'}</p>
-            <p className={`text-[10px] mt-0.5 ${isDark ? 'text-[#8C857B]' : 'text-[#968D82]'}`}>{language === 'vi' ? 'Quyền: SuperAdmin' : 'Role: SuperAdmin'}</p>
+            <p className={`font-bold ${'text-[var(--text-primary)]'}`}>{language === 'vi' ? 'Chế độ Quản trị' : 'Admin Mode'}</p>
+            <p className={`text-[10px] mt-0.5 ${isDark ? 'text-[var(--text-muted)]' : 'text-[var(--text-muted)]'}`}>{language === 'vi' ? 'Quyền: SuperAdmin' : 'Role: SuperAdmin'}</p>
           </div>
         </aside>
 
@@ -219,14 +219,14 @@ export const AdminCouponScreen: React.FC = () => {
         <div className="flex-1 flex flex-col h-full overflow-hidden">
           {/* Header Controls */}
           <div className={`p-4 sm:p-6 pb-4 border-b space-y-4 transition-colors ${
-            isDark ? 'border-[#38322B] bg-[#24201C]/80' : 'border-[#E6E0D6] bg-white'
+            isDark ? 'border-[var(--border-color)] bg-[var(--bg-card)]/80' : 'border-[var(--border-color)] bg-white'
           }`}>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h2 className={`text-lg sm:text-xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-[#26221D]'}`}>
+                <h2 className={`text-lg sm:text-xl font-bold tracking-tight ${'text-[var(--text-primary)]'}`}>
                   {language === 'vi' ? 'Quản Lý Coupon Giảm Giá' : 'Coupon Campaign Management'}
                 </h2>
-                <p className={`text-xs mt-0.5 ${isDark ? 'text-[#A8A199]' : 'text-[#6E665D]'}`}>
+                <p className={`text-xs mt-0.5 ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
                   {language === 'vi' 
                     ? 'Tạo mới, theo dõi số lượt sử dụng và điều chỉnh thời hạn mã khuyến mại' 
                     : 'Create promotional vouchers, track redemption counts, and adjust expiry rules'}
@@ -236,7 +236,7 @@ export const AdminCouponScreen: React.FC = () => {
               <button
                 id="btn-open-create-coupon"
                 onClick={openCreateModal}
-                className="self-start sm:self-auto flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white rounded-xl text-xs font-bold shadow-md shadow-amber-600/25 transition-all cursor-pointer active:scale-95"
+                className="self-start sm:self-auto flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary)] hover:from-[var(--accent-primary)] hover:to-[var(--accent-primary)] text-white rounded-xl text-xs font-bold shadow-md shadow-[var(--accent-primary)]/25 transition-all cursor-pointer active:scale-95"
               >
                 <Plus className="w-4 h-4" />
                 <span>{language === 'vi' ? '+ Tạo Coupon mới' : '+ Create New Coupon'}</span>
@@ -246,15 +246,15 @@ export const AdminCouponScreen: React.FC = () => {
             {/* Search & Filter */}
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="relative flex-1 min-w-[200px] sm:min-w-[240px] max-w-md">
-                <Search className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 ${isDark ? 'text-[#8C857B]' : 'text-[#9E958A]'}`} />
+                <Search className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 ${isDark ? 'text-[var(--text-muted)]' : 'text-[var(--text-muted)]'}`} />
                 <input
                   id="input-search-coupons"
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={language === 'vi' ? 'Tìm kiếm mã coupon, đối tượng áp dụng...' : 'Search coupons, plan targets...'}
-                  className={`w-full rounded-xl pl-10 pr-4 py-2 text-xs border focus:outline-none focus:border-amber-500 ${
-                    isDark ? 'bg-[#26211C] border-[#38322B] text-white placeholder-[#8A8177]' : 'bg-[#FAF7F2] border-[#E2DBD0] text-[#26221D] placeholder-[#9E958A]'
+                  className={`w-full rounded-xl pl-10 pr-4 py-2 text-xs border focus:outline-none focus:border-[var(--accent-primary)] ${
+                    isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)]' : 'bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)]'
                   }`}
                 />
               </div>
@@ -272,8 +272,8 @@ export const AdminCouponScreen: React.FC = () => {
                     onClick={() => setStatusFilter(s.id)}
                     className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer border whitespace-nowrap active:scale-95 ${
                       statusFilter === s.id
-                        ? 'bg-amber-500/20 text-amber-500 border-amber-500/40'
-                        : isDark ? 'border-transparent text-[#A8A199] hover:text-white' : 'border-transparent text-[#6E665D] hover:text-[#26221D]'
+                        ? 'bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] border-[var(--accent-primary)]/40'
+                        : isDark ? 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]' : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                     }`}
                   >
                     {s.label}
@@ -285,17 +285,17 @@ export const AdminCouponScreen: React.FC = () => {
 
           {/* Table Container */}
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar">
-            <div className="md:hidden flex items-center justify-between text-[11px] text-[#8C857B] mb-2 px-1">
+            <div className="md:hidden flex items-center justify-between text-[11px] text-[var(--text-muted)] mb-2 px-1">
               <span>{language === 'vi' ? '← Vuốt sang ngang để xem đầy đủ cột' : '← Swipe horizontally to see all columns'}</span>
-              <span className="text-[10px] font-mono bg-[#322B24] px-1.5 py-0.5 rounded text-[#D8D2C9]">{filteredCoupons.length} coupons</span>
+              <span className="text-[10px] font-mono bg-[var(--bg-hover)] px-1.5 py-0.5 rounded text-[var(--text-secondary)]">{filteredCoupons.length} coupons</span>
             </div>
 
             <div className={`rounded-2xl border overflow-x-auto custom-scrollbar ${
-              isDark ? 'border-[#38322B] bg-[#26211C]' : 'border-[#E6E0D6] bg-white shadow-xs'
+              isDark ? 'border-[var(--border-color)] bg-[var(--bg-card)]' : 'border-[var(--border-color)] bg-white shadow-xs'
             }`}>
               <table className="w-full text-left text-xs min-w-[700px]">
                 <thead className={`border-b font-semibold uppercase text-[10px] tracking-wider ${
-                  isDark ? 'bg-[#24201C] border-[#38322B] text-[#A8A199]' : 'bg-[#FAF7F2] border-[#E6E0D6] text-[#6E665D]'
+                  isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-secondary)]' : 'bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-secondary)]'
                 }`}>
                   <tr>
                     <th className="px-5 py-3.5">{language === 'vi' ? 'Mã Coupon' : 'Code'}</th>
@@ -307,21 +307,21 @@ export const AdminCouponScreen: React.FC = () => {
                     <th className="px-4 py-3.5 text-right">{language === 'vi' ? 'Hành Động' : 'Actions'}</th>
                   </tr>
                 </thead>
-                <tbody className={`divide-y ${isDark ? 'divide-[#38322B] text-[#D8D2C9]' : 'divide-[#EAE4D9] text-[#4A4239]'}`}>
+                <tbody className={`divide-y ${isDark ? 'divide-[var(--border-color)] text-[var(--text-secondary)]' : 'divide-[var(--border-subtle)] text-[var(--text-secondary)]'}`}>
                   {filteredCoupons.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className={`px-5 py-8 text-center ${isDark ? 'text-[#8C857B]' : 'text-[#968D82]'}`}>
+                      <td colSpan={7} className={`px-5 py-8 text-center ${isDark ? 'text-[var(--text-muted)]' : 'text-[var(--text-muted)]'}`}>
                         {language === 'vi' ? 'Không tìm thấy coupon nào.' : 'No coupons match filter.'}
                       </td>
                     </tr>
                   ) : (
                     filteredCoupons.map((coupon) => (
-                      <tr key={coupon.id} className={isDark ? 'hover:bg-[#322B24]/40 transition-colors' : 'hover:bg-[#FAF7F2] transition-colors'}>
+                      <tr key={coupon.id} className={isDark ? 'hover:bg-[var(--bg-hover)]/40 transition-colors' : 'hover:bg-[var(--bg-app)] transition-colors'}>
                         {/* Code */}
                         <td className="px-5 py-3.5">
                           <div className="flex items-center gap-2">
-                            <Ticket className="w-4 h-4 text-amber-500 shrink-0" />
-                            <span className={`font-mono font-bold text-sm tracking-wide ${isDark ? 'text-white' : 'text-[#26221D]'}`}>
+                            <Ticket className="w-4 h-4 text-[var(--accent-primary)] shrink-0" />
+                            <span className={`font-mono font-bold text-sm tracking-wide ${'text-[var(--text-primary)]'}`}>
                               {coupon.code}
                             </span>
                           </div>
@@ -329,7 +329,7 @@ export const AdminCouponScreen: React.FC = () => {
 
                         {/* Value */}
                         <td className="px-4 py-3.5 whitespace-nowrap">
-                          <span className="font-bold text-emerald-500">
+                          <span className="font-bold text-[var(--status-success)]">
                             {coupon.type === 'percentage'
                               ? `${language === 'vi' ? 'Giảm' : 'Off'} ${coupon.value}%`
                               : `${language === 'vi' ? 'Giảm' : 'Off'} ${coupon.value.toLocaleString('vi-VN')}đ`}
@@ -347,15 +347,15 @@ export const AdminCouponScreen: React.FC = () => {
 
                         {/* Used count */}
                         <td className="px-4 py-3.5 font-mono text-[11px] whitespace-nowrap">
-                          <span className={`font-bold ${isDark ? 'text-white' : 'text-[#26221D]'}`}>{coupon.usedCount}</span>
-                          <span className={isDark ? 'text-[#8C857B]' : 'text-[#968D82]'}>
+                          <span className={`font-bold ${'text-[var(--text-primary)]'}`}>{coupon.usedCount}</span>
+                          <span className={isDark ? 'text-[var(--text-muted)]' : 'text-[var(--text-muted)]'}>
                             {' '}
                             / {coupon.usageLimit !== null ? coupon.usageLimit : (language === 'vi' ? '∞ Không giới hạn' : '∞ Unlimited')}
                           </span>
                         </td>
 
                         {/* Expiry */}
-                        <td className="px-4 py-3.5 text-[#8C857B] whitespace-nowrap">
+                        <td className="px-4 py-3.5 text-[var(--text-muted)] whitespace-nowrap">
                           {coupon.expiryDate}
                         </td>
 
@@ -371,7 +371,7 @@ export const AdminCouponScreen: React.FC = () => {
                               id={`btn-edit-coupon-${coupon.id}`}
                               onClick={() => openEditModal(coupon)}
                               className={`p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-xl transition-colors cursor-pointer active:scale-95 ${
-                                isDark ? 'text-[#A8A199] hover:text-amber-400 hover:bg-[#322B24]' : 'text-[#6E665D] hover:text-amber-600 hover:bg-[#FAF7F2]'
+                                isDark ? 'text-[var(--text-secondary)] hover:text-[var(--accent-primary)] hover:bg-[var(--bg-hover)]' : 'text-[var(--text-secondary)] hover:text-[var(--accent-primary)] hover:bg-[var(--bg-app)]'
                               }`}
                               title={language === 'vi' ? 'Chỉnh sửa coupon' : 'Edit coupon'}
                               aria-label="Edit coupon"
@@ -381,7 +381,7 @@ export const AdminCouponScreen: React.FC = () => {
                             <button
                               id={`btn-delete-coupon-${coupon.id}`}
                               onClick={() => setDeleteConfirmCoupon(coupon)}
-                              className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center text-[#8C857B] hover:text-rose-500 hover:bg-rose-500/10 rounded-xl transition-colors cursor-pointer active:scale-95"
+                              className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--status-error)] hover:bg-[var(--status-error)]/10 rounded-xl transition-colors cursor-pointer active:scale-95"
                               title={language === 'vi' ? 'Xóa coupon' : 'Delete coupon'}
                               aria-label="Delete coupon"
                             >
@@ -410,8 +410,8 @@ export const AdminCouponScreen: React.FC = () => {
         >
           <form onSubmit={handleSaveCoupon} className="space-y-4">
             <div>
-              <label className={`block text-xs font-semibold mb-1 ${isDark ? 'text-[#D8D2C9]' : 'text-[#4A4239]'}`}>
-                {language === 'vi' ? 'Mã Code Coupon' : 'Promo Code'} <span className="text-red-500">*</span>
+              <label className={`block text-xs font-semibold mb-1 ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
+                {language === 'vi' ? 'Mã Code Coupon' : 'Promo Code'} <span className="text-[var(--status-error)]">*</span>
               </label>
               <input
                 id="input-coupon-code"
@@ -420,23 +420,23 @@ export const AdminCouponScreen: React.FC = () => {
                 value={formCode}
                 onChange={(e) => setFormCode(e.target.value.toUpperCase())}
                 placeholder="VD: PROMO2026"
-                className={`w-full border rounded-xl px-3.5 py-2 text-xs uppercase font-mono focus:outline-none focus:border-amber-500 ${
-                  isDark ? 'bg-[#26211C] border-[#38322B] text-white' : 'bg-white border-[#E2DBD0] text-[#26221D]'
+                className={`w-full border rounded-xl px-3.5 py-2 text-xs uppercase font-mono focus:outline-none focus:border-[var(--accent-primary)] ${
+                  isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-primary)]' : 'bg-white border-[var(--border-color)] text-[var(--text-primary)]'
                 }`}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className={`block text-xs font-semibold mb-1 ${isDark ? 'text-[#D8D2C9]' : 'text-[#4A4239]'}`}>
+                <label className={`block text-xs font-semibold mb-1 ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
                   {language === 'vi' ? 'Loại giảm giá' : 'Discount Type'}
                 </label>
                 <select
                   id="select-coupon-type"
                   value={formType}
                   onChange={(e) => setFormType(e.target.value as any)}
-                  className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-amber-500 ${
-                    isDark ? 'bg-[#26211C] border-[#38322B] text-white' : 'bg-white border-[#E2DBD0] text-[#26221D]'
+                  className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[var(--accent-primary)] ${
+                    isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-primary)]' : 'bg-white border-[var(--border-color)] text-[var(--text-primary)]'
                   }`}
                 >
                   <option value="percentage">{language === 'vi' ? 'Phần trăm (%)' : 'Percentage (%)'}</option>
@@ -445,8 +445,8 @@ export const AdminCouponScreen: React.FC = () => {
               </div>
 
               <div>
-                <label className={`block text-xs font-semibold mb-1 ${isDark ? 'text-[#D8D2C9]' : 'text-[#4A4239]'}`}>
-                  {language === 'vi' ? 'Giá trị giảm' : 'Discount Value'} ({formType === 'percentage' ? '%' : 'VNĐ'}) <span className="text-red-500">*</span>
+                <label className={`block text-xs font-semibold mb-1 ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
+                  {language === 'vi' ? 'Giá trị giảm' : 'Discount Value'} ({formType === 'percentage' ? '%' : 'VNĐ'}) <span className="text-[var(--status-error)]">*</span>
                 </label>
                 <input
                   id="input-coupon-value"
@@ -455,8 +455,8 @@ export const AdminCouponScreen: React.FC = () => {
                   min={1}
                   value={formValue}
                   onChange={(e) => setFormValue(Number(e.target.value))}
-                  className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-amber-500 ${
-                    isDark ? 'bg-[#26211C] border-[#38322B] text-white' : 'bg-white border-[#E2DBD0] text-[#26221D]'
+                  className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[var(--accent-primary)] ${
+                    isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-primary)]' : 'bg-white border-[var(--border-color)] text-[var(--text-primary)]'
                   }`}
                 />
               </div>
@@ -464,15 +464,15 @@ export const AdminCouponScreen: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className={`block text-xs font-semibold mb-1 ${isDark ? 'text-[#D8D2C9]' : 'text-[#4A4239]'}`}>
+                <label className={`block text-xs font-semibold mb-1 ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
                   {language === 'vi' ? 'Áp dụng cho' : 'Applied To'}
                 </label>
                 <select
                   id="select-coupon-applied-to"
                   value={formAppliedTo}
                   onChange={(e) => setFormAppliedTo(e.target.value as any)}
-                  className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-amber-500 ${
-                    isDark ? 'bg-[#26211C] border-[#38322B] text-white' : 'bg-white border-[#E2DBD0] text-[#26221D]'
+                  className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[var(--accent-primary)] ${
+                    isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-primary)]' : 'bg-white border-[var(--border-color)] text-[var(--text-primary)]'
                   }`}
                 >
                   <option value="all">{language === 'vi' ? 'Tất cả các gói' : 'All Plans'}</option>
@@ -482,7 +482,7 @@ export const AdminCouponScreen: React.FC = () => {
               </div>
 
               <div>
-                <label className={`block text-xs font-semibold mb-1 ${isDark ? 'text-[#D8D2C9]' : 'text-[#4A4239]'}`}>
+                <label className={`block text-xs font-semibold mb-1 ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
                   {language === 'vi' ? 'Giới hạn số lượt dùng' : 'Usage Limit'}
                 </label>
                 <input
@@ -491,8 +491,8 @@ export const AdminCouponScreen: React.FC = () => {
                   value={formUsageLimit}
                   onChange={(e) => setFormUsageLimit(e.target.value)}
                   placeholder="100"
-                  className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-amber-500 ${
-                    isDark ? 'bg-[#26211C] border-[#38322B] text-white' : 'bg-white border-[#E2DBD0] text-[#26221D]'
+                  className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[var(--accent-primary)] ${
+                    isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-primary)]' : 'bg-white border-[var(--border-color)] text-[var(--text-primary)]'
                   }`}
                 />
               </div>
@@ -500,7 +500,7 @@ export const AdminCouponScreen: React.FC = () => {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className={`block text-xs font-semibold mb-1 ${isDark ? 'text-[#D8D2C9]' : 'text-[#4A4239]'}`}>
+                <label className={`block text-xs font-semibold mb-1 ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
                   {language === 'vi' ? 'Ngày hết hạn' : 'Expiry Date'}
                 </label>
                 <input
@@ -509,22 +509,22 @@ export const AdminCouponScreen: React.FC = () => {
                   value={formExpiryDate}
                   onChange={(e) => setFormExpiryDate(e.target.value)}
                   placeholder="31/12/2026"
-                  className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-amber-500 ${
-                    isDark ? 'bg-[#26211C] border-[#38322B] text-white' : 'bg-white border-[#E2DBD0] text-[#26221D]'
+                  className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[var(--accent-primary)] ${
+                    isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-primary)]' : 'bg-white border-[var(--border-color)] text-[var(--text-primary)]'
                   }`}
                 />
               </div>
 
               <div>
-                <label className={`block text-xs font-semibold mb-1 ${isDark ? 'text-[#D8D2C9]' : 'text-[#4A4239]'}`}>
+                <label className={`block text-xs font-semibold mb-1 ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
                   {language === 'vi' ? 'Trạng thái' : 'Status'}
                 </label>
                 <select
                   id="select-coupon-status"
                   value={formStatus}
                   onChange={(e) => setFormStatus(e.target.value as any)}
-                  className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-amber-500 ${
-                    isDark ? 'bg-[#26211C] border-[#38322B] text-white' : 'bg-white border-[#E2DBD0] text-[#26221D]'
+                  className={`w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[var(--accent-primary)] ${
+                    isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-primary)]' : 'bg-white border-[var(--border-color)] text-[var(--text-primary)]'
                   }`}
                 >
                   <option value="active">{language === 'vi' ? 'Đang hoạt động' : 'Active'}</option>
@@ -539,7 +539,7 @@ export const AdminCouponScreen: React.FC = () => {
                 type="button"
                 onClick={() => setIsCreateModalOpen(false)}
                 className={`px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer active:scale-95 ${
-                  isDark ? 'bg-[#322B24] text-[#D8D2C9] hover:bg-[#3D352D]' : 'bg-[#EAE4D9] text-[#4A4239] hover:bg-[#DDD5C8]'
+                  isDark ? 'bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:bg-[var(--border-color)]'
                 }`}
               >
                 {t('cancel')}
@@ -547,7 +547,7 @@ export const AdminCouponScreen: React.FC = () => {
               <button
                 type="submit"
                 id="btn-save-coupon-submit"
-                className="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-md shadow-amber-600/25 cursor-pointer active:scale-95"
+                className="px-5 py-2 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-white text-xs font-bold shadow-md shadow-[var(--accent-primary)]/25 cursor-pointer active:scale-95"
               >
                 {editingCoupon ? (language === 'vi' ? 'Lưu Thay Đổi' : 'Save Changes') : (language === 'vi' ? 'Tạo Coupon' : 'Create Coupon')}
               </button>
@@ -565,16 +565,16 @@ export const AdminCouponScreen: React.FC = () => {
           maxWidth="max-w-md"
         >
           <div className="space-y-4">
-            <p className={`text-xs ${isDark ? 'text-[#D8D2C9]' : 'text-[#4A4239]'}`}>
+            <p className={`text-xs ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
               {language === 'vi' ? 'Bạn có chắc chắn muốn xóa vĩnh viễn mã coupon ' : 'Are you sure you want to delete promo coupon '}
-              <strong className={`font-mono ${isDark ? 'text-white' : 'text-[#26221D]'}`}>{deleteConfirmCoupon.code}</strong>?
+              <strong className={`font-mono ${'text-[var(--text-primary)]'}`}>{deleteConfirmCoupon.code}</strong>?
             </p>
             <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setDeleteConfirmCoupon(null)}
                 className={`px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer active:scale-95 ${
-                  isDark ? 'bg-[#322B24] text-[#D8D2C9] hover:bg-[#3D352D]' : 'bg-[#EAE4D9] text-[#4A4239] hover:bg-[#DDD5C8]'
+                  isDark ? 'bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:bg-[var(--border-color)]'
                 }`}
               >
                 {t('cancel')}
@@ -586,7 +586,7 @@ export const AdminCouponScreen: React.FC = () => {
                   deleteCoupon(deleteConfirmCoupon.id);
                   setDeleteConfirmCoupon(null);
                 }}
-                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold cursor-pointer shadow-md shadow-rose-600/20 active:scale-95"
+                className="px-4 py-2 rounded-xl bg-[var(--status-error)] hover:bg-[var(--status-error)] text-white text-xs font-semibold cursor-pointer shadow-md shadow-[var(--status-error)]/20 active:scale-95"
               >
                 {language === 'vi' ? 'Xóa Coupon' : 'Delete Coupon'}
               </button>

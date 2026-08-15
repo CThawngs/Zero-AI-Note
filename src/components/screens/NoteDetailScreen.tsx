@@ -77,12 +77,12 @@ export const NoteDetailScreen: React.FC = () => {
   if (!activeNote) {
     return (
       <div className={`flex-1 flex flex-col items-center justify-center p-8 text-center transition-colors duration-250 ${
-        isDark ? 'bg-[#171513] text-[#A8A199]' : 'bg-[#FBF9F5] text-[#6E665D]'
+        isDark ? 'bg-[var(--bg-app)] text-[var(--text-secondary)]' : 'bg-[var(--bg-app)] text-[var(--text-secondary)]'
       }`}>
         <p className="text-sm">{language === 'vi' ? 'Không tìm thấy ghi chú' : 'Note not found'}</p>
         <button
           onClick={() => setCurrentScreen('library')}
-          className="mt-4 px-4 py-2 bg-amber-600 hover:bg-amber-500 active:scale-95 text-white text-xs font-semibold rounded-xl cursor-pointer transition-all"
+          className="mt-4 px-4 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] active:scale-95 text-white text-xs font-semibold rounded-xl cursor-pointer transition-all"
         >
           {t('backToLibrary')}
         </button>
@@ -126,26 +126,26 @@ export const NoteDetailScreen: React.FC = () => {
 
   return (
     <div className={`flex-1 flex flex-col h-full overflow-hidden transition-colors duration-250 ${
-      isDark ? 'bg-[#171513] text-[#F7F4EE]' : 'bg-[#FBF9F5] text-[#26221D]'
+      isDark ? 'bg-[var(--bg-app)] text-[var(--text-primary)]' : 'bg-[var(--bg-app)] text-[var(--text-primary)]'
     }`}>
       {/* Top Breadcrumb & Controls Bar */}
       <div className={`h-14 border-b px-4 sm:px-6 flex items-center justify-between shrink-0 transition-colors duration-250 ${
-        isDark ? 'bg-[#1C1916] border-[#38322B]' : 'bg-[#FCFAF7] border-[#E6E0D6] shadow-2xs'
+        isDark ? 'bg-[var(--bg-sidebar)] border-[var(--border-color)]' : 'bg-[var(--bg-surface)] border-[var(--border-color)] shadow-2xs'
       }`}>
         <div className="flex items-center gap-3 sm:gap-4 min-w-0">
           <button
             id="btn-back-to-library"
             onClick={() => setCurrentScreen('library')}
             className={`flex items-center gap-1.5 text-xs font-semibold transition-all cursor-pointer py-1.5 px-2.5 rounded-xl active:scale-95 ${
-              isDark ? 'text-[#A8A199] hover:text-[#F7F4EE] hover:bg-[#2A2621]' : 'text-[#6E665D] hover:text-[#26221D] hover:bg-[#F4EFE6]'
+              isDark ? 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
             }`}
           >
             <ArrowLeft className="w-4 h-4" />
             <span className="hidden sm:inline">{t('backToLibrary')}</span>
           </button>
-          <span className={isDark ? 'text-[#78716A]' : 'text-[#968D82]'}>/</span>
+          <span className={isDark ? 'text-[var(--text-muted)]' : 'text-[var(--text-muted)]'}>/</span>
           <h2 className={`text-xs sm:text-sm font-bold truncate max-w-[180px] sm:max-w-md ${
-            isDark ? 'text-[#F7F4EE]' : 'text-[#26221D]'
+            isDark ? 'text-[var(--text-primary)]' : 'text-[var(--text-primary)]'
           }`}>
             {activeNote.title}
           </h2>
@@ -155,7 +155,7 @@ export const NoteDetailScreen: React.FC = () => {
         <div className="flex items-center gap-2">
           {/* Audio TTS Pill */}
           <div className={`hidden md:flex items-center gap-2.5 px-3 py-1.5 border rounded-xl transition-colors ${
-            isDark ? 'bg-[#201D1A] border-[#38322B]' : 'bg-[#F4EFE6] border-[#E6E0D6] shadow-2xs'
+            isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)]' : 'bg-[var(--bg-hover)] border-[var(--border-color)] shadow-2xs'
           }`}>
             <button
               id="btn-toggle-audio"
@@ -165,19 +165,19 @@ export const NoteDetailScreen: React.FC = () => {
                   addToast(t('audioSummary'), language === 'vi' ? 'Giọng đọc AI tự nhiên đang đọc tóm tắt ghi chú.' : 'AI natural voice is reading the note summary.');
                 }
               }}
-              className="p-1 rounded-full bg-amber-600 hover:bg-amber-500 text-white transition-all cursor-pointer active:scale-90"
+              className="p-1 rounded-full bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-white transition-all cursor-pointer active:scale-90"
             >
               {isPlayingAudio ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3 fill-current" />}
             </button>
             <div className="flex flex-col">
-              <span className={`text-[10px] font-semibold ${isDark ? 'text-[#A8A199]' : 'text-[#6E665D]'}`}>
+              <span className={`text-[10px] font-semibold ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
                 {t('audioSummary')}
               </span>
               <div className={`w-20 lg:w-24 h-1.5 rounded-full overflow-hidden mt-0.5 ${
-                isDark ? 'bg-[#2A2621]' : 'bg-[#E6E0D6]'
+                isDark ? 'bg-[var(--bg-hover)]' : 'bg-[var(--border-color)]'
               }`}>
                 <div 
-                  className="h-full bg-amber-500 transition-all duration-300"
+                  className="h-full bg-[var(--accent-primary)] transition-all duration-300"
                   style={{ width: `${audioProgress}%` }}
                 />
               </div>
@@ -190,11 +190,11 @@ export const NoteDetailScreen: React.FC = () => {
             onClick={handleCopy}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer active:scale-95 ${
               isDark 
-                ? 'bg-[#201D1A] hover:bg-[#2A2621] border-[#38322B] text-[#F7F4EE]' 
-                : 'bg-white hover:bg-[#F4EFE6] border-[#E6E0D6] text-[#26221D] shadow-2xs'
+                ? 'bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] border-[var(--border-color)] text-[var(--text-primary)]' 
+                : 'bg-white hover:bg-[var(--bg-hover)] border-[var(--border-color)] text-[var(--text-primary)] shadow-2xs'
             }`}
           >
-            {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5 text-[#A8A199]" />}
+            {isCopied ? <Check className="w-3.5 h-3.5 text-[var(--status-success)]" /> : <Copy className="w-3.5 h-3.5 text-[var(--text-secondary)]" />}
             <span>{isCopied ? t('copied') : t('copyMarkdown')}</span>
           </button>
 
@@ -205,7 +205,7 @@ export const NoteDetailScreen: React.FC = () => {
               addToast(t('copied'), t('toastCopied'));
             }}
             className={`p-2 rounded-xl border transition-all cursor-pointer active:scale-95 ${
-              isDark ? 'border-transparent text-[#A8A199] hover:text-[#F7F4EE] hover:bg-[#2A2621]' : 'border-transparent text-[#6E665D] hover:text-[#26221D] hover:bg-[#F4EFE6]'
+              isDark ? 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]' : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
             }`}
             title={t('share')}
           >
@@ -216,14 +216,14 @@ export const NoteDetailScreen: React.FC = () => {
 
       {/* Mobile Sub-Navigation for switching Note view / AI Q&A */}
       <div className={`lg:hidden flex border-b px-4 py-1.5 gap-2 ${
-        isDark ? 'bg-[#1C1916] border-[#38322B]' : 'bg-[#F4EFE6] border-[#E6E0D6]'
+        isDark ? 'bg-[var(--bg-sidebar)] border-[var(--border-color)]' : 'bg-[var(--bg-hover)] border-[var(--border-color)]'
       }`}>
         <button
           onClick={() => setMobileTab('content')}
           className={`flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-95 ${
             mobileTab === 'content'
-              ? 'bg-amber-600 text-white shadow-xs'
-              : isDark ? 'text-[#A8A199]' : 'text-[#6E665D]'
+              ? 'bg-[var(--accent-primary)] text-white shadow-xs'
+              : isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'
           }`}
         >
           <BookOpen className="w-3.5 h-3.5" />
@@ -233,8 +233,8 @@ export const NoteDetailScreen: React.FC = () => {
           onClick={() => setMobileTab('ask')}
           className={`flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-95 ${
             mobileTab === 'ask'
-              ? 'bg-amber-600 text-white shadow-xs'
-              : isDark ? 'text-[#A8A199]' : 'text-[#6E665D]'
+              ? 'bg-[var(--accent-primary)] text-white shadow-xs'
+              : isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'
           }`}
         >
           <MessageSquare className="w-3.5 h-3.5" />
@@ -246,11 +246,11 @@ export const NoteDetailScreen: React.FC = () => {
       <div className="flex-1 flex overflow-hidden">
         {/* Left Column: Key Questions & Terms */}
         <div className={`hidden xl:flex w-64 border-r flex-col p-5 overflow-y-auto custom-scrollbar shrink-0 transition-colors duration-250 ${
-          isDark ? 'border-[#38322B] bg-[#1C1916]' : 'border-[#E6E0D6] bg-[#FAF7F2]'
+          isDark ? 'border-[var(--border-color)] bg-[var(--bg-sidebar)]' : 'border-[var(--border-color)] bg-[var(--bg-app)]'
         }`}>
           <div className="space-y-6">
             <div>
-              <h4 className="text-xs font-bold text-amber-500 uppercase tracking-wider mb-3">
+              <h4 className="text-xs font-bold text-[var(--accent-primary)] uppercase tracking-wider mb-3">
                 {t('keyConcepts')}
               </h4>
               <div className="flex flex-wrap gap-1.5">
@@ -258,7 +258,7 @@ export const NoteDetailScreen: React.FC = () => {
                   <span
                     key={i}
                     className={`px-2.5 py-1 rounded-lg border text-xs font-medium ${
-                      isDark ? 'bg-[#201D1A] border-[#38322B] text-[#F7F4EE]' : 'bg-white border-[#E6E0D6] text-[#26221D] shadow-2xs'
+                      isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-primary)]' : 'bg-white border-[var(--border-color)] text-[var(--text-primary)] shadow-2xs'
                     }`}
                   >
                     {kw}
@@ -269,7 +269,7 @@ export const NoteDetailScreen: React.FC = () => {
 
             <div>
               <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${
-                isDark ? 'text-[#F7F4EE]' : 'text-[#26221D]'
+                isDark ? 'text-[var(--text-primary)]' : 'text-[var(--text-primary)]'
               }`}>
                 {t('coreQuestions')}
               </h4>
@@ -283,8 +283,8 @@ export const NoteDetailScreen: React.FC = () => {
                     }}
                     className={`p-2.5 rounded-xl border text-xs transition-all cursor-pointer group active:scale-97 ${
                       isDark 
-                        ? 'bg-[#201D1A] border-[#38322B] hover:border-amber-500/40 text-[#A8A199] hover:text-amber-300' 
-                        : 'bg-white border-[#E6E0D6] hover:border-amber-400 text-[#6E665D] hover:text-amber-700 shadow-2xs'
+                        ? 'bg-[var(--bg-card)] border-[var(--border-color)] hover:border-[var(--accent-primary)]/40 text-[var(--text-secondary)] hover:text-[var(--accent-primary)]' 
+                        : 'bg-white border-[var(--border-color)] hover:border-[var(--accent-primary)] text-[var(--text-secondary)] hover:text-[var(--accent-primary)] shadow-2xs'
                     }`}
                   >
                     <p className="leading-relaxed font-medium">? {q}</p>
@@ -295,7 +295,7 @@ export const NoteDetailScreen: React.FC = () => {
 
             <div>
               <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${
-                isDark ? 'text-[#F7F4EE]' : 'text-[#26221D]'
+                isDark ? 'text-[var(--text-primary)]' : 'text-[var(--text-primary)]'
               }`}>
                 {language === 'vi' ? 'Nguồn liên kết' : 'Connected Sources'}
               </h4>
@@ -304,10 +304,10 @@ export const NoteDetailScreen: React.FC = () => {
                   <div
                     key={i}
                     className={`flex items-center gap-2 p-2 rounded-lg border text-xs ${
-                      isDark ? 'bg-[#201D1A] border-[#38322B] text-[#A8A199]' : 'bg-white border-[#E6E0D6] text-[#6E665D] shadow-2xs'
+                      isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-secondary)]' : 'bg-white border-[var(--border-color)] text-[var(--text-secondary)] shadow-2xs'
                     }`}
                   >
-                    <FileText className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                    <FileText className="w-3.5 h-3.5 text-[var(--accent-primary)] shrink-0" />
                     <span className="truncate">{src.name}</span>
                   </div>
                 ))}
@@ -323,15 +323,15 @@ export const NoteDetailScreen: React.FC = () => {
           {/* Note Title & Header */}
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded bg-amber-500/15 text-amber-500 border border-amber-500/30">
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] border border-[var(--accent-primary)]/30">
                 {activeNote.category} • {activeNote.method.toUpperCase()} NOTE
               </span>
-              <span className={`text-xs ${isDark ? 'text-[#78716A]' : 'text-[#968D82]'}`}>
+              <span className={`text-xs ${isDark ? 'text-[var(--text-muted)]' : 'text-[var(--text-muted)]'}`}>
                 {language === 'vi' ? 'Cập nhật: ' : 'Updated: '}{activeNote.updatedAt}
               </span>
             </div>
             <h1 className={`text-xl sm:text-2xl md:text-3xl font-bold tracking-tight ${
-              isDark ? 'text-[#F7F4EE]' : 'text-[#26221D]'
+              isDark ? 'text-[var(--text-primary)]' : 'text-[var(--text-primary)]'
             }`}>
               {activeNote.title}
             </h1>
@@ -339,7 +339,7 @@ export const NoteDetailScreen: React.FC = () => {
 
           {/* Overview text */}
           <div className={`p-4 sm:p-5 rounded-2xl border text-sm leading-relaxed ${
-            isDark ? 'bg-[#201D1A] border-[#38322B] text-[#F7F4EE]' : 'bg-white border-[#E6E0D6] text-[#26221D] shadow-xs'
+            isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-primary)]' : 'bg-white border-[var(--border-color)] text-[var(--text-primary)] shadow-xs'
           }`}>
             <p>{activeNote.content.overview}</p>
           </div>
@@ -348,17 +348,17 @@ export const NoteDetailScreen: React.FC = () => {
           {activeNote.content.sections.map((sec, idx) => (
             <div key={idx} className="space-y-4 pt-2">
               <h3 className={`text-base sm:text-lg font-bold flex items-center gap-2 ${
-                isDark ? 'text-[#F7F4EE]' : 'text-[#26221D]'
+                isDark ? 'text-[var(--text-primary)]' : 'text-[var(--text-primary)]'
               }`}>
-                <span className="w-1.5 h-5 bg-amber-600 rounded-full" />
+                <span className="w-1.5 h-5 bg-[var(--accent-primary)] rounded-full" />
                 <span>{sec.title}</span>
               </h3>
 
               {sec.definition && (
-                <div className={`p-4 rounded-xl border-l-4 border-amber-500 text-xs ${
-                  isDark ? 'bg-amber-950/20 text-[#F7F4EE]' : 'bg-amber-50/70 text-[#26221D]'
+                <div className={`p-4 rounded-xl border-l-4 border-[var(--accent-primary)] text-xs ${
+                  isDark ? 'bg-[var(--accent-subtle)]/20 text-[var(--text-primary)]' : 'bg-[var(--accent-subtle)]/70 text-[var(--text-primary)]'
                 }`}>
-                  <p className="font-bold text-amber-600 mb-1">
+                  <p className="font-bold text-[var(--accent-primary)] mb-1">
                     {language === 'vi' ? 'Định nghĩa cốt lõi:' : 'Core Definition:'}
                   </p>
                   <p className="italic leading-relaxed">{sec.definition}</p>
@@ -367,7 +367,7 @@ export const NoteDetailScreen: React.FC = () => {
 
               {sec.text && (
                 <p className={`text-xs sm:text-sm leading-relaxed ${
-                  isDark ? 'text-[#A8A199]' : 'text-[#6E665D]'
+                  isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'
                 }`}>
                   {sec.text}
                 </p>
@@ -376,11 +376,11 @@ export const NoteDetailScreen: React.FC = () => {
               {/* Table Data */}
               {sec.tableData && (
                 <div className={`overflow-x-auto rounded-xl border my-3 ${
-                  isDark ? 'border-[#38322B] bg-[#201D1A]' : 'border-[#E6E0D6] bg-white shadow-2xs'
+                  isDark ? 'border-[var(--border-color)] bg-[var(--bg-card)]' : 'border-[var(--border-color)] bg-white shadow-2xs'
                 }`}>
                   <table className="w-full text-xs text-left">
                     <thead className={`font-semibold border-b ${
-                      isDark ? 'bg-[#2A2621] text-[#A8A199] border-[#38322B]' : 'bg-[#F4EFE6] text-[#6E665D] border-[#E6E0D6]'
+                      isDark ? 'bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border-color)]' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border-color)]'
                     }`}>
                       <tr>
                         {sec.tableData.headers.map((h, i) => (
@@ -389,10 +389,10 @@ export const NoteDetailScreen: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody className={`divide-y ${
-                      isDark ? 'divide-[#38322B] text-[#F7F4EE]' : 'divide-[#E6E0D6] text-[#26221D]'
+                      isDark ? 'divide-[var(--border-color)] text-[var(--text-primary)]' : 'divide-[var(--border-color)] text-[var(--text-primary)]'
                     }`}>
                       {sec.tableData.rows.map((row, rIdx) => (
-                        <tr key={rIdx} className={isDark ? 'hover:bg-[#2A2621]/40' : 'hover:bg-[#F4EFE6]/40'}>
+                        <tr key={rIdx} className={isDark ? 'hover:bg-[var(--bg-hover)]/40' : 'hover:bg-[var(--bg-hover)]/40'}>
                           {row.map((cell, cIdx) => (
                             <td key={cIdx} className="px-4 py-2.5">{cell}</td>
                           ))}
@@ -407,9 +407,9 @@ export const NoteDetailScreen: React.FC = () => {
                 <div className="space-y-2 pl-2">
                   {sec.bulletPoints.map((bp, bIdx) => (
                     <div key={bIdx} className={`text-xs sm:text-sm flex items-start gap-2.5 ${
-                      isDark ? 'text-[#A8A199]' : 'text-[#6E665D]'
+                      isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'
                     }`}>
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 shrink-0" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-primary)] mt-2 shrink-0" />
                       <span>{bp}</span>
                     </div>
                   ))}
@@ -421,19 +421,19 @@ export const NoteDetailScreen: React.FC = () => {
           {/* Bottom Summary Callout */}
           <div className={`p-5 rounded-2xl border ${
             isDark 
-              ? 'bg-gradient-to-r from-amber-950/30 via-orange-950/20 to-[#201D1A] border-amber-500/30' 
-              : 'bg-gradient-to-r from-amber-50 via-orange-50/50 to-white border-amber-200'
+              ? 'bg-gradient-to-r from-[var(--accent-primary)]/30 via-[var(--accent-subtle)]/20 to-[var(--bg-card)] border-[var(--accent-primary)]/30' 
+              : 'bg-gradient-to-r from-[var(--accent-primary)] via-[var(--accent-subtle)]/50 to-white border-[var(--accent-primary)]'
           }`}>
             <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="w-4 h-4 text-amber-500" />
+              <Sparkles className="w-4 h-4 text-[var(--accent-primary)]" />
               <h4 className={`text-xs font-bold uppercase tracking-wider ${
-                isDark ? 'text-[#F7F4EE]' : 'text-[#26221D]'
+                isDark ? 'text-[var(--text-primary)]' : 'text-[var(--text-primary)]'
               }`}>
                 {language === 'vi' ? 'Tóm tắt cốt lõi (Cornell Summary)' : 'Executive Summary (Cornell Method)'}
               </h4>
             </div>
             <p className={`text-xs sm:text-sm leading-relaxed ${
-              isDark ? 'text-[#A8A199]' : 'text-[#6E665D]'
+              isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'
             }`}>
               {activeNote.content.summaryText}
             </p>
@@ -444,21 +444,21 @@ export const NoteDetailScreen: React.FC = () => {
         <div className={`w-full lg:w-80 xl:w-96 border-l flex flex-col shrink-0 h-full transition-colors duration-250 ${
           mobileTab !== 'ask' ? 'hidden lg:flex' : 'flex'
         } ${
-          isDark ? 'border-[#38322B] bg-[#1C1916]' : 'border-[#E6E0D6] bg-[#FCFAF7]'
+          isDark ? 'border-[var(--border-color)] bg-[var(--bg-sidebar)]' : 'border-[var(--border-color)] bg-[var(--bg-surface)]'
         }`}>
           {/* Header */}
           <div className={`p-4 border-b flex items-center justify-between transition-colors ${
-            isDark ? 'border-[#38322B] bg-[#201D1A]' : 'border-[#E6E0D6] bg-[#F4EFE6]'
+            isDark ? 'border-[var(--border-color)] bg-[var(--bg-card)]' : 'border-[var(--border-color)] bg-[var(--bg-hover)]'
           }`}>
             <div className="flex items-center gap-2">
-              <Bot className="w-4 h-4 text-amber-500" />
+              <Bot className="w-4 h-4 text-[var(--accent-primary)]" />
               <h4 className={`text-xs font-bold uppercase tracking-wider ${
-                isDark ? 'text-[#F7F4EE]' : 'text-[#26221D]'
+                isDark ? 'text-[var(--text-primary)]' : 'text-[var(--text-primary)]'
               }`}>
                 {t('askNoteTitle')}
               </h4>
             </div>
-            <span className="text-[10px] bg-amber-500/20 text-amber-500 px-2 py-0.5 rounded font-mono font-bold">
+            <span className="text-[10px] bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] px-2 py-0.5 rounded font-mono font-bold">
               AI Copilot
             </span>
           </div>
@@ -469,7 +469,7 @@ export const NoteDetailScreen: React.FC = () => {
               <div key={idx} className="space-y-2">
                 {/* User Q */}
                 <div className="flex justify-end">
-                  <div className="p-3 rounded-xl bg-amber-600 text-white text-xs max-w-[90%] rounded-br-sm shadow-xs">
+                  <div className="p-3 rounded-xl bg-[var(--accent-primary)] text-white text-xs max-w-[90%] rounded-br-sm shadow-xs">
                     {item.q}
                   </div>
                 </div>
@@ -477,17 +477,17 @@ export const NoteDetailScreen: React.FC = () => {
                 {/* AI Answer */}
                 <div className="flex justify-start">
                   <div className={`p-3.5 rounded-xl border text-xs max-w-[95%] rounded-tl-sm space-y-2 ${
-                    isDark ? 'bg-[#201D1A] border-[#38322B] text-[#F7F4EE]' : 'bg-white border-[#E6E0D6] text-[#26221D]'
+                    isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-primary)]' : 'bg-white border-[var(--border-color)] text-[var(--text-primary)]'
                   }`}>
                     <p className="leading-relaxed">{item.a}</p>
-                    <div className="flex items-center justify-between pt-1 text-[10px] text-[#78716A]">
+                    <div className="flex items-center justify-between pt-1 text-[10px] text-[var(--text-muted)]">
                       <span>{item.time}</span>
                       <button
                         onClick={() => {
                           navigator.clipboard?.writeText(item.a);
                           addToast(t('copied'), t('toastCopied'));
                         }}
-                        className="text-amber-500 hover:underline cursor-pointer"
+                        className="text-[var(--accent-primary)] hover:underline cursor-pointer"
                       >
                         {t('copyMarkdown')}
                       </button>
@@ -499,9 +499,9 @@ export const NoteDetailScreen: React.FC = () => {
 
             {isAsking && (
               <div className={`flex items-center gap-2 p-3 rounded-xl border text-xs animate-pulse ${
-                isDark ? 'bg-[#201D1A] border-[#38322B] text-[#A8A199]' : 'bg-white border-[#E6E0D6] text-[#6E665D]'
+                isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-secondary)]' : 'bg-white border-[var(--border-color)] text-[var(--text-secondary)]'
               }`}>
-                <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-spin" />
+                <Sparkles className="w-3.5 h-3.5 text-[var(--accent-primary)] animate-spin" />
                 <span>{language === 'vi' ? 'AI đang phân tích ngữ cảnh ghi chú...' : 'AI is parsing note context...'}</span>
               </div>
             )}
@@ -509,7 +509,7 @@ export const NoteDetailScreen: React.FC = () => {
 
           {/* Input form */}
           <div className={`p-3 border-t transition-colors ${
-            isDark ? 'border-[#38322B] bg-[#201D1A]' : 'border-[#E6E0D6] bg-[#F4EFE6]'
+            isDark ? 'border-[var(--border-color)] bg-[var(--bg-card)]' : 'border-[var(--border-color)] bg-[var(--bg-hover)]'
           }`}>
             <form onSubmit={handleAskSubmit} className="relative">
               <input
@@ -518,15 +518,15 @@ export const NoteDetailScreen: React.FC = () => {
                 value={askInput}
                 onChange={(e) => setAskInput(e.target.value)}
                 placeholder={t('askNotePlaceholder')}
-                className={`w-full rounded-xl pl-3 pr-10 py-2.5 text-xs focus:outline-none focus:border-amber-500 border transition-colors ${
-                  isDark ? 'bg-[#171513] border-[#38322B] text-[#F7F4EE] placeholder-[#78716A]' : 'bg-white border-[#E6E0D6] text-[#26221D] placeholder-[#968D82] shadow-2xs'
+                className={`w-full rounded-xl pl-3 pr-10 py-2.5 text-xs focus:outline-none focus:border-[var(--accent-primary)] border transition-colors ${
+                  isDark ? 'bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)]' : 'bg-white border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] shadow-2xs'
                 }`}
               />
               <button
                 type="submit"
                 id="btn-submit-ask-note"
                 disabled={!askInput.trim() || isAsking}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white disabled:opacity-40 transition-all cursor-pointer active:scale-95"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-white disabled:opacity-40 transition-all cursor-pointer active:scale-95"
               >
                 <Send className="w-3.5 h-3.5" />
               </button>

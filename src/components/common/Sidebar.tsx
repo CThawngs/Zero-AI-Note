@@ -262,10 +262,10 @@ export const Sidebar: React.FC = () => {
           }`}
         >
           <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-500" />
+            <ShieldCheck className="w-4 h-4 text-[var(--status-success)]" />
             <span>{t('navAdminArea')}</span>
           </div>
-          <span className="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold bg-emerald-500/20 text-emerald-500">
+          <span className="text-[9px] px-1.5 py-0.5 rounded font-mono font-bold bg-[var(--status-success)]/20 text-[var(--status-success)]">
             {currentScreen === 'admin-coupons' ? 'Active' : 'Portal'}
           </span>
         </button>
@@ -286,7 +286,7 @@ export const Sidebar: React.FC = () => {
                 alt={user.name}
                 className="w-8 h-8 rounded-full object-cover ring-1 ring-[var(--accent-primary)]/40"
               />
-              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ring-2 bg-emerald-500 ring-[var(--bg-card)]" />
+              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ring-2 bg-[var(--status-success)] ring-[var(--bg-card)]" />
             </div>
             <div className="min-w-0 text-left">
               <p className="text-xs font-semibold truncate transition-colors text-[var(--text-primary)] group-hover:text-[var(--accent-primary)]">
