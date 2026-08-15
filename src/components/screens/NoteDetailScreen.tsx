@@ -1,0 +1,539 @@
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { 
+  ArrowLeft, 
+  Volume2, 
+  VolumeX, 
+  Play, 
+  Pause, 
+  Share2, 
+  MoreVertical, 
+  Download, 
+  Copy, 
+  Check, 
+  FileText, 
+  Youtube, 
+  Headphones, 
+  Eye, 
+  Code, 
+  Send, 
+  Sparkles, 
+  HelpCircle, 
+  ChevronRight,
+  ExternalLink,
+  Bot,
+  MessageSquare,
+  BookOpen
+} from 'lucide-react';
+import { useApp } from '../../context/AppContext';
+import { NoteItem } from '../../types';
+
+export const NoteDetailScreen: React.FC = () => {
+  const { 
+    activeNote, 
+    setCurrentScreen, 
+    addToast, 
+    archiveNote, 
+    startNewChatNote,
+    theme,
+    language,
+    t
+  } = useApp();
+
+  const [activeTab, setActiveTab] = useState<'preview' | 'code'>('preview');
+  const [mobileTab, setMobileTab] = useState<'content' | 'ask' | 'summary'>('content');
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [audioProgress, setAudioProgress] = useState(25);
+  const [isCopied, setIsCopied] = useState(false);
+  const [askInput, setAskInput] = useState('');
+  const [askHistory, setAskHistory] = useState<{ q: string; a: string; time: string }[]>([
+    {
+      q: 'Giải thích thêm về chỉ số CPI? Nó khác gì so với chỉ số giảm phát GDP?',
+      a: 'Chỉ số CPI đo lường sự thay đổi giá của một "rổ hàng hóa cố định" được mua bởi người tiêu dùng điển hình (bao gồm cả hàng nhập khẩu như xăng dầu). Trong khi đó, GDP Deflator tính toán giá của "tất cả hàng hóa & dịch vụ sản xuất trong nước", rổ hàng tự động thay đổi theo lượng tiêu thụ thực tế hàng năm.',
+      time: '14:32'
+    }
+  ]);
+  const [isAsking, setIsAsking] = useState(false);
+
+  // Audio player timer
+  useEffect(() => {
+    let interval: any;
+    if (isPlayingAudio) {
+      interval = setInterval(() => {
+        setAudioProgress(prev => {
+          if (prev >= 100) {
+            setIsPlayingAudio(false);
+            return 0;
+          }
+          return prev + 1;
+        });
+      }, 400);
+    }
+    return () => clearInterval(interval);
+  }, [isPlayingAudio]);
+
+  const isDark = theme === 'dark';
+
+  if (!activeNote) {
+    return (
+      <div className={`flex-1 flex flex-col items-center justify-center p-8 text-center transition-colors duration-250 ${
+        isDark ? 'bg-[#171513] text-[#A8A199]' : 'bg-[#FBF9F5] text-[#6E665D]'
+      }`}>
+        <p className="text-sm">{language === 'vi' ? 'Không tìm thấy ghi chú' : 'Note not found'}</p>
+        <button
+          onClick={() => setCurrentScreen('library')}
+          className="mt-4 px-4 py-2 bg-amber-600 hover:bg-amber-500 active:scale-95 text-white text-xs font-semibold rounded-xl cursor-pointer transition-all"
+        >
+          {t('backToLibrary')}
+        </button>
+      </div>
+    );
+  }
+
+  const handleCopy = () => {
+    navigator.clipboard?.writeText(activeNote.rawMarkdown);
+    setIsCopied(true);
+    addToast(t('copied'), t('toastCopied'));
+    setTimeout(() => setIsCopied(false), 2000);
+  };
+
+  const handleAskSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!askInput.trim() || isAsking) return;
+
+    const question = askInput;
+    setAskInput('');
+    setIsAsking(true);
+
+    setTimeout(() => {
+      setIsAsking(false);
+      setAskHistory(prev => [
+        ...prev,
+        {
+          q: question,
+          a: language === 'vi'
+            ? `Dựa trên dữ liệu ghi chú "${activeNote.title}", câu hỏi của bạn được giải thích như sau: Đây là một khía cạnh trọng tâm gắn liền với cơ chế cân bằng thị trường và các mô hình dự báo kinh tế vĩ mô.`
+            : `Based on the note context "${activeNote.title}", here is the explanation: This core aspect aligns with the market equilibrium mechanism and macro-economic forecasting models.`,
+          time: language === 'vi' ? 'Vừa xong' : 'Just now'
+        }
+      ]);
+      addToast(
+        language === 'vi' ? 'AI đã phản hồi' : 'AI Copilot Replied',
+        language === 'vi' ? 'Câu trả lời đã được thêm vào hội thoại hỏi đáp.' : 'Response added to your Q&A stream.'
+      );
+    }, 1000);
+  };
+
+  return (
+    <div className={`flex-1 flex flex-col h-full overflow-hidden transition-colors duration-250 ${
+      isDark ? 'bg-[#171513] text-[#F7F4EE]' : 'bg-[#FBF9F5] text-[#26221D]'
+    }`}>
+      {/* Top Breadcrumb & Controls Bar */}
+      <div className={`h-14 border-b px-4 sm:px-6 flex items-center justify-between shrink-0 transition-colors duration-250 ${
+        isDark ? 'bg-[#1C1916] border-[#38322B]' : 'bg-[#FCFAF7] border-[#E6E0D6] shadow-2xs'
+      }`}>
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+          <button
+            id="btn-back-to-library"
+            onClick={() => setCurrentScreen('library')}
+            className={`flex items-center gap-1.5 text-xs font-semibold transition-all cursor-pointer py-1.5 px-2.5 rounded-xl active:scale-95 ${
+              isDark ? 'text-[#A8A199] hover:text-[#F7F4EE] hover:bg-[#2A2621]' : 'text-[#6E665D] hover:text-[#26221D] hover:bg-[#F4EFE6]'
+            }`}
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="hidden sm:inline">{t('backToLibrary')}</span>
+          </button>
+          <span className={isDark ? 'text-[#78716A]' : 'text-[#968D82]'}>/</span>
+          <h2 className={`text-xs sm:text-sm font-bold truncate max-w-[180px] sm:max-w-md ${
+            isDark ? 'text-[#F7F4EE]' : 'text-[#26221D]'
+          }`}>
+            {activeNote.title}
+          </h2>
+        </div>
+
+        {/* Audio TTS Player & Actions */}
+        <div className="flex items-center gap-2">
+          {/* Audio TTS Pill */}
+          <div className={`hidden md:flex items-center gap-2.5 px-3 py-1.5 border rounded-xl transition-colors ${
+            isDark ? 'bg-[#201D1A] border-[#38322B]' : 'bg-[#F4EFE6] border-[#E6E0D6] shadow-2xs'
+          }`}>
+            <button
+              id="btn-toggle-audio"
+              onClick={() => {
+                setIsPlayingAudio(!isPlayingAudio);
+                if (!isPlayingAudio) {
+                  addToast(t('audioSummary'), language === 'vi' ? 'Giọng đọc AI tự nhiên đang đọc tóm tắt ghi chú.' : 'AI natural voice is reading the note summary.');
+                }
+              }}
+              className="p-1 rounded-full bg-amber-600 hover:bg-amber-500 text-white transition-all cursor-pointer active:scale-90"
+            >
+              {isPlayingAudio ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3 fill-current" />}
+            </button>
+            <div className="flex flex-col">
+              <span className={`text-[10px] font-semibold ${isDark ? 'text-[#A8A199]' : 'text-[#6E665D]'}`}>
+                {t('audioSummary')}
+              </span>
+              <div className={`w-20 lg:w-24 h-1.5 rounded-full overflow-hidden mt-0.5 ${
+                isDark ? 'bg-[#2A2621]' : 'bg-[#E6E0D6]'
+              }`}>
+                <div 
+                  className="h-full bg-amber-500 transition-all duration-300"
+                  style={{ width: `${audioProgress}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Copy Button */}
+          <button
+            id="btn-copy-note-detail"
+            onClick={handleCopy}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer active:scale-95 ${
+              isDark 
+                ? 'bg-[#201D1A] hover:bg-[#2A2621] border-[#38322B] text-[#F7F4EE]' 
+                : 'bg-white hover:bg-[#F4EFE6] border-[#E6E0D6] text-[#26221D] shadow-2xs'
+            }`}
+          >
+            {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5 text-[#A8A199]" />}
+            <span>{isCopied ? t('copied') : t('copyMarkdown')}</span>
+          </button>
+
+          {/* Share Button */}
+          <button
+            onClick={() => {
+              navigator.clipboard?.writeText(window.location.href);
+              addToast(t('copied'), t('toastCopied'));
+            }}
+            className={`p-2 rounded-xl border transition-all cursor-pointer active:scale-95 ${
+              isDark ? 'border-transparent text-[#A8A199] hover:text-[#F7F4EE] hover:bg-[#2A2621]' : 'border-transparent text-[#6E665D] hover:text-[#26221D] hover:bg-[#F4EFE6]'
+            }`}
+            title={t('share')}
+          >
+            <Share2 className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Sub-Navigation for switching Note view / AI Q&A */}
+      <div className={`lg:hidden flex border-b px-4 py-1.5 gap-2 ${
+        isDark ? 'bg-[#1C1916] border-[#38322B]' : 'bg-[#F4EFE6] border-[#E6E0D6]'
+      }`}>
+        <button
+          onClick={() => setMobileTab('content')}
+          className={`flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-95 ${
+            mobileTab === 'content'
+              ? 'bg-amber-600 text-white shadow-xs'
+              : isDark ? 'text-[#A8A199]' : 'text-[#6E665D]'
+          }`}
+        >
+          <BookOpen className="w-3.5 h-3.5" />
+          <span>{language === 'vi' ? 'Nội dung Note' : 'Note Body'}</span>
+        </button>
+        <button
+          onClick={() => setMobileTab('ask')}
+          className={`flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-95 ${
+            mobileTab === 'ask'
+              ? 'bg-amber-600 text-white shadow-xs'
+              : isDark ? 'text-[#A8A199]' : 'text-[#6E665D]'
+          }`}
+        >
+          <MessageSquare className="w-3.5 h-3.5" />
+          <span>{language === 'vi' ? 'Hỏi đáp AI' : 'AI Copilot'}</span>
+        </button>
+      </div>
+
+      {/* Main 3-Column Layout */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Column: Key Questions & Terms */}
+        <div className={`hidden xl:flex w-64 border-r flex-col p-5 overflow-y-auto custom-scrollbar shrink-0 transition-colors duration-250 ${
+          isDark ? 'border-[#38322B] bg-[#1C1916]' : 'border-[#E6E0D6] bg-[#FAF7F2]'
+        }`}>
+          <div className="space-y-6">
+            <div>
+              <h4 className="text-xs font-bold text-amber-500 uppercase tracking-wider mb-3">
+                {t('keyConcepts')}
+              </h4>
+              <div className="flex flex-wrap gap-1.5">
+                {activeNote.keywords.map((kw, i) => (
+                  <span
+                    key={i}
+                    className={`px-2.5 py-1 rounded-lg border text-xs font-medium ${
+                      isDark ? 'bg-[#201D1A] border-[#38322B] text-[#F7F4EE]' : 'bg-white border-[#E6E0D6] text-[#26221D] shadow-2xs'
+                    }`}
+                  >
+                    {kw}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${
+                isDark ? 'text-[#F7F4EE]' : 'text-[#26221D]'
+              }`}>
+                {t('coreQuestions')}
+              </h4>
+              <div className="space-y-2.5">
+                {activeNote.coreQuestions.map((q, i) => (
+                  <div
+                    key={i}
+                    onClick={() => {
+                      setAskInput(q);
+                      setMobileTab('ask');
+                    }}
+                    className={`p-2.5 rounded-xl border text-xs transition-all cursor-pointer group active:scale-97 ${
+                      isDark 
+                        ? 'bg-[#201D1A] border-[#38322B] hover:border-amber-500/40 text-[#A8A199] hover:text-amber-300' 
+                        : 'bg-white border-[#E6E0D6] hover:border-amber-400 text-[#6E665D] hover:text-amber-700 shadow-2xs'
+                    }`}
+                  >
+                    <p className="leading-relaxed font-medium">? {q}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h4 className={`text-xs font-bold uppercase tracking-wider mb-3 ${
+                isDark ? 'text-[#F7F4EE]' : 'text-[#26221D]'
+              }`}>
+                {language === 'vi' ? 'Nguồn liên kết' : 'Connected Sources'}
+              </h4>
+              <div className="space-y-2">
+                {activeNote.sources.map((src, i) => (
+                  <div
+                    key={i}
+                    className={`flex items-center gap-2 p-2 rounded-lg border text-xs ${
+                      isDark ? 'bg-[#201D1A] border-[#38322B] text-[#A8A199]' : 'bg-white border-[#E6E0D6] text-[#6E665D] shadow-2xs'
+                    }`}
+                  >
+                    <FileText className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                    <span className="truncate">{src.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Center Column: Detailed Note Body */}
+        <div className={`flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 custom-scrollbar space-y-6 ${
+          mobileTab !== 'content' ? 'hidden lg:block' : 'block'
+        }`}>
+          {/* Note Title & Header */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded bg-amber-500/15 text-amber-500 border border-amber-500/30">
+                {activeNote.category} • {activeNote.method.toUpperCase()} NOTE
+              </span>
+              <span className={`text-xs ${isDark ? 'text-[#78716A]' : 'text-[#968D82]'}`}>
+                {language === 'vi' ? 'Cập nhật: ' : 'Updated: '}{activeNote.updatedAt}
+              </span>
+            </div>
+            <h1 className={`text-xl sm:text-2xl md:text-3xl font-bold tracking-tight ${
+              isDark ? 'text-[#F7F4EE]' : 'text-[#26221D]'
+            }`}>
+              {activeNote.title}
+            </h1>
+          </div>
+
+          {/* Overview text */}
+          <div className={`p-4 sm:p-5 rounded-2xl border text-sm leading-relaxed ${
+            isDark ? 'bg-[#201D1A] border-[#38322B] text-[#F7F4EE]' : 'bg-white border-[#E6E0D6] text-[#26221D] shadow-xs'
+          }`}>
+            <p>{activeNote.content.overview}</p>
+          </div>
+
+          {/* Sections Breakdown */}
+          {activeNote.content.sections.map((sec, idx) => (
+            <div key={idx} className="space-y-4 pt-2">
+              <h3 className={`text-base sm:text-lg font-bold flex items-center gap-2 ${
+                isDark ? 'text-[#F7F4EE]' : 'text-[#26221D]'
+              }`}>
+                <span className="w-1.5 h-5 bg-amber-600 rounded-full" />
+                <span>{sec.title}</span>
+              </h3>
+
+              {sec.definition && (
+                <div className={`p-4 rounded-xl border-l-4 border-amber-500 text-xs ${
+                  isDark ? 'bg-amber-950/20 text-[#F7F4EE]' : 'bg-amber-50/70 text-[#26221D]'
+                }`}>
+                  <p className="font-bold text-amber-600 mb-1">
+                    {language === 'vi' ? 'Định nghĩa cốt lõi:' : 'Core Definition:'}
+                  </p>
+                  <p className="italic leading-relaxed">{sec.definition}</p>
+                </div>
+              )}
+
+              {sec.text && (
+                <p className={`text-xs sm:text-sm leading-relaxed ${
+                  isDark ? 'text-[#A8A199]' : 'text-[#6E665D]'
+                }`}>
+                  {sec.text}
+                </p>
+              )}
+
+              {/* Table Data */}
+              {sec.tableData && (
+                <div className={`overflow-x-auto rounded-xl border my-3 ${
+                  isDark ? 'border-[#38322B] bg-[#201D1A]' : 'border-[#E6E0D6] bg-white shadow-2xs'
+                }`}>
+                  <table className="w-full text-xs text-left">
+                    <thead className={`font-semibold border-b ${
+                      isDark ? 'bg-[#2A2621] text-[#A8A199] border-[#38322B]' : 'bg-[#F4EFE6] text-[#6E665D] border-[#E6E0D6]'
+                    }`}>
+                      <tr>
+                        {sec.tableData.headers.map((h, i) => (
+                          <th key={i} className="px-4 py-3">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className={`divide-y ${
+                      isDark ? 'divide-[#38322B] text-[#F7F4EE]' : 'divide-[#E6E0D6] text-[#26221D]'
+                    }`}>
+                      {sec.tableData.rows.map((row, rIdx) => (
+                        <tr key={rIdx} className={isDark ? 'hover:bg-[#2A2621]/40' : 'hover:bg-[#F4EFE6]/40'}>
+                          {row.map((cell, cIdx) => (
+                            <td key={cIdx} className="px-4 py-2.5">{cell}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {sec.bulletPoints && (
+                <div className="space-y-2 pl-2">
+                  {sec.bulletPoints.map((bp, bIdx) => (
+                    <div key={bIdx} className={`text-xs sm:text-sm flex items-start gap-2.5 ${
+                      isDark ? 'text-[#A8A199]' : 'text-[#6E665D]'
+                    }`}>
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-2 shrink-0" />
+                      <span>{bp}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* Bottom Summary Callout */}
+          <div className={`p-5 rounded-2xl border ${
+            isDark 
+              ? 'bg-gradient-to-r from-amber-950/30 via-orange-950/20 to-[#201D1A] border-amber-500/30' 
+              : 'bg-gradient-to-r from-amber-50 via-orange-50/50 to-white border-amber-200'
+          }`}>
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles className="w-4 h-4 text-amber-500" />
+              <h4 className={`text-xs font-bold uppercase tracking-wider ${
+                isDark ? 'text-[#F7F4EE]' : 'text-[#26221D]'
+              }`}>
+                {language === 'vi' ? 'Tóm tắt cốt lõi (Cornell Summary)' : 'Executive Summary (Cornell Method)'}
+              </h4>
+            </div>
+            <p className={`text-xs sm:text-sm leading-relaxed ${
+              isDark ? 'text-[#A8A199]' : 'text-[#6E665D]'
+            }`}>
+              {activeNote.content.summaryText}
+            </p>
+          </div>
+        </div>
+
+        {/* Right Column: Interactive AI Assistant Q&A */}
+        <div className={`w-full lg:w-80 xl:w-96 border-l flex flex-col shrink-0 h-full transition-colors duration-250 ${
+          mobileTab !== 'ask' ? 'hidden lg:flex' : 'flex'
+        } ${
+          isDark ? 'border-[#38322B] bg-[#1C1916]' : 'border-[#E6E0D6] bg-[#FCFAF7]'
+        }`}>
+          {/* Header */}
+          <div className={`p-4 border-b flex items-center justify-between transition-colors ${
+            isDark ? 'border-[#38322B] bg-[#201D1A]' : 'border-[#E6E0D6] bg-[#F4EFE6]'
+          }`}>
+            <div className="flex items-center gap-2">
+              <Bot className="w-4 h-4 text-amber-500" />
+              <h4 className={`text-xs font-bold uppercase tracking-wider ${
+                isDark ? 'text-[#F7F4EE]' : 'text-[#26221D]'
+              }`}>
+                {t('askNoteTitle')}
+              </h4>
+            </div>
+            <span className="text-[10px] bg-amber-500/20 text-amber-500 px-2 py-0.5 rounded font-mono font-bold">
+              AI Copilot
+            </span>
+          </div>
+
+          {/* Chat History */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+            {askHistory.map((item, idx) => (
+              <div key={idx} className="space-y-2">
+                {/* User Q */}
+                <div className="flex justify-end">
+                  <div className="p-3 rounded-xl bg-amber-600 text-white text-xs max-w-[90%] rounded-br-sm shadow-xs">
+                    {item.q}
+                  </div>
+                </div>
+
+                {/* AI Answer */}
+                <div className="flex justify-start">
+                  <div className={`p-3.5 rounded-xl border text-xs max-w-[95%] rounded-tl-sm space-y-2 ${
+                    isDark ? 'bg-[#201D1A] border-[#38322B] text-[#F7F4EE]' : 'bg-white border-[#E6E0D6] text-[#26221D]'
+                  }`}>
+                    <p className="leading-relaxed">{item.a}</p>
+                    <div className="flex items-center justify-between pt-1 text-[10px] text-[#78716A]">
+                      <span>{item.time}</span>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard?.writeText(item.a);
+                          addToast(t('copied'), t('toastCopied'));
+                        }}
+                        className="text-amber-500 hover:underline cursor-pointer"
+                      >
+                        {t('copyMarkdown')}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {isAsking && (
+              <div className={`flex items-center gap-2 p-3 rounded-xl border text-xs animate-pulse ${
+                isDark ? 'bg-[#201D1A] border-[#38322B] text-[#A8A199]' : 'bg-white border-[#E6E0D6] text-[#6E665D]'
+              }`}>
+                <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-spin" />
+                <span>{language === 'vi' ? 'AI đang phân tích ngữ cảnh ghi chú...' : 'AI is parsing note context...'}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Input form */}
+          <div className={`p-3 border-t transition-colors ${
+            isDark ? 'border-[#38322B] bg-[#201D1A]' : 'border-[#E6E0D6] bg-[#F4EFE6]'
+          }`}>
+            <form onSubmit={handleAskSubmit} className="relative">
+              <input
+                id="input-ask-note"
+                type="text"
+                value={askInput}
+                onChange={(e) => setAskInput(e.target.value)}
+                placeholder={t('askNotePlaceholder')}
+                className={`w-full rounded-xl pl-3 pr-10 py-2.5 text-xs focus:outline-none focus:border-amber-500 border transition-colors ${
+                  isDark ? 'bg-[#171513] border-[#38322B] text-[#F7F4EE] placeholder-[#78716A]' : 'bg-white border-[#E6E0D6] text-[#26221D] placeholder-[#968D82] shadow-2xs'
+                }`}
+              />
+              <button
+                type="submit"
+                id="btn-submit-ask-note"
+                disabled={!askInput.trim() || isAsking}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white disabled:opacity-40 transition-all cursor-pointer active:scale-95"
+              >
+                <Send className="w-3.5 h-3.5" />
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};

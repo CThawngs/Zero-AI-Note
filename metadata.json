@@ -1,0 +1,6 @@
+{
+  "name": "Zero AI Note",
+  "description": "AI-Powered Research and intelligent note-taking application with automated structuring, multi-format templates, and knowledge management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
