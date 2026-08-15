@@ -20,6 +20,8 @@ export const AddProviderModal: React.FC<AddProviderModalProps> = ({ isOpen, onCl
   const [autoDiscoverModels, setAutoDiscoverModels] = useState(true);
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; latency: number } | null>(null);
+  const [isCheckingModel, setIsCheckingModel] = useState(false);
+  const [modelCheckResult, setModelCheckResult] = useState<boolean | null>(null);
 
   const discoveredModels = [
     'qwen/qwen3-asr-1.7b',
@@ -46,6 +48,17 @@ export const AddProviderModal: React.FC<AddProviderModalProps> = ({ isOpen, onCl
         latency: Math.floor(Math.random() * 60) + 85
       });
     }, 1100);
+  };
+
+  const handleCheckModel = () => {
+    if (!defaultModel.trim()) return;
+    setIsCheckingModel(true);
+    setModelCheckResult(null);
+
+    setTimeout(() => {
+      setIsCheckingModel(false);
+      setModelCheckResult(true);
+    }, 1200);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -186,15 +199,44 @@ export const AddProviderModal: React.FC<AddProviderModalProps> = ({ isOpen, onCl
               <span className="block text-xs font-medium mb-1 text-[var(--text-secondary)]">
                 {language === 'vi' ? 'Hoặc gõ tay tên model:' : 'Or type custom model:'}
               </span>
-              <input
-                id="input-provider-model"
-                type="text"
-                required
-                value={defaultModel}
-                onChange={(e) => setDefaultModel(e.target.value)}
-                placeholder="qwen/qwen3-asr-1.7b"
-                className="w-full border rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[var(--accent-primary)] transition-colors font-mono bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
-              />
+              <div className="flex gap-2">
+                <input
+                  id="input-provider-model"
+                  type="text"
+                  required
+                  value={defaultModel}
+                  onChange={(e) => {
+                    setDefaultModel(e.target.value);
+                    setModelCheckResult(null);
+                  }}
+                  placeholder="qwen/qwen3-asr-1.7b"
+                  className="w-full border rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[var(--accent-primary)] transition-colors font-mono bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
+                />
+                <button
+                  type="button"
+                  onClick={handleCheckModel}
+                  disabled={isCheckingModel || !defaultModel.trim()}
+                  className="px-3 py-2 rounded-xl text-xs font-semibold shrink-0 border border-[var(--border-color)] bg-[var(--bg-app)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] cursor-pointer active:scale-95 disabled:opacity-50 flex items-center gap-1"
+                >
+                  {isCheckingModel ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--accent-primary)]" />
+                  ) : null}
+                  <span>{language === 'vi' ? 'Check' : 'Check'}</span>
+                </button>
+              </div>
+              {modelCheckResult !== null && (
+                <div className="mt-1.5 text-xs">
+                  {modelCheckResult ? (
+                    <span className="text-[var(--status-success)] flex items-center gap-1 font-medium">
+                      <span>✓</span> {language === 'vi' ? 'Model khả dụng' : 'Model available'}
+                    </span>
+                  ) : (
+                    <span className="text-[var(--status-error)] flex items-center gap-1 font-medium">
+                      <span>✗</span> {language === 'vi' ? 'Không tìm thấy model này qua provider' : 'Model not found via provider'}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

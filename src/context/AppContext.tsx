@@ -95,6 +95,7 @@ interface AppContextType {
   addAIProvider: (provider: Omit<AIProviderItem, 'id' | 'latencyMs' | 'status'>) => void;
   toggleProviderStatus: (providerId: string) => void;
   deleteAIProvider: (providerId: string) => void;
+  updateAIProvider: (providerId: string, updates: Partial<AIProviderItem>) => void;
 
   // Coupons & Admin
   coupons: CouponItem[];
@@ -483,6 +484,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
+  const updateAIProvider = (providerId: string, updates: Partial<AIProviderItem>) => {
+    setAIProviders(prev => prev.map(p => p.id === providerId ? { ...p, ...updates } : p));
+  };
+
   const addCoupon = (couponData: Omit<CouponItem, 'id' | 'usedCount'>) => {
     const newCp: CouponItem = {
       ...couponData,
@@ -820,6 +825,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addAIProvider,
       toggleProviderStatus,
       deleteAIProvider,
+      updateAIProvider,
       coupons,
       addCoupon,
       updateCoupon,

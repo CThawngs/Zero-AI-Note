@@ -116,6 +116,11 @@ export interface AIProviderItem {
   autoFallback?: boolean;
   useForNewChats?: boolean;
   autoDiscoverModels?: boolean;
+  importFreeModels?: boolean;
+  syncEnabled?: boolean;
+  freeModelsCount?: number;
+  freeModelsList?: string[];
+  isCustomEndpoint?: boolean;
 }
 
 export interface CouponItem {

@@ -533,7 +533,11 @@ export const initialAIProviders: AIProviderItem[] = [
     status: 'active',
     latencyMs: 135,
     streaming: true,
-    autoFallback: true
+    autoFallback: true,
+    importFreeModels: false,
+    syncEnabled: false,
+    freeModelsCount: 2,
+    freeModelsList: ['gpt-4o-mini', 'gpt-3.5-turbo']
   },
   {
     id: 'prov_anthropic',
@@ -545,7 +549,11 @@ export const initialAIProviders: AIProviderItem[] = [
     status: 'active',
     latencyMs: 180,
     streaming: true,
-    autoFallback: true
+    autoFallback: true,
+    importFreeModels: true,
+    syncEnabled: false,
+    freeModelsCount: 1,
+    freeModelsList: ['claude-3-haiku-free']
   },
   {
     id: 'prov_gemini',
@@ -557,7 +565,11 @@ export const initialAIProviders: AIProviderItem[] = [
     status: 'active',
     latencyMs: 95,
     streaming: true,
-    autoFallback: false
+    autoFallback: false,
+    importFreeModels: true,
+    syncEnabled: true,
+    freeModelsCount: 3,
+    freeModelsList: ['gemini-1.5-flash', 'gemini-1.5-flash-8b', 'gemini-2.0-flash-exp']
   },
   {
     id: 'prov_ollama',
@@ -569,7 +581,12 @@ export const initialAIProviders: AIProviderItem[] = [
     status: 'inactive',
     latencyMs: 25,
     streaming: true,
-    autoFallback: false
+    autoFallback: false,
+    isCustomEndpoint: true,
+    importFreeModels: false,
+    syncEnabled: false,
+    freeModelsCount: 0,
+    freeModelsList: []
   }
 ];
 

@@ -64,6 +64,7 @@ export const SettingsScreen: React.FC = () => {
 
   // Add Provider Modal
   const [isAddProviderModalOpen, setIsAddProviderModalOpen] = useState(false);
+  const [expandedProviders, setExpandedProviders] = useState<Record<string, boolean>>({});
 
   // Notification toggles
   const [notifications, setNotifications] = useState({
@@ -507,14 +508,26 @@ export const SettingsScreen: React.FC = () => {
                 </p>
               </div>
 
-              <button
-                id="btn-open-add-provider"
-                onClick={() => setIsAddProviderModalOpen(true)}
-                className="self-start sm:self-auto flex items-center gap-2 px-4 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-white rounded-xl text-xs font-semibold shadow-md shadow-[var(--accent-primary)]/20 cursor-pointer active:scale-95 transition-all"
-              >
-                <Plus className="w-4 h-4" />
-                <span>{t('addProvider')}</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => addToast(
+                    language === 'vi' ? 'Cảnh báo Model hết free' : 'Model Free Tier Ended',
+                    language === 'vi' ? 'Model gpt-4o không còn free trên OpenAI, đã tự động chuyển sang gpt-4o-mini' : 'Model gpt-4o no longer free on OpenAI, switched to gpt-4o-mini',
+                    'warning'
+                  )}
+                  className="px-3 py-2 rounded-xl border border-[var(--border-color)] text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                >
+                  Demo: Model hết free
+                </button>
+                <button
+                  id="btn-open-add-provider"
+                  onClick={() => setIsAddProviderModalOpen(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-white rounded-xl text-xs font-semibold shadow-md shadow-[var(--accent-primary)]/20 cursor-pointer active:scale-95 transition-all"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>{t('addProvider')}</span>
+                </button>
+              </div>
             </div>
 
             <div className="space-y-3">
@@ -547,56 +560,122 @@ export const SettingsScreen: React.FC = () => {
                 aiProviders.map((prov) => (
                   <div
                     key={prov.id}
-                    className={`p-5 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+                    className={`p-5 rounded-2xl border transition-all flex flex-col gap-4 ${
                       isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)] hover:border-[var(--accent-primary)]/40' : 'bg-white border-[var(--border-color)] hover:border-[var(--accent-primary)] shadow-xs'
                     }`}
                   >
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2.5">
-                        <h4 className={`text-sm font-bold ${isDark ? 'text-[var(--text-primary)]' : 'text-[var(--text-primary)]'}`}>{prov.name}</h4>
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded ${
-                          prov.status === 'active' 
-                            ? 'bg-[var(--status-success)]/20 text-[var(--status-success)] border border-[var(--status-success)]/30 font-bold' 
-                            : isDark ? 'bg-[var(--bg-hover)] text-[var(--text-muted)]' : 'bg-[var(--bg-hover)] text-[var(--text-muted)]'
-                        }`}>
-                          {prov.status === 'active' ? (language === 'vi' ? 'ĐANG KẾT NỐI' : 'ACTIVE') : (language === 'vi' ? 'TẠM TẮT' : 'DISABLED')}
-                        </span>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2.5">
+                          <h4 className={`text-sm font-bold ${isDark ? 'text-[var(--text-primary)]' : 'text-[var(--text-primary)]'}`}>{prov.name}</h4>
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded ${
+                            prov.status === 'active' 
+                              ? 'bg-[var(--status-success)]/20 text-[var(--status-success)] border border-[var(--status-success)]/30 font-bold' 
+                              : isDark ? 'bg-[var(--bg-hover)] text-[var(--text-muted)]' : 'bg-[var(--bg-hover)] text-[var(--text-muted)]'
+                          }`}>
+                            {prov.status === 'active' ? (language === 'vi' ? 'ĐANG KẾT NỐI' : 'ACTIVE') : (language === 'vi' ? 'TẠM TẮT' : 'DISABLED')}
+                          </span>
+                        </div>
+                        <div className={`flex flex-wrap items-center gap-2 text-xs ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
+                          <span>Model: <strong className={isDark ? 'text-[var(--text-primary)]' : 'text-[var(--text-primary)]'}>{prov.defaultModel}</strong></span>
+                          <span>•</span>
+                          <span>{language === 'vi' ? 'Độ trễ:' : 'Latency:'} <strong className="text-[var(--status-success)]">{prov.latencyMs}ms</strong></span>
+                          <span>•</span>
+                          <span className="font-mono text-xs">{prov.apiKeyMasked}</span>
+                        </div>
                       </div>
-                      <div className={`flex flex-wrap items-center gap-2 text-xs ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
-                        <span>Model: <strong className={isDark ? 'text-[var(--text-primary)]' : 'text-[var(--text-primary)]'}>{prov.defaultModel}</strong></span>
-                        <span>•</span>
-                        <span>{language === 'vi' ? 'Độ trễ:' : 'Latency:'} <strong className="text-[var(--status-success)]">{prov.latencyMs}ms</strong></span>
-                        <span>•</span>
-                        <span className="font-mono text-xs">{prov.apiKeyMasked}</span>
+
+                      <div className="flex items-center gap-2 self-end sm:self-auto">
+                        {/* New Toggles */}
+                        <div className="flex items-center gap-3 mr-2">
+                           <div className="flex items-center gap-1.5 relative group">
+                             <input 
+                               type="checkbox" 
+                               id={`import-free-${prov.id}`}
+                               checked={prov.importFreeModels || false} 
+                               disabled={prov.isCustomEndpoint}
+                               onChange={() => updateAIProvider(prov.id, { importFreeModels: !prov.importFreeModels })}
+                               className="accent-[var(--accent-primary)] cursor-pointer disabled:opacity-50"
+                             />
+                             <label 
+                               htmlFor={`import-free-${prov.id}`}
+                               className={`text-xs cursor-pointer select-none ${prov.isCustomEndpoint ? 'text-[var(--text-muted)] opacity-50 cursor-not-allowed' : 'text-[var(--text-primary)]'}`}
+                             >
+                               {language === 'vi' ? 'Import free' : 'Import free'}
+                             </label>
+                             {prov.isCustomEndpoint && (
+                               <span className="text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-help text-[11px] font-bold border border-[var(--border-color)] w-3.5 h-3.5 rounded-full flex items-center justify-center relative">
+                                 i
+                                 <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-48 hidden group-hover:block bg-black text-white text-[10px] p-2 rounded-lg shadow-lg z-50 leading-relaxed font-normal">
+                                   {language === 'vi' 
+                                     ? 'Không áp dụng cho endpoint tự host — không có khái niệm giá free/trả phí' 
+                                     : 'Not applicable for self-hosted endpoints'}
+                                 </span>
+                               </span>
+                             )}
+                           </div>
+
+                           <div className="flex items-center gap-1.5 relative group">
+                             <input 
+                               type="checkbox" 
+                               id={`sync-${prov.id}`}
+                               checked={prov.syncEnabled || false}
+                               disabled={prov.isCustomEndpoint}
+                               onChange={() => updateAIProvider(prov.id, { syncEnabled: !prov.syncEnabled, importFreeModels: true })}
+                               className="accent-[var(--accent-primary)] cursor-pointer disabled:opacity-50"
+                             />
+                             <label 
+                               htmlFor={`sync-${prov.id}`}
+                               className={`text-xs cursor-pointer select-none ${prov.isCustomEndpoint ? 'text-[var(--text-muted)] opacity-50 cursor-not-allowed' : 'text-[var(--text-primary)]'}`}
+                             >
+                               {language === 'vi' ? 'Sync' : 'Sync'}
+                             </label>
+                             {prov.syncEnabled && (
+                               <div className="flex items-center gap-1">
+                                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--status-success)] animate-ping shrink-0" />
+                                 <span className="text-[10px] text-[var(--status-success)] font-bold shrink-0">{language === 'vi' ? 'Đang đồng bộ' : 'Syncing'}</span>
+                               </div>
+                             )}
+                           </div>
+                        </div>
+
+                        <button
+                          onClick={() => toggleProviderStatus(prov.id)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border active:scale-95 ${
+                            prov.status === 'active'
+                              ? isDark ? 'bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border-color)] hover:bg-[var(--border-color)]' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border-color)] hover:bg-[var(--bg-hover)]'
+                              : 'bg-[var(--status-success)]/15 text-[var(--status-success)] border-[var(--status-success)]/30 hover:bg-[var(--status-success)]/25'
+                          }`}
+                        >
+                          {prov.status === 'active' 
+                            ? (language === 'vi' ? 'Tắt' : 'Disable') 
+                            : (language === 'vi' ? 'Bật' : 'Enable')}
+                        </button>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 self-end sm:self-auto">
-                      <button
-                        onClick={() => toggleProviderStatus(prov.id)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer border active:scale-95 ${
-                          prov.status === 'active'
-                            ? isDark ? 'bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border-color)] hover:bg-[var(--border-color)]' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border-color)] hover:bg-[var(--bg-hover)]'
-                            : 'bg-[var(--status-success)]/15 text-[var(--status-success)] border-[var(--status-success)]/30 hover:bg-[var(--status-success)]/25'
-                        }`}
-                      >
-                        {prov.status === 'active' 
-                          ? (language === 'vi' ? 'Tắt Provider' : 'Disable') 
-                          : (language === 'vi' ? 'Bật kết nối' : 'Enable')}
-                      </button>
+                    {prov.importFreeModels && (prov.freeModelsList?.length || 0) > 0 && (
+                       <div className="mt-2 pt-2 border-t border-[var(--border-subtle)] text-xs space-y-2">
+                          <button 
+                            onClick={() => setExpandedProviders(prev => ({ ...prev, [prov.id]: !prev[prov.id] }))}
+                            className="text-[var(--accent-primary)] font-semibold hover:underline flex items-center gap-1 cursor-pointer"
+                          >
+                            <span>{prov.freeModelsCount} {language === 'vi' ? 'model đang free' : 'models are free'}</span>
+                            <span>{expandedProviders[prov.id] ? '▲' : '▼'}</span>
+                          </button>
 
-                      <button
-                        onClick={() => deleteAIProvider(prov.id)}
-                        className={`p-1.5 rounded-xl border transition-colors cursor-pointer active:scale-95 ${
-                          isDark 
-                            ? 'bg-[var(--bg-hover)] border-[var(--border-color)] text-[var(--status-error)] hover:bg-[var(--status-error)]/30 hover:border-[var(--status-error)]' 
-                            : 'bg-[var(--bg-hover)] border-[var(--border-color)] text-[var(--status-error)] hover:bg-[var(--status-error)] hover:border-[var(--status-error)]'
-                        }`}
-                        title={language === 'vi' ? 'Xóa Provider' : 'Delete Provider'}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                          {expandedProviders[prov.id] && (
+                            <div className="pl-2 space-y-1 py-1 border-l-2 border-[var(--accent-primary)]/40">
+                              {prov.freeModelsList?.map(m => (
+                                <div key={m} className="font-mono text-xs text-[var(--text-secondary)] flex items-center justify-between">
+                                  <span>• {m}</span>
+                                  <span className="text-[10px] bg-[var(--status-success)]/10 text-[var(--status-success)] px-1.5 py-0.5 rounded font-sans font-medium">FREE</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                       </div>
+                    )}
                   </div>
                 ))
               )}
