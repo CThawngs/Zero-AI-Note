@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { AppProvider } from '@/src/context/AppContext';
 import '../src/index.css';
 
 export const metadata: Metadata = {
@@ -14,7 +15,9 @@ export default function RootLayout({
   return (
     <html lang="vi">
       <body className="antialiased">
-        {children}
+        <AppProvider>
+          {children}
+        </AppProvider>
       </body>
     </html>
   );
