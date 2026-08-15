@@ -257,7 +257,27 @@ export const translations = {
     toastCopied: 'Đã sao chép vào clipboard!',
     toastError: 'Có lỗi xảy ra, vui lòng thử lại.',
     toastThemeChanged: 'Đã đổi giao diện',
-    toastLangChanged: 'Đã đổi ngôn ngữ'
+    toastLangChanged: 'Đã đổi ngôn ngữ',
+
+    // Missing keys (added for Next.js type-check)
+    apply: 'Áp dụng',
+    changePassword: 'Đổi mật khẩu',
+    planDetails: 'Chi tiết gói',
+    paymentHistory: 'Lịch sử thanh toán',
+    dangerZone: 'Vùng nguy hiểm',
+    deleteAccount: 'Xoá tài khoản',
+    addProvider: 'Thêm Provider',
+    savedSettings: 'Đã lưu cài đặt',
+    toastSavedSettings: 'Cài đặt của bạn đã được lưu thành công.',
+    createTemplate: 'Tạo mẫu mới',
+    viewLayout: 'Xem bố cục',
+    askNoteTitle: 'Nhập tiêu đề note',
+    askNotePlaceholder: 'Mô tả note bạn muốn tạo...',
+    customMethod: 'Phương pháp tùy chỉnh',
+    deletePermanently: 'Xoá vĩnh viễn',
+    cloudStorageUsage: 'Dung lượng lưu trữ đám mây',
+    backToLibrary: 'Quay lại thư viện',
+    audioSummary: 'Tóm tắt âm thanh'
   },
   en: {
     // Brand
@@ -514,6 +534,26 @@ export const translations = {
     toastCopied: 'Copied to clipboard!',
     toastError: 'An error occurred, please try again.',
     toastThemeChanged: 'Theme updated',
-    toastLangChanged: 'Language updated'
+    toastLangChanged: 'Language updated',
+
+    // Missing keys (added for Next.js type-check)
+    apply: 'Apply',
+    changePassword: 'Change Password',
+    planDetails: 'Plan Details',
+    paymentHistory: 'Payment History',
+    dangerZone: 'Danger Zone',
+    deleteAccount: 'Delete Account',
+    addProvider: 'Add Provider',
+    savedSettings: 'Settings saved',
+    toastSavedSettings: 'Your settings have been saved successfully.',
+    createTemplate: 'Create Template',
+    viewLayout: 'View Layout',
+    askNoteTitle: 'Enter note title',
+    askNotePlaceholder: 'Describe the note you want to create...',
+    customMethod: 'Custom Method',
+    deletePermanently: 'Delete Permanently',
+    cloudStorageUsage: 'Cloud Storage Usage',
+    backToLibrary: 'Back to Library',
+    audioSummary: 'Audio Summary'
   }
 };

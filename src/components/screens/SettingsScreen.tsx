@@ -41,6 +41,7 @@ export const SettingsScreen: React.FC = () => {
     aiProviders, 
     toggleProviderStatus,
     deleteAIProvider,
+    updateAIProvider,
     settingsActiveTab,
     setSettingsActiveTab,
     addToast,

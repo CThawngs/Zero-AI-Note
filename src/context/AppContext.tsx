@@ -147,18 +147,23 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Theme & Language states with local storage caching
+  // Theme & Language states with local storage caching (guard for SSR/Next.js prerender)
+  const getLocal = (key: string) => {
+    if (typeof window === 'undefined') return null;
+    try { return window.localStorage.getItem(key); } catch { return null; }
+  };
+
   // Default is Theme "Giấy" (paper) in Dark mode as requested
   const [colorPalette, setColorPaletteState] = useState<ColorPalette>(() => {
-    return (localStorage.getItem('zero_ai_palette') as ColorPalette) || 'paper';
+    return (getLocal('zero_ai_palette') as ColorPalette) || 'paper';
   });
 
   const [theme, setThemeState] = useState<Theme>(() => {
-    return (localStorage.getItem('zero_ai_theme') as Theme) || 'dark';
+    return (getLocal('zero_ai_theme') as Theme) || 'dark';
   });
   
   const [language, setLanguageState] = useState<Language>(() => {
-    return (localStorage.getItem('zero_ai_lang') as Language) || 'vi';
+    return (getLocal('zero_ai_lang') as Language) || 'vi';
   });
 
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
@@ -224,9 +229,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setLanguage(language === 'vi' ? 'en' : 'vi');
   };
 
-  const t = (key: TranslationKey) => {
+  const t = (key: TranslationKey): string => {
     const dict = translations[language] || translations.vi;
-    return dict[key] !== undefined ? dict[key] : (translations.vi[key] || key);
+    const val = dict[key] !== undefined ? dict[key] : (translations.vi[key] || key);
+    return Array.isArray(val) ? String(val[0]) : val;
   };
 
   const [currentScreen, setCurrentScreenState] = useState<ScreenType>('chat');
@@ -251,7 +257,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [focusSearchInput, setFocusSearchInput] = useState<boolean>(false);
 
   // Settings
-  const [settingsActiveTab, setSettingsActiveTab] = useState<'account' | 'ai-providers' | 'notifications'>('account');
+  const [settingsActiveTab, setSettingsActiveTab] = useState<'account' | 'appearance' | 'ai-providers' | 'notifications'>('account');
 
   // AI & Chat States
   const [selectedModel, setSelectedModel] = useState<string>('Claude 3.5 Sonnet');
