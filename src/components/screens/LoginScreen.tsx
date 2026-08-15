@@ -25,45 +25,86 @@ export const LoginScreen: React.FC = () => {
 
   const isDark = theme === 'dark';
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setIsLoading(true);
 
-    setTimeout(() => {
-      setIsLoading(false);
-      setUser(prev => ({
-        ...prev,
-        email: email || prev.email,
-        name: email.split('@')[0] || 'Zero User'
-      }));
-      addToast(
-        language === 'vi' ? 'Đăng nhập thành công' : 'Logged in successfully',
-        language === 'vi' ? 'Chào mừng bạn quay trở lại với Zero AI Note!' : 'Welcome back to Zero AI Note!',
-        'success'
-      );
-      setCurrentScreen('chat');
-    }, 800);
-  };
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
 
-  const handleGoogleLogin = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      setUser(prev => ({
-        ...prev,
-        name: 'Zero User',
-        email: 'user.google@gmail.com'
-      }));
-      addToast(
-        language === 'vi' ? 'Đăng nhập Google thành công' : 'Google Auth Successful',
-        language === 'vi' ? 'Xác thực qua tài khoản Google hoàn tất.' : 'Google account verified successfully.',
-        'success'
-      );
-      setCurrentScreen('chat');
-    }, 700);
-  };
+        const data = await res.json();
 
-  const handleForgotPassword = (e: React.FormEvent) => {
+        if (!res.ok) {
+          throw new Error(data.error ?? 'Login failed');
+        }
+
+        // Cookies are set by the server via Set-Cookie header
+        setUser(data.user);
+        addToast(
+          language === 'vi' ? 'Đăng nhập thành công' : 'Logged in successfully',
+          language === 'vi' ? 'Chào mừng bạn quay trở lại với Zero AI Note!' : 'Welcome back to Zero AI Note!',
+          'success'
+        );
+        setCurrentScreen('chat');
+      } catch (err) {
+        addToast(
+          language === 'vi' ? 'Đăng nhập thất bại' : 'Login failed',
+          err instanceof Error ? err.message : 'Unknown error',
+          'error'
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    const handleRegister = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+
+        try {
+          const res = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password, displayName: email.split('@')[0] }),
+          });
+
+          const data = await res.json();
+
+          if (!res.ok) {
+            throw new Error(data.error ?? 'Registration failed');
+          }
+
+          setUser(data.user);
+          addToast(
+            language === 'vi' ? 'Đăng ký thành công' : 'Registration successful',
+            language === 'vi' ? 'Chào mừng bạn đến với Zero AI Note!' : 'Welcome to Zero AI Note!',
+            'success'
+          );
+          setCurrentScreen('chat');
+        } catch (err) {
+          addToast(
+            language === 'vi' ? 'Đăng ký thất bại' : 'Registration failed',
+            err instanceof Error ? err.message : 'Unknown error',
+            'error'
+          );
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      const handleGoogleLogin = () => {
+        addToast(
+          language === 'vi' ? 'Chưa hỗ trợ' : 'Not supported yet',
+          language === 'vi' ? 'Google OAuth sẽ có khi Neon DB sẵn sàng.' : 'Google OAuth coming when Neon DB ready.',
+          'info'
+        );
+      };
+
+      const handleForgotPassword = (e: React.FormEvent) => {
     e.preventDefault();
     setIsForgotPasswordOpen(false);
     addToast(
@@ -149,7 +190,7 @@ export const LoginScreen: React.FC = () => {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={activeTab === 'login' ? handleSubmit : handleRegister} className="space-y-4">
           <div>
             <label className="block text-xs font-medium mb-1.5 text-[var(--text-secondary)]">
               {language === 'vi' ? 'Địa chỉ Email' : 'Email Address'}
