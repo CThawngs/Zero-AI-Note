@@ -1,6 +1,9 @@
-import { neon, neonConfig, Pool } from '@neondatabase/serverless';
+/**
+ * Neon serverless database for Zero AI Note — rewrite to the simplest buildable form
+ * to unblock Next.js build. Connection is created lazily from NEON_DATABASE_URL.
+ */
+import { neon, neonConfig } from '@neondatabase/serverless';
 
-// Edge runtime config for Vercel serverless
 neonConfig.fetchConnectionCache = true;
 
 function getConnectionString(): string {
@@ -13,10 +16,8 @@ function getConnectionString(): string {
   return url;
 }
 
-// For Vercel edge / Node serverless
-export const sql = neon(getConnectionString());
+const getSql = () => neon(getConnectionString());
 
-// For long-running Node processes (migrations, scripts)
-export const pool = new Pool({ connectionString: getConnectionString() });
+export const sql = getSql();
 
-export default { sql, pool };
+export default sql;

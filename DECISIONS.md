@@ -41,3 +41,27 @@ Free tier 0.5GB đủ ~20 users; vượt ngưỡng sẽ chuyển sang paid có �
 STT chính: Gemini Flash audio input (free tier).
 Backup: Whisper qua Groq.
 TTS: Gemini Flash TTS preview / Deepgram Flux TTS / Fish Audio S2.1 Pro Free theo thứ tự ưu tiên, tất cả free tier.
+
+## Q10 GitHub Token Scope [CHỐT THEO ZERO — FULL ACCOUNT]
+[HERMES QUYẾT ĐỊNH: Fine-grained PAT với quyền **All repositories** trên toàn bộ account `CThawngs` — lý do: Zero muốn mình (agent) có quyền push/triển code trên mọi project trong account mà không cần cấp thêm sau này.]
+
+## Q11 Auth flow [HERMES QUYẾT ĐỊNH]
+Dùng JWT do Next.js API route phát hành sau khi xác thực với Neon DB.
+Không dùng session cookie, không dùng Magic Link.
+Refresh token lưu HTTP-only cookie.
+Lý do: không phụ thuộc service bên ngoài, phù hợp kiến trúc Neon + Next.js + Vercel edge.
+
+## Q12 Bảng profiles trong Neon [NHẤT QUÁN]
+Thêm cột processing_minutes_used INT mặc định 0 + processing_minutes_limit INT mặc định theo plan (Free=120, Pro=1200, Ultra=6000).
+Reset về 0 mỗi đầu tháng bằng job nhẹ trong API route.
+Lý do: không cần thay đổi schema lớn, vẫn giữ trong bảng profiles, dễ query + enforce.
+
+## Phiên làm việc hiện tại
+- Next.js đã build pass, route /api/health đã thêm (chờ Neon env để connect).
+- lib/db.ts + lib/db-types.ts đã có, chờ NEON_DATABASE_URL.
+- PricingScreen 3 gói đã commit, UI đang render đúng trên Next.js.
+- Đang chờ Zero tạo Neon DB + GitHub PAT để tiếp tục Tuần 1-2.
+
+## Chờ từ Zero
+- GitHub Fine-grained PAT với quyền **All repositories**
+- NEON_DATABASE_URL
