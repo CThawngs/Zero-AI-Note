@@ -20,7 +20,9 @@ export type ColorPalette =
   | 'lavender'
   | 'sakura'
   | 'mint'
-  | 'wine';
+  | 'wine'
+  | 'mono'
+  | 'gray';
 export type ThemeMode = 'dark' | 'light';
 
 export type NoteMethod = 'auto' | 'cornell' | 'outline' | 'qa' | 'flashcard' | 'quick-summary' | 'executive-summary' | 'custom';

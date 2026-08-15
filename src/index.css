@@ -698,6 +698,140 @@
     --dracula-red: #be123c;
   }
 
+  /* =========================================================
+     THEME "TRẮNG/ĐEN" (MONO) — Full Black & Pure White
+     ========================================================= */
+  :root[data-theme="mono"],
+  .theme-mono {
+    --bg-app: #000000;
+    --bg-card: #0a0a0a;
+    --bg-sidebar: #050505;
+    --bg-surface: #0a0a0a;
+    --bg-hover: #1f1f1f;
+    --bg-input: #000000;
+    --border-color: #333333;
+    --border-subtle: #222222;
+    --text-primary: #ffffff;
+    --text-secondary: #cccccc;
+    --text-muted: #888888;
+    --accent-primary: #ffffff;
+    --accent-hover: #e5e5e5;
+    --accent-subtle: rgba(255, 255, 255, 0.15);
+    --accent-gradient: linear-gradient(135deg, #ffffff, #aaaaaa);
+    --accent-text: #000000;
+    --status-success: #22c55e;
+    --status-error: #ef4444;
+    --status-warning: #eab308;
+    --status-info: #3b82f6;
+
+    --dracula-purple: #ffffff;
+    --dracula-pink: #cccccc;
+    --dracula-cyan: #ffffff;
+    --dracula-green: #22c55e;
+    --dracula-orange: #eab308;
+    --dracula-yellow: #eab308;
+    --dracula-red: #ef4444;
+  }
+
+  :root[data-theme="mono"].light,
+  .theme-mono.light {
+    --bg-app: #ffffff;
+    --bg-card: #ffffff;
+    --bg-sidebar: #f8f8f8;
+    --bg-surface: #ffffff;
+    --bg-hover: #f0f0f0;
+    --bg-input: #ffffff;
+    --border-color: #e5e5e5;
+    --border-subtle: #eeeeee;
+    --text-primary: #000000;
+    --text-secondary: #444444;
+    --text-muted: #777777;
+    --accent-primary: #000000;
+    --accent-hover: #262626;
+    --accent-subtle: rgba(0, 0, 0, 0.08);
+    --accent-gradient: linear-gradient(135deg, #000000, #444444);
+    --accent-text: #ffffff;
+    --status-success: #16a34a;
+    --status-error: #dc2626;
+    --status-warning: #ca8a04;
+    --status-info: #2563eb;
+
+    --dracula-purple: #000000;
+    --dracula-pink: #444444;
+    --dracula-cyan: #000000;
+    --dracula-green: #16a34a;
+    --dracula-orange: #ca8a04;
+    --dracula-yellow: #ca8a04;
+    --dracula-red: #dc2626;
+  }
+
+  /* =========================================================
+     THEME "XÁM" (GRAY) — Xám Đen / Xám Trắng
+     ========================================================= */
+  :root[data-theme="gray"],
+  .theme-gray {
+    --bg-app: #18181b;
+    --bg-card: #27272a;
+    --bg-sidebar: #1f1f22;
+    --bg-surface: #27272a;
+    --bg-hover: #3f3f46;
+    --bg-input: #18181b;
+    --border-color: #3f3f46;
+    --border-subtle: #27272a;
+    --text-primary: #f4f4f5;
+    --text-secondary: #d4d4d8;
+    --text-muted: #a1a1aa;
+    --accent-primary: #a1a1aa;
+    --accent-hover: #d4d4d8;
+    --accent-subtle: rgba(161, 161, 170, 0.2);
+    --accent-gradient: linear-gradient(135deg, #a1a1aa, #71717a);
+    --accent-text: #18181b;
+    --status-success: #34d399;
+    --status-error: #f87171;
+    --status-warning: #fbbf24;
+    --status-info: #60a5fa;
+
+    --dracula-purple: #a1a1aa;
+    --dracula-pink: #d4d4d8;
+    --dracula-cyan: #e4e4e7;
+    --dracula-green: #34d399;
+    --dracula-orange: #fbbf24;
+    --dracula-yellow: #fbbf24;
+    --dracula-red: #f87171;
+  }
+
+  :root[data-theme="gray"].light,
+  .theme-gray.light {
+    --bg-app: #f4f4f5;
+    --bg-card: #ffffff;
+    --bg-sidebar: #e4e4e7;
+    --bg-surface: #ffffff;
+    --bg-hover: #d4d4d8;
+    --bg-input: #f4f4f5;
+    --border-color: #d4d4d8;
+    --border-subtle: #e4e4e7;
+    --text-primary: #18181b;
+    --text-secondary: #52525b;
+    --text-muted: #71717a;
+    --accent-primary: #52525b;
+    --accent-hover: #3f3f46;
+    --accent-subtle: rgba(82, 82, 91, 0.12);
+    --accent-gradient: linear-gradient(135deg, #52525b, #27272a);
+    --accent-text: #ffffff;
+    --status-success: #059669;
+    --status-error: #dc2626;
+    --status-warning: #d97706;
+    --status-info: #2563eb;
+
+    --dracula-purple: #52525b;
+    --dracula-pink: #71717a;
+    --dracula-cyan: #3f3f46;
+    --dracula-green: #059669;
+    --dracula-orange: #d97706;
+    --dracula-yellow: #b45309;
+    --dracula-red: #dc2626;
+  }
+
   /* Global smooth theme transitions */
   *,
   *::before,

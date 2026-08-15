@@ -8,7 +8,9 @@ export type ColorPalette =
   | 'lavender'
   | 'sakura'
   | 'mint'
-  | 'wine';
+  | 'wine'
+  | 'mono'
+  | 'gray';
 export type ThemeMode = 'dark' | 'light';
 
 export interface ThemeOption {
@@ -179,5 +181,35 @@ export const THEME_OPTIONS: ThemeOption[] = [
     lightAccent: '#a8384f',
     darkBorder: '#4b272e',
     lightBorder: '#ecd2d6'
+  },
+  {
+    id: 'mono',
+    nameVi: 'Trắng/Đen',
+    nameEn: 'Monochrome',
+    descVi: 'Tương phản cao tuyệt đối, tối giản & sắc sảo',
+    descEn: 'Absolute high contrast, minimalist & sharp',
+    darkBg: '#000000',
+    lightBg: '#ffffff',
+    darkSurface: '#0a0a0a',
+    lightSurface: '#ffffff',
+    darkAccent: '#ffffff',
+    lightAccent: '#000000',
+    darkBorder: '#333333',
+    lightBorder: '#e5e5e5'
+  },
+  {
+    id: 'gray',
+    nameVi: 'Xám',
+    nameEn: 'Slate Gray',
+    descVi: 'Xám sang trọng, hiện đại & chuyên nghiệp',
+    descEn: 'Modern sophisticated gray, professional & sleek',
+    darkBg: '#18181b',
+    lightBg: '#f4f4f5',
+    darkSurface: '#27272a',
+    lightSurface: '#ffffff',
+    darkAccent: '#a1a1aa',
+    lightAccent: '#52525b',
+    darkBorder: '#3f3f46',
+    lightBorder: '#e4e4e7'
   }
 ];
