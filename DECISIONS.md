@@ -63,5 +63,18 @@ Lý do: không cần thay đổi schema lớn, vẫn giữ trong bảng profiles
 - Đang chờ Zero tạo Neon DB + GitHub PAT để tiếp tục Tuần 1-2.
 
 ## Chờ từ Zero
-- GitHub Fine-grained PAT với quyền **All repositories**
+- GitHub Fine-grained PAT với quyền **All repositories** ✅ đã có (ghi nhận trong session này)
 - NEON_DATABASE_URL
+
+## Phiên làm việc hiện tại (2026-08-15)
+- Next.js đã build pass, route /api/health đã thêm (chờ Neon env để connect).
+- lib/db.ts + lib/db-types.ts đã có, chờ NEON_DATABASE_URL.
+- PricingScreen 3 gói đã commit, UI đang render đúng trên Next.js.
+- đã push code lên GitHub thành công bằng cách nhúng PAT vào URL khi push, không cần cài `gh` CLI.
+- Phiên đã xác nhận docs sạch — không còn nhiễm nội dung Telegram/bot lạ.
+
+## Cách push lên GitHub mà không cần `gh` CLI
+- Bước 1: đã tải `gh.msi` qua curl nhưng lệnh `msiexec` không chạy ở PowerShell do từ khoá `start` hiểu nhầm.
+- Bước 2: bỏ qua việc cài `gh`, push trực tiếp bằng cách nhúng token vào URL:
+  `git push https://<PAT>@github.com/CThawngs/Zero-AI-Note.git main`
+- Bước 3: nếu cần push lần sau, làm tương tự với token mới. Token hiện tại được Zero cung cấp 1 lần qua chat — không lưu vào file, repo hay memory để tránh lộ.
