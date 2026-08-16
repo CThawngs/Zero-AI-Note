@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySession } from '@/lib/auth/session';
 import { ok, fail } from '@/lib/auth/http';
+import { storageService } from '@/lib/storage';
 
 export const runtime = 'nodejs';
 
@@ -37,27 +38,21 @@ export async function POST(request: NextRequest) {
       return fail('Unsupported file type', 400);
     }
 
-    // Generate R2 presigned URL
-    // In production, use Cloudflare R2 SDK or AWS S3 SDK
-    const uploadId = crypto.randomUUID();
-    const key = `${session.sub}/${uploadId}/${encodeURIComponent(fileName)}`;
-
-    // Mock presigned URL for dev — replace with real R2/S3 presigned URL in production
-    const presignedUrl = `/api/upload/put?key=${key}&uploadId=${uploadId}`;
-
-    // TODO: In production, generate real R2 presigned PUT URL:
-    // const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
-    // const { getSignedUrl } = await import('@aws-sdk/s3-request-presigner');
-    // const client = new S3Client({ region: 'auto', endpoint: process.env.R2_ENDPOINT, credentials: { accessKeyId: process.env.R2_ACCESS_KEY, secretAccessKey: process.env.R2_SECRET_KEY } });
-    // const presignedUrl = await getSignedUrl(client, new PutObjectCommand({ Bucket: process.env.R2_BUCKET, Key: key }), { expiresIn: 3600 });
+    // Generate REAL Cloudflare R2 presigned URL via storage abstraction layer
+    const { uploadUrl, key } = await storageService.generatePresignedUploadUrl(
+      session.sub,
+      fileName,
+      contentType
+    );
 
     return ok({
-      uploadUrl: presignedUrl,
+      uploadUrl,
       key,
-      uploadId,
+      uploadId: key.split('/')[1],
       expiresIn: 3600,
     });
   } catch (error) {
+    console.error('presign failed:', error);
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
       headers: { 'content-type': 'application/json' },

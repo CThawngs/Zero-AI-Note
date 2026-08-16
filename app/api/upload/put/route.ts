@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySession } from '@/lib/auth/session';
 import { ok, fail } from '@/lib/auth/http';
+import { storageService } from '@/lib/storage';
 
 export const runtime = 'nodejs';
 
@@ -24,25 +25,18 @@ export async function PUT(request: NextRequest) {
       return fail('Invalid upload key', 403);
     }
 
-    // Get the file stream
-    const body = request.body;
-    if (!body) {
-      return fail('Empty file', 400);
-    }
-
-    // In dev, we just acknowledge the upload
-    // In production, stream to R2/S3:
-    // const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
-    // const client = new S3Client({ region: 'auto', endpoint: process.env.R2_ENDPOINT, credentials: { accessKeyId: process.env.R2_ACCESS_KEY, secretAccessKey: process.env.R2_SECRET_KEY } });
-    // await client.send(new PutObjectCommand({ Bucket: process.env.R2_BUCKET, Key: key, Body: body, ContentType: request.headers.get('content-type') }));
+    // Với R2 presigned URL, client đã upload thẳng lên R2.
+    // Route này chỉ xác nhận upload thành công trong DB (tracking).
+    await storageService.confirmUpload(key);
 
     return ok({
       success: true,
       key,
       uploadId,
-      message: 'Upload successful (dev mock)',
+      message: 'Upload confirmed',
     });
   } catch (error) {
+    console.error('confirm upload failed:', error);
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
       headers: { 'content-type': 'application/json' },
