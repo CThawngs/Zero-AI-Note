@@ -2,37 +2,55 @@
 
 > Sơ đồ kiến trúc hiện tại, cập nhật mỗi khi có thay đổi lớn.
 
-## Trạng thái: 2026-08-15 — Đang chuyển từ UI-only sang full-stack
+## Trạng thái: 2026-08-16 — Đã migration Supabase → Neon, hoàn thiện Tuần 1-2
 
-### Hiện tại (trước Tuần 1-2)
+### Hiện tại (sau Tuần 1-2)
 ```
-[Vite + React 19 + Tailwind v4]  ← UI hoàn thiện từ Google AI Studio (11 màn, 12 theme)
-  ├── src/components/        ← components common/screens/modals
-  ├── src/context/           ← AppContext (state giả lập, dữ liệu mock)
-  ├── src/data/mockData.ts   ← MOCK — sẽ thay thế bằng dữ liệu thật
-  ├── src/i18n/              ← đa ngôn ngữ VI/EN
-  ├── src/utils/themeTokens.ts ← 12 theme × dark/light
-  └── src/index.css          ← theme tokens, font scale, utilities
-[Express server nhẹ (đã có trong deps)] — chưa dùng
+[Next.js 16 App Router → deploy Vercel]
+  ├── app/                        ← pages + API routes
+  │   ├── (landing)/page.tsx      ← / : landing công khai (SEO)
+  │   ├── app/page.tsx            ← /app : dashboard SPA (bắt buộc login)
+  │   ├── docs/page.tsx           ← /docs : tài liệu công khai (SEO)
+  │   ├── api/auth/*              ← register/login/session (JWT + bcrypt)
+  │   ├── api/admin/coupons       ← CRUD coupon (admin only)
+  │   ├── api/coupons/apply       ← áp mã giảm giá (cần login)
+  │   └── api/health              ← health check DB
+  ├── middleware.ts               ← bảo vệ /app, admin routes, redirect logic
+  ├── lib/
+  │   ├── db.ts                   ← Neon serverless driver singleton
+  │   ├── auth/                   ← session (jose JWT), admin, http, password
+  │   ├── neon/queries.ts         ← CRUD notes/sources/coupons/profile
+  │   └── storage.ts              ← abstraction Storage (Neon Object Storage / R2)
+  └── src/                        ← UI giữ nguyên từ Google AI Studio
+      ├── components/             ← common/screens/modals
+      ├── context/AppContext.tsx  ← data thật từ Neon (bỏ mock)
+      ├── i18n/                   ← VI/EN
+      └── utils/themeTokens.ts    ← 12 theme × dark/light
+
+[Neon Postgres] — serverless, RLS (Row-Level Security), 10 bảng
+[Ngrok/Server khác] — tuỳ chọn
+[Cloudflare R2 / Neon Object Storage] — file storage (chờ chốt)
+[JWT (HS256)] — cookie HttpOnly 7 ngày, bcryptjs
 ```
 
-### Mục tiêu (theo PRD mục 3.1, master prompt)
-```
-[Next.js app router trên Vercel]
-  ├── app/ (pages + API routes)
-  ├── src/components/        ← GIỮ NGUYÊN từ Vite (không thiết kế lại)
-  ├── src/context/           ← thay dữ liệu mock bằng data thật từ API
-  ├── lib/supabase/          ← client + server (RLS)
-  ├── lib/ai/                ← pipeline: transcribe → structure → content_structured
-  ├── lib/billing/           ← ZeroInvoice webhook (fail-closed, idempotent)
-  ├── lib/jobs/              ← Inngest/Trigger.dev (xử lý file dài)
-  └── lib/byok/              ← adapter từng provider + cache free models
+### Routing & Middleware (mục 5, 8)
+| Route | Chưa đăng nhập | Đã đăng nhập |
+|---|---|---|
+| `/` | Landing page (200) | Redirect → `/app` (307) |
+| `/app` | Redirect → `/` (307) | Dashboard (200) |
+| `/docs` | Công khai (200) | Công khai (200) |
+| `/api/admin/coupons` | 401/403 | Admin: CRUD; user thường: 403 |
 
-[Supabase] — Auth (Google OAuth + email/password), Postgres (RLS), Storage
-[Inngest/Trigger.dev] — job nền xử lý file dài
-[ZeroInvoice] — billing thật (webhook xác minh chữ ký, idempotent)
-[AI Providers] — Google AI (default), OpenAI, Anthropic, NVIDIA, Groq, OpenRouter, DeepSeek, Grok + BYOK custom
-```
+### Admin hardcode (mục 6)
+- `ADMIN_EMAIL` (`.env.local`) là nguồn duy nhất xác định admin
+- Register tự gán role `admin` khi email khớp
+- Route coupon kiểm tra `isAdmin()` server-side (không chỉ RLS/UI)
+- RLS coupons: `admin manages coupons` — only admin role
+
+### Storage (mục 3) — trạng thái: chờ Zero chốt
+- `lib/storage.ts` là lớp trừu tượng chung (interface StorageService)
+- Hỗ trợ cả 2 backend: Neon Object Storage (S3-compatible) / Cloudflare R2
+- **Chưa chốt**: project Neon hiện ở `ap-southeast-1`, Neon Object Storage cần `us-east-2` → chờ quyết định (tạo project mới hoặc dùng R2)
 
 ### Nguyên tắc bất biến
 1. `content_structured` (JSON) là nguồn DUY NHẤT cho Preview + mọi export (MD/DOCX/PDF/HTML)
@@ -40,8 +58,9 @@
 3. RLS trên mọi bảng chứa dữ liệu cá nhân
 4. API key BYOK mã hoá, không log, không lộ client
 5. SSRF validate server-side cho Custom Endpoint
-6. Free models cache dùng chung theo provider (`provider_free_models_cache`), không polling riêng từng user
+6. Free models cache dùng chung theo provider (`provider_free_models_cache`)
 7. Không màu Tailwind hardcode — mọi màu qua theme token
+8. Không mock/fake data ở UI — mọi dữ liệu query Neon thật
 
 ### Pipeline xử lý file (PRD mục 3.2)
 ```

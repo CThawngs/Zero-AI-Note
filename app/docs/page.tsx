@@ -17,7 +17,7 @@ export default function DocsPage() {
             </div>
             <span className="font-bold">Zero AI Note</span>
           </Link>
-          <Link href="/login" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors">
+          <Link href="/app" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors">
             Đăng nhập
           </Link>
         </div>
@@ -39,7 +39,7 @@ export default function DocsPage() {
         <section className="mb-12">
           <h2 className="text-2xl font-bold mb-4">Bắt đầu nhanh</h2>
           <ol className="list-decimal list-inside space-y-2 text-slate-600 dark:text-slate-300">
-            <li>Đăng ký tài khoản miễn phí tại trang <Link href="/login" className="text-blue-500 hover:underline">Đăng nhập</Link></li>
+            <li>Đăng ký tài khoản miễn phí tại trang <Link href="/app" className="text-blue-500 hover:underline">Đăng nhập</Link></li>
             <li>Kéo thả file hoặc dán link YouTube vào khung chat</li>
             <li>Chọn phương pháp ghi chú: Cornell, Outline, Q&A, hoặc Tóm tắt nhanh</li>
             <li>Xem kết quả trong Artifact Panel (bên phải)</li>
@@ -92,11 +92,33 @@ export default function DocsPage() {
           </p>
         </section>
 
+        <section className="mb-12">
+          <h2 className="text-2xl font-bold mb-4">Routing</h2>
+          <ul className="list-disc list-inside space-y-2 text-slate-600 dark:text-slate-300">
+            <li><code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-sm">/</code> — Landing page (công khai). Đã đăng nhập sẽ tự chuyển hướng về <code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-sm">/app</code>.</li>
+            <li><code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-sm">/app</code> — Dashboard (bắt buộc đăng nhập). Chưa đăng nhập sẽ chuyển hướng về landing.</li>
+            <li><code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-sm">/docs</code> — Tài liệu này (công khai, SEO-friendly).</li>
+          </ul>
+        </section>
+
+        <section className="mb-12">
+          <h2 className="text-2xl font-bold mb-4">API Endpoints</h2>
+          <ul className="list-disc list-inside space-y-2 text-slate-600 dark:text-slate-300 text-sm">
+            <li><code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800">POST /api/auth/register</code> — Đăng ký (tự gán role admin nếu email là ADMIN_EMAIL)</li>
+            <li><code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800">POST /api/auth/login</code> — Đăng nhập, set cookie session JWT (7 ngày)</li>
+            <li><code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800">GET /api/auth/session</code> — Kiểm tra session</li>
+            <li><code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800">GET/POST/PUT/DELETE /api/admin/coupons</code> — CRUD Coupon (chỉ admin, 403 cho user thường)</li>
+            <li><code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800">POST /api/coupons/apply</code> — Áp mã giảm giá (yêu cầu đăng nhập)</li>
+            <li><code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800">GET /api/health</code> — Health check DB</li>
+          </ul>
+        </section>
+
         <section>
           <h2 className="text-2xl font-bold mb-4">Links</h2>
           <ul className="list-disc list-inside space-y-2">
             <li><Link href="/" className="text-blue-500 hover:underline">Trang chủ</Link></li>
-            <li><Link href="/login" className="text-blue-500 hover:underline">Đăng nhập / Đăng ký</Link></li>
+            <li><Link href="/app" className="text-blue-500 hover:underline">Đăng nhập / Đăng ký</Link></li>
+            <li><Link href="/docs" className="text-blue-500 hover:underline">Tài liệu này</Link></li>
             <li><a href="https://github.com/CThawngs/Zero-AI-Note" className="text-blue-500 hover:underline">GitHub Repository</a></li>
           </ul>
         </section>
