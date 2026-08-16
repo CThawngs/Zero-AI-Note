@@ -2,7 +2,18 @@ node_modules/
 .next/
 out/
 dist/
-*.local
-.env*.local
 tsconfig.tsbuildinfo
 .next/
+
+# === ENVIRONMENT (TUYỆT ĐỐI không commit secrets) ===
+.env
+.env.*
+!.env.example
+*.local
+.env*.local
+
+# === Build artifacts ===
+*.log
+.DS_Store
+Thumbs.db
+.vercel

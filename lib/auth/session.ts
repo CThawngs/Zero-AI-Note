@@ -2,21 +2,28 @@ import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { SessionPayload, COOKIE_NAME, SESSION_TTL_SECONDS } from './types';
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.ZERO_JWT_SECRET ?? 'dev-zero-ai-note-secret-change-me'
-);
+// Fail-closed: KHÔNG dùng fallback secret trong production.
+// ZERO_JWT_SECRET là bắt buộc (set ở Vercel/Neon env). Nếu thiếu, auth sẽ báo lỗi
+// thay vì âm thầm dùng secret mặc định (vốn đã public do nằm trong repo).
+function getJwtSecret(): Uint8Array {
+  const secret = process.env.ZERO_JWT_SECRET;
+  if (!secret) {
+    throw new Error('ZERO_JWT_SECRET is not set. Configure it in environment variables.');
+  }
+  return new TextEncoder().encode(secret);
+}
 
 export async function signSession(payload: SessionPayload) {
   return new SignJWT(payload as unknown as import('jose').JWTPayload)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime(Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS)
-    .sign(JWT_SECRET);
+    .sign(getJwtSecret());
 }
 
 export async function verifySession(token: string): Promise<SessionPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const { payload } = await jwtVerify(token, getJwtSecret());
     return payload as unknown as SessionPayload;
   } catch {
     return null;

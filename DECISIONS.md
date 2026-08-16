@@ -249,9 +249,31 @@
 
 ---
 
-## 13. References
+## 13. Security Audit — Secret Scan (2026-08-17)
+
+### Audit Result
+- **Công cụ**: `gitleaks v8.24.3` (open source, free 100%) quét full lịch sử Git (38 commits) + quét thủ công bằng grep patterns
+- **Kết quả**: ✅ **KHÔNG phát hiện secret thật nào từng lộ trong lịch sử Git**
+  - Neon connection string thật (`ep-frosty-morning`, `npg_jD6yf4...`) → 0 lần xuất hiện
+  - Cloudflare R2 keys (`bb4cd6b4...`, `e8f9fbaf...`, `cfut_aC07...`, `7d1c250f...`) → 0 lần xuất hiện
+  - AI provider keys, ZeroInvoice keys → không có
+- **Kết luận**: Không cần rotate key — mọi giá trị thật chỉ nằm trong `.env.local` (đã gitignore), chưa từng bị commit.
+
+### Fixes đã áp dụng (phòng ngừa lộ trong tương lai)
+1. **`.gitignore`**: thêm `.env` và `.env.*` (trước chỉ chặn `.env*.local`) — chặn triệt để mọi biến thể env
+2. **`lib/auth/session.ts`**: bỏ JWT fallback secret hardcode (`dev-zero-ai-note-secret-change-me`) — giờ fail-closed (throw error nếu thiếu `ZERO_JWT_SECRET`), không dùng secret mặc định public
+3. **`.env.example`**: liệt kê ĐẦY ĐỦ biến env (NEON_DATABASE_URL, ZERO_JWT_SECRET, ADMIN_EMAIL, R2_*, GEMINI_API_KEY, OPENAI_API_KEY, ZEROINVOICE) — là "bản đồ" duy nhất sau khi xoá máy local
+
+### Cloud-First (độc lập máy local)
+- Giá trị thật phải nhập vào **Vercel Dashboard → Settings → Environment Variables** (không lưu local)
+- Vercel project phải liên kết GitHub repo (auto-deploy mỗi commit `main`)
+
+---
+
+## 14. References
 - [Neon Documentation](https://neon.tech/docs)
 - [Drizzle ORM](https://orm.drizzle.team)
+- [gitleaks](https://github.com/gitleaks/gitleaks)
 - [Cloudflare R2](https://developers.cloudflare.com/r2)
 - [Next.js Middleware](https://nextjs.org/docs/middleware)
 - [JWT.io](https://jwt.io)
