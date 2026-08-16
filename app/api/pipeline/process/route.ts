@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getSql } from '@/lib/db';
 import { verifySession } from '@/lib/auth/session';
 import { ok, fail } from '@/lib/auth/http';
 
@@ -6,7 +7,8 @@ export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await verifySession(request.cookies.get('zero_ai_note_session')?.value ?? '');
+    const token = request.cookies.get('zero_ai_note_session')?.value;
+    const session = await verifySession(token ?? '');
     if (!session) {
       return fail('Unauthorized', 401);
     }
@@ -18,19 +20,20 @@ export async function POST(request: NextRequest) {
       return fail('Missing file key', 400);
     }
 
-    // Check user's processing minutes quota
-    const { sql, getPool } = await import('@/lib/db');
-    const pool = getPool();
-    const userRes = await pool.query(
-      'select processing_minutes_used, processing_minutes_limit, plan from profiles where id = $1',
-      [session.sub]
-    );
+    const sql = getSql();
+    const userRows = await sql`
+      select processing_minutes_used, processing_minutes_limit, plan
+      from profiles where id = ${session.sub}
+    `;
+    const firstUser = Array.isArray(userRows) ? userRows[0] : userRows;
+    const user = firstUser as
+      | { processing_minutes_used: number; processing_minutes_limit: number; plan: string }
+      | undefined;
 
-    if (userRes.rows.length === 0) {
+    if (!user) {
       return fail('User not found', 404);
     }
 
-    const user = userRes.rows[0];
     if (user.processing_minutes_used >= user.processing_minutes_limit) {
       return fail(
         `Monthly processing limit reached (${user.processing_minutes_limit} minutes). Upgrade plan for more.`,
@@ -38,18 +41,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check file exists in R2 (mock check)
-    // In production: HEAD object in R2
-
-    // Create job entry
     const jobId = crypto.randomUUID();
     await sql`
       insert into jobs (id, user_id, source_key, method, language, model, status, created_at)
       values (${jobId}, ${session.sub}, ${key}, ${method}, ${language}, ${model}, 'queued', now())
     `;
-
-    // Enqueue background job (Inngest/Trigger.dev)
-    // In production: await inngest.send({ name: 'process-file', data: { jobId } })
 
     return ok({
       jobId,
@@ -57,9 +53,7 @@ export async function POST(request: NextRequest) {
       message: 'File queued for processing',
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
-      status: 500,
-      headers: { 'content-type': 'application/json' },
-    });
+    console.error('pipeline process failed:', error);
+    return fail('Internal server error', 500);
   }
 }

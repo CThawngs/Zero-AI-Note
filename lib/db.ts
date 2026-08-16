@@ -1,20 +1,18 @@
-import { neon, neonConfig, Pool } from '@neondatabase/serverless';
+import { neon, neonConfig } from '@neondatabase/serverless';
 
 neonConfig.fetchConnectionCache = true;
 
-const connectionString: string | undefined = process.env.NEON_DATABASE_URL ?? undefined;
-
 function getConnectionString(): string {
-  if (!connectionString) {
+  const url = process.env.NEON_DATABASE_URL;
+  if (!url) {
     throw new Error(
       'Missing NEON_DATABASE_URL. Add it to .env.local (dev) or Vercel env (prod).'
     );
   }
-  return connectionString;
+  return url;
 }
 
 let sqlInstance: ReturnType<typeof neon> | null = null;
-let poolInstance: Pool | null = null;
 
 export function getSql() {
   if (!sqlInstance) {
@@ -23,13 +21,13 @@ export function getSql() {
   return sqlInstance;
 }
 
-export function getPool() {
-  if (!poolInstance) {
-    poolInstance = new Pool({ connectionString: getConnectionString() });
-  }
-  return poolInstance;
-}
+// Lazy callable: `sql`query...` works, and getSql() returns the neon instance.
+type NeonFn = ReturnType<typeof neon>;
+const sql = ((...args: Parameters<NeonFn>) => {
+  const instance = getSql();
+  return (instance as (...a: Parameters<NeonFn>) => ReturnType<NeonFn>)(...args);
+}) as NeonFn & { getSql: typeof getSql };
 
-export const sql = getSql();
+(sql as unknown as { getSql: typeof getSql }).getSql = getSql;
 
 export default sql;
