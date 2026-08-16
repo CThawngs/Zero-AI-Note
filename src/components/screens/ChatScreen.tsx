@@ -17,6 +17,7 @@ import { AttachSourceModal } from '../modals/AttachSourceModal';
 import { CustomTemplateModal } from '../modals/CustomTemplateModal';
 import { MethodPillRow } from '../chat/MethodPillRow';
 import { ChatPipelineProgress } from '../chat/ChatPipelineProgress';
+import { UploadArea } from '../common/UploadArea';
 
 export const ChatScreen: React.FC = () => {
   const { 
@@ -40,6 +41,7 @@ export const ChatScreen: React.FC = () => {
   const [inputVal, setInputVal] = useState<string>('');
   const [attachedSources, setAttachedSources] = useState<{ type: 'pdf' | 'youtube' | 'doc'; name: string }[]>([]);
   const [isAttachModalOpen, setIsAttachModalOpen] = useState<boolean>(false);
+  const [isUploadAreaOpen, setIsUploadAreaOpen] = useState<boolean>(false);
   const [isCustomTemplateModalOpen, setIsCustomTemplateModalOpen] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -74,6 +76,16 @@ export const ChatScreen: React.FC = () => {
     addToast(
       language === 'vi' ? 'Đã đính kèm' : 'Source Attached', 
       `"${source.name}" ${language === 'vi' ? 'đã sẵn sàng để trích xuất.' : 'ready for extraction.'}`
+    );
+  };
+
+  const handleUploaded = (fileKey: string, fileName: string) => {
+    setAttachedSources(prev => [...prev, { type: 'doc', name: fileName }]);
+    setIsUploadAreaOpen(false);
+    addToast(
+      language === 'vi' ? 'Upload thành công' : 'Upload Successful',
+      `"${fileName}" ${language === 'vi' ? 'đã tải lên và sẵn sàng xử lý.' : 'uploaded and ready to process.'}`,
+      'success'
     );
   };
 
@@ -311,7 +323,7 @@ export const ChatScreen: React.FC = () => {
               <button
                 type="button"
                 id="btn-attach-source"
-                onClick={() => setIsAttachModalOpen(true)}
+                onClick={() => setIsUploadAreaOpen(true)}
                 className={`absolute left-2 min-w-[36px] min-h-[36px] sm:min-w-[40px] sm:min-h-[40px] flex items-center justify-center p-2 rounded-xl transition-colors cursor-pointer active:scale-95 ${
                   isDark ? 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
                 }`}
@@ -371,6 +383,12 @@ export const ChatScreen: React.FC = () => {
         isOpen={isAttachModalOpen}
         onClose={() => setIsAttachModalOpen(false)}
         onAttach={handleAttachSource}
+      />
+
+      <UploadArea
+        isOpen={isUploadAreaOpen}
+        onClose={() => setIsUploadAreaOpen(false)}
+        onUploaded={handleUploaded}
       />
 
       <CustomTemplateModal
