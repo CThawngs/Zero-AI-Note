@@ -253,11 +253,11 @@ export const Sidebar: React.FC = () => {
                 {user.name}
               </p>
               <span className={`inline-block text-xs font-bold px-1.5 py-0.2 rounded ${
-                user.plan === 'PRO' 
+                user.plan === 'pro' 
                   ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] border border-[var(--accent-primary)]/30' 
                   : 'bg-[var(--bg-hover)] text-[var(--text-muted)]'
               }`}>
-                {user.plan === 'PRO' ? t('proPlan') : t('freePlan')}
+                {user.plan === 'pro' ? t('proPlan') : t('freePlan')}
               </span>
             </div>
           </div>

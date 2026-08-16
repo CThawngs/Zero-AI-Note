@@ -20,19 +20,24 @@ export async function POST(request: NextRequest) {
              processing_minutes_used, processing_minutes_limit, password_hash
       from profiles where email = ${email.toLowerCase()}
     `;
-    const first = Array.isArray(rows) ? rows[0] : rows;
-    const user = first as
-      | {
-          id: string; email: string; display_name: string | null;
-          role: string; plan: string;
-          processing_minutes_used: number; processing_minutes_limit: number;
-          password_hash: string;
-        }
-      | undefined;
 
-    if (!user) {
+    type UserRow = {
+      id: string;
+      email: string;
+      display_name: string | null;
+      role: string;
+      plan: string;
+      processing_minutes_used: number;
+      processing_minutes_limit: number;
+      password_hash: string;
+    };
+
+    if (!Array.isArray(rows) || rows.length === 0) {
       return fail('Invalid credentials', 401);
     }
+
+    const user = rows[0] as UserRow;
+
     if (!user.password_hash) {
       return fail('No password set. Use OAuth or set a password first.', 401);
     }

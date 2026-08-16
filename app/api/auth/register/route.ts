@@ -7,21 +7,14 @@ import { v4 as uuidv4 } from 'uuid';
 
 const JWT_SECRET = new TextEncoder().encode(process.env.ZERO_JWT_SECRET ?? 'dev-zero-ai-note-secret');
 
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL ?? 'nguyenchithang2804@gmail.com').toLowerCase();
+
 async function signSession(payload: { sub: string; email: string; role: string; plan: string; processingMinutesUsed: number; processingMinutesLimit: number }) {
   return new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('7d')
     .sign(JWT_SECRET);
-}
-
-async function verifySession(token: string) {
-  try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
-    return payload as { sub: string; email: string; role: string; plan: string; processingMinutesUsed: number; processingMinutesLimit: number };
-  } catch {
-    return null;
-  }
 }
 
 function getSessionCookie(token: string) {
@@ -41,8 +34,9 @@ export async function POST(request: NextRequest) {
       return fail('Password must be at least 8 characters', 400);
     }
 
+    const normalizedEmail = email.toLowerCase();
     const sql = getSql();
-    const exists = await sql`select id from profiles where email = ${email.toLowerCase()}`;
+    const exists = await sql`select id from profiles where email = ${normalizedEmail}`;
     if (Array.isArray(exists) && exists.length > 0) {
       return fail('Email already registered', 409);
     }
@@ -50,10 +44,13 @@ export async function POST(request: NextRequest) {
     const passwordHash = await bcrypt.hash(password, 10);
     const userId = uuidv4();
 
+    // Auto-assign admin role if email matches ADMIN_EMAIL
+    const role = normalizedEmail === ADMIN_EMAIL ? 'admin' : 'user';
+
     try {
       await sql`
         insert into profiles (id, email, display_name, role, plan, password_hash)
-        values (${userId}, ${email.toLowerCase()}, ${displayName ?? null}, 'user', 'free', ${passwordHash})
+        values (${userId}, ${normalizedEmail}, ${displayName ?? null}, ${role}, 'free', ${passwordHash})
       `;
     } catch (insertErr) {
       const msg = insertErr instanceof Error ? insertErr.message : String(insertErr);
@@ -65,8 +62,8 @@ export async function POST(request: NextRequest) {
 
     const token = await signSession({
       sub: userId,
-      email: email.toLowerCase(),
-      role: 'user',
+      email: normalizedEmail,
+      role,
       plan: 'free',
       processingMinutesUsed: 0,
       processingMinutesLimit: 120,
@@ -76,9 +73,9 @@ export async function POST(request: NextRequest) {
       authenticated: true,
       user: {
         id: userId,
-        email: email.toLowerCase(),
+        email: normalizedEmail,
         displayName: displayName ?? null,
-        role: 'user',
+        role,
         plan: 'free',
       },
     });

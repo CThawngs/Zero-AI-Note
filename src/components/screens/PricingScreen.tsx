@@ -221,7 +221,7 @@ export const PricingScreen: React.FC = () => {
                   : plan.id === 'FREE'
                     ? (language === 'vi' ? 'Gói Miễn Phí' : 'Free Plan')
                     : plan.id === 'PRO'
-                      ? (user.plan === 'ULTRA' ? (language === 'vi' ? 'Chuyển xuống Pro' : 'Downgrade to Pro') : (language === 'vi' ? 'Nâng cấp Pro' : 'Upgrade to Pro'))
+                      ? (user.plan === 'ultra' ? (language === 'vi' ? 'Chuyển xuống Pro' : 'Downgrade to Pro') : (language === 'vi' ? 'Nâng cấp Pro' : 'Upgrade to Pro'))
                       : (language === 'vi' ? 'Nâng cấp Ultra' : 'Upgrade to Ultra')}
                 {!isCurrent && plan.id !== 'FREE' && <ArrowRight className="w-4 h-4 inline ml-1" />}
               </button>

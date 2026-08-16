@@ -26,11 +26,9 @@ import { Modal } from '../common/Modal';
 
 export const AdminCouponScreen: React.FC = () => {
   const { 
-    coupons, 
-    addCoupon, 
-    updateCoupon, 
-    deleteCoupon, 
-    setCurrentScreen, 
+    coupons,
+    setCoupons,
+    setCurrentScreen,
     addToast,
     theme,
     language,
@@ -67,56 +65,109 @@ export const AdminCouponScreen: React.FC = () => {
   };
 
   const openEditModal = (coupon: CouponItem) => {
-    setEditingCoupon(coupon);
-    setFormCode(coupon.code);
-    setFormType(coupon.type);
-    setFormValue(coupon.value);
-    setFormAppliedTo(coupon.appliedTo);
-    setFormUsageLimit(coupon.usageLimit !== null ? String(coupon.usageLimit) : '');
-    setFormExpiryDate(coupon.expiryDate);
-    setFormStatus(coupon.status);
-    setIsCreateModalOpen(true);
-  };
+      setEditingCoupon(coupon);
+      setFormCode(coupon.code);
+      setFormType(coupon.discount_type ?? 'percentage');
+      setFormValue(coupon.discount_value ?? 0);
+      setFormAppliedTo(coupon.applies_to ?? 'all');
+      setFormUsageLimit(coupon.usage_limit !== null ? String(coupon.usage_limit) : '');
+      setFormExpiryDate(coupon.expires_at ?? '');
+      setFormStatus(coupon.status);
+      setIsCreateModalOpen(true);
+    };
 
-  const handleSaveCoupon = (e: React.FormEvent) => {
+  const handleSaveCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formCode.trim()) return;
 
     const limitVal = formUsageLimit.trim() ? parseInt(formUsageLimit, 10) : null;
 
-    if (editingCoupon) {
-      updateCoupon(editingCoupon.id, {
-        code: formCode.trim().toUpperCase(),
-        type: formType,
-        value: Number(formValue),
-        appliedTo: formAppliedTo,
-        usageLimit: limitVal,
-        expiryDate: formExpiryDate.trim() || (language === 'vi' ? 'Không giới hạn' : 'Unlimited'),
-        status: formStatus
+    try {
+      const response = await fetch('/api/admin/coupons', {
+        method: editingCoupon ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingCoupon?.id,
+          code: formCode.trim().toUpperCase(),
+          discount_type: formType,
+          discount_value: Number(formValue),
+          applies_to: formAppliedTo,
+          usage_limit: limitVal,
+          expires_at: formExpiryDate.trim() || null,
+          status: formStatus
+        }),
       });
-    } else {
-      addCoupon({
-        code: formCode.trim().toUpperCase(),
-        type: formType,
-        value: Number(formValue),
-        appliedTo: formAppliedTo,
-        usageLimit: limitVal,
-        expiryDate: formExpiryDate.trim() || (language === 'vi' ? 'Không giới hạn' : 'Unlimited'),
-        status: formStatus
-      });
-    }
 
-    setIsCreateModalOpen(false);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error ?? 'Failed to save coupon');
+      }
+
+      // Refresh coupons list
+      const couponsResponse = await fetch('/api/admin/coupons');
+      const couponsData = await couponsResponse.json();
+      if (couponsData.coupons) {
+        setCoupons(couponsData.coupons);
+      }
+
+      setIsCreateModalOpen(false);
+      addToast(
+        language === 'vi' ? 'Lưu thành công' : 'Saved successfully',
+        language === 'vi' ? 'Mã giảm giá đã được cập nhật.' : 'Coupon updated successfully.'
+      );
+    } catch (err) {
+      addToast(
+        language === 'vi' ? 'Lỗi lưu Coupon' : 'Save failed',
+        err instanceof Error ? err.message : 'Unknown error',
+        'error'
+      );
+    }
+  };
+
+  const handleDeleteCoupon = async () => {
+    if (!deleteConfirmCoupon) return;
+
+    try {
+      const response = await fetch(`/api/admin/coupons?id=${deleteConfirmCoupon.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error ?? 'Failed to delete coupon');
+      }
+
+      // Refresh coupons list
+      const couponsResponse = await fetch('/api/admin/coupons');
+      const couponsData = await couponsResponse.json();
+      if (couponsData.coupons) {
+        setCoupons(couponsData.coupons);
+      }
+
+      setDeleteConfirmCoupon(null);
+      addToast(
+        language === 'vi' ? 'Đã xoá Coupon' : 'Coupon Deleted',
+        language === 'vi' ? 'Mã giảm giá đã được gỡ.' : 'Coupon removed.',
+        'info'
+      );
+    } catch (err) {
+      addToast(
+        language === 'vi' ? 'Lỗi xoá Coupon' : 'Delete failed',
+        err instanceof Error ? err.message : 'Unknown error',
+        'error'
+      );
+    }
   };
 
   const filteredCoupons = coupons.filter(c => {
-    if (statusFilter !== 'all' && c.status !== statusFilter) return false;
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      return c.code.toLowerCase().includes(q) || c.appliedTo.toLowerCase().includes(q);
-    }
-    return true;
-  });
+      if (statusFilter !== 'all' && c.status !== statusFilter) return false;
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        return c.code.toLowerCase().includes(q) || (c.applies_to ?? '').toLowerCase().includes(q);
+      }
+      return true;
+    });
 
   const getStatusBadge = (status: string) => {
     if (status === 'active') {
@@ -328,36 +379,36 @@ export const AdminCouponScreen: React.FC = () => {
                         </td>
 
                         {/* Value */}
-                        <td className="px-4 py-3.5 whitespace-nowrap">
-                          <span className="font-bold text-[var(--status-success)]">
-                            {coupon.type === 'percentage'
-                              ? `${language === 'vi' ? 'Giảm' : 'Off'} ${coupon.value}%`
-                              : `${language === 'vi' ? 'Giảm' : 'Off'} ${coupon.value.toLocaleString('vi-VN')}đ`}
-                          </span>
-                        </td>
+                                                <td className="px-4 py-3.5 whitespace-nowrap">
+                                                  <span className="font-bold text-[var(--status-success)]">
+                                                    {coupon.discount_type === 'percentage'
+                                                      ? `${language === 'vi' ? 'Giảm' : 'Off'} ${coupon.discount_value}%`
+                                                      : `${language === 'vi' ? 'Giảm' : 'Off'} ${Number(coupon.discount_value ?? 0).toLocaleString('vi-VN')}đ`}
+                                                  </span>
+                                                </td>
 
-                        {/* Applied to */}
-                        <td className="px-4 py-3.5 capitalize font-medium whitespace-nowrap">
-                          {coupon.appliedTo === 'all'
-                            ? (language === 'vi' ? 'Tất cả các gói' : 'All Plans')
-                            : coupon.appliedTo === 'pro'
-                            ? (language === 'vi' ? 'Gói Pro' : 'Pro Plan')
-                            : (language === 'vi' ? 'Gói Paid' : 'Paid Tiers')}
-                        </td>
+                                                {/* Applied to */}
+                                                <td className="px-4 py-3.5 capitalize font-medium whitespace-nowrap">
+                                                  {(coupon.applies_to ?? 'all') === 'all'
+                                                    ? (language === 'vi' ? 'Tất cả các gói' : 'All Plans')
+                                                    : (coupon.applies_to ?? '') === 'pro'
+                                                    ? (language === 'vi' ? 'Gói Pro' : 'Pro Plan')
+                                                    : (language === 'vi' ? 'Gói Paid' : 'Paid Tiers')}
+                                                </td>
 
-                        {/* Used count */}
-                        <td className="px-4 py-3.5 font-mono text-xs whitespace-nowrap">
-                          <span className={`font-bold ${'text-[var(--text-primary)]'}`}>{coupon.usedCount}</span>
-                          <span className={isDark ? 'text-[var(--text-muted)]' : 'text-[var(--text-muted)]'}>
-                            {' '}
-                            / {coupon.usageLimit !== null ? coupon.usageLimit : (language === 'vi' ? '∞ Không giới hạn' : '∞ Unlimited')}
-                          </span>
-                        </td>
+                                                {/* Used count */}
+                                                <td className="px-4 py-3.5 font-mono text-xs whitespace-nowrap">
+                                                  <span className={`font-bold ${'text-[var(--text-primary)]'}`}>{coupon.usage_count ?? 0}</span>
+                                                  <span className={isDark ? 'text-[var(--text-muted)]' : 'text-[var(--text-muted)]'}>
+                                                    {' '}
+                                                    / {coupon.usage_limit !== null ? coupon.usage_limit : (language === 'vi' ? '∞ Không giới hạn' : '∞ Unlimited')}
+                                                  </span>
+                                                </td>
 
-                        {/* Expiry */}
-                        <td className="px-4 py-3.5 text-[var(--text-muted)] whitespace-nowrap">
-                          {coupon.expiryDate}
-                        </td>
+                                                {/* Expiry */}
+                                                <td className="px-4 py-3.5 text-[var(--text-muted)] whitespace-nowrap">
+                                                  {coupon.expires_at ?? (language === 'vi' ? 'Không giới hạn' : 'Unlimited')}
+                                                </td>
 
                         {/* Status */}
                         <td className="px-4 py-3.5 whitespace-nowrap">
@@ -583,9 +634,8 @@ export const AdminCouponScreen: React.FC = () => {
                 type="button"
                 id="btn-confirm-delete-coupon"
                 onClick={() => {
-                  deleteCoupon(deleteConfirmCoupon.id);
-                  setDeleteConfirmCoupon(null);
-                }}
+                                  handleDeleteCoupon();
+                                }}
                 className="px-4 py-2 rounded-xl bg-[var(--status-error)] hover:bg-[var(--status-error)] text-white text-xs font-semibold cursor-pointer shadow-md shadow-[var(--status-error)]/20 active:scale-95"
               >
                 {language === 'vi' ? 'Xóa Coupon' : 'Delete Coupon'}

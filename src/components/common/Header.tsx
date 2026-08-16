@@ -319,7 +319,7 @@ export const Header: React.FC = () => {
           {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </button>
 
-        {user.plan === 'FREE' && (
+        {user.plan === 'free' && (
           <button
             id="header-upgrade-btn"
             onClick={() => setCurrentScreen('pricing')}

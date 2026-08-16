@@ -4,3 +4,5 @@ out/
 dist/
 *.local
 .env*.local
+tsconfig.tsbuildinfo
+.next/

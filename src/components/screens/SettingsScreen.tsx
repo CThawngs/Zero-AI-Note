@@ -205,11 +205,11 @@ export const SettingsScreen: React.FC = () => {
                     <p className={`text-xs ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>{user.email}</p>
                     <div className="mt-1 flex items-center gap-2">
                       <span className={`text-xs font-bold px-2 py-0.5 rounded ${
-                        user.plan === 'PRO' 
+                        user.plan === 'pro' 
                           ? 'bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] border border-[var(--accent-primary)]/30' 
                           : isDark ? 'bg-[var(--bg-hover)] text-[var(--text-secondary)]' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)]'
                       }`}>
-                        {user.plan === 'PRO' ? '★ ' + t('proPlan') : t('freePlan')}
+                        {user.plan === 'pro' ? '★ ' + t('proPlan') : t('freePlan')}
                       </span>
                     </div>
                   </div>
@@ -237,13 +237,13 @@ export const SettingsScreen: React.FC = () => {
                     {t('planDetails')}
                   </h3>
                   <p className={`text-xs mt-0.5 ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
-                    {user.plan === 'PRO' 
+                    {user.plan === 'pro' 
                       ? (language === 'vi' ? 'Bạn đang sử dụng toàn bộ tính năng cao cấp không giới hạn.' : 'You have active access to unlimited AI power, TTS, and multi-sources.')
                       : (language === 'vi' ? 'Nâng cấp để mở khóa tính năng AI TTS, Multi-source và không giới hạn lưu trữ.' : 'Upgrade to unlock AI Audio TTS, multi-source extraction, and unlimited storage.')}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  {user.plan === 'FREE' ? (
+                  {user.plan === 'free' ? (
                     <button
                       id="btn-upgrade-from-settings"
                       onClick={() => setCurrentScreen('pricing')}
@@ -265,7 +265,7 @@ export const SettingsScreen: React.FC = () => {
                 </div>
               </div>
 
-              {user.plan === 'PRO' && user.nextBillingDate && (
+              {user.plan === 'pro' && user.nextBillingDate && (
                 <div className={`p-3.5 rounded-xl border text-xs flex items-center justify-between ${
                   isDark ? 'bg-[var(--accent-subtle)]/20 border-[var(--accent-primary)]/40 text-[var(--accent-primary)]' : 'bg-[var(--accent-subtle)] border-[var(--accent-primary)] text-[var(--accent-primary)]'
                 }`}>

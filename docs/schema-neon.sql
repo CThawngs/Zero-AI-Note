@@ -131,6 +131,27 @@ create table if not exists jobs (
   updated_at timestamptz default now()
 );
 
+-- 11. uploads (file upload tracking)
+create table if not exists uploads (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id) on delete cascade,
+  file_key text not null,
+  file_name text not null,
+  content_type text not null,
+  size_bytes bigint,
+  status text default 'pending' check (status in ('pending','completed','error','deleted')),
+  error_message text,
+  created_at timestamptz default now(),
+  completed_at timestamptz,
+  deleted_at timestamptz
+);
+
+-- RLS for uploads
+alter table uploads enable row level security;
+create policy "user reads own uploads" on uploads for select using (auth_uid() = user_id);
+create policy "user writes own uploads" on uploads for insert with check (auth_uid() = user_id);
+create policy "user updates own uploads" on uploads for update using (auth_uid() = user_id);
+
 -- ============================================================
 -- RLS — mọi bảng chứa dữ liệu cá nhân đều bật RLS
 -- Dùng pattern current_setting('request.jwt.claims') cho Neon (custom JWT)

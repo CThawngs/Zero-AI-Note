@@ -32,7 +32,8 @@ export interface UserProfile {
   name: string;
   email: string;
   avatar: string;
-  plan: 'FREE' | 'PRO' | 'ULTRA';
+  role: 'user' | 'admin';
+  plan: 'free' | 'pro' | 'ultra';
   nextBillingDate?: string;
   appliedCoupon?: {
     code: string;
@@ -126,12 +127,12 @@ export interface AIProviderItem {
 export interface CouponItem {
   id: string;
   code: string;
-  type: 'percentage' | 'fixed';
-  value: number;
-  appliedTo: 'all' | 'paid' | 'pro';
-  usedCount: number;
-  usageLimit: number | null; // null for unlimited
-  expiryDate: string;
+  discount_type: 'percentage' | 'fixed';
+  discount_value: number;
+  applies_to: 'all' | 'paid' | 'pro';
+  usage_count: number;
+  usage_limit: number | null; // null for unlimited
+  expires_at: string | null;
   status: 'active' | 'expired' | 'disabled';
 }
 

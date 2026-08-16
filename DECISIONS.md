@@ -1,80 +1,251 @@
-# DECISIONS — Zero AI Note
+# Zero AI Note — Technical Decisions
 
-> [HERMES QUYẾT ĐỊNH format = quyết định tự đưa + lý do ngắn]
+## 1. Database Migration (Supabase → Neon)
 
-## Q1 Giá gói [CHỐT THEO ZERO + HERMES PHÂN BỔ]
-Zero chốt Free / Pro 99.000đ / Ultra 199.000đ.
-Phân bổ chi tiết: Free giữ chân (thư viện, chat tiếp), Pro = dùng thật mỗi ngày, Ultra = xử lý nặng/BYOK/ưu tiên.
-Đã ghi kèm bảng tính năng và lý do trong commit gắn liền với PricingScreen.
+### Decision
+- **Database**: Neon Postgres (serverless) thay cho Supabase
+- **ORM**: Drizzle ORM (thay cho Supabase client)
+- **Schema**: 10 bảng + RLS + index, tương thích Neon
+- **Auth**: JWT tự phát hành (thay cho Supabase Auth)
 
-## Q2 Giới hạn giờ xử lý/phiên [HERMES QUYẾT ĐỊNH]
-Free 2h/tháng, Paid/Pro 20h/tháng, Ultra 100h/tháng.
-Lý do: kiểm soát chi phí API, chống abuse, dễ truyền thông, dễ giới hạn về sau.
+### Rationale
+- **Neon** cung cấp Postgres serverless với RLS, tương thích tốt với Vercel
+- **Drizzle ORM** nhẹ, type-safe, hỗ trợ tốt cho Neon
+- **JWT** đơn giản, dễ tích hợp với middleware Next.js
+- **RLS** dùng `auth_uid()` dựa trên `current_setting('request.jwt.claims')` (chuẩn Neon)
 
-## Q3 Provider AI mặc định [CHỐT THEO ZERO]
-Google AI (Gemini) làm default; OpenAI, Anthropic, NVIDIA, Groq, OpenRouter, DeepSeek, Grok theo sau.
-Lưu key server-side, không expose client.
+### Implementation
+- Schema: `docs/schema-neon.sql`
+- Connection: `@neondatabase/serverless`
+- Auth: `jose` + `bcryptjs`
+- Session: cookie `zero_ai_note_session` (HttpOnly, Secure, SameSite=Lax)
 
-## Q4 Auth [CHỐT THEO ZERO — BẮT BUỘC]
-Google OAuth + email/password + forgot password ngay Tuần 1-2.
-Không chấp nhận skip auth.
+### Migration Steps
+1. Export schema từ Supabase sang cú pháp Postgres chuẩn
+2. Cài `@neondatabase/serverless` và `drizzle-orm`
+3. Thay `supabase.from(...)` bằng query Postgres trực tiếp
+4. Viết RLS policy dùng `auth_uid()` thay cho `auth.uid()`
 
-## Q5 Notebook share [HERMES QUYẾT ĐỊNH]
-MVP/Tuần 8-9: view-only share link.
-Đồng biên tập để sau launch, tránh RLS/Realtime phức tạp sớm.
+---
 
-## Q6 Chính sách lưu trữ file nguồn [CHỐT THEO ZERO]
-Xóa 100% file gốc ngay sau khi transcribe xong.
-Chỉ giữ transcript + content_structured + thumbnail nhỏ.
-Lý do: đúng yêu cầu “free 100%”, giảm chi phí lưu trữ tối đa, UX vẫn đủ nhờ regenerate từ transcript.
+## 2. Auth Migration (Supabase Auth → Neon Auth)
 
-## Q7 Storage cho file tạm [HERMES QUYẾT ĐỊNH]
-Cloudflare R2 — free 10GB/tháng, không tính egress.
-Vì file chỉ tồn tại tạm trong pipeline transcribe, R2 là lựa chọn phù hợp nhất.
+### Decision
+- **Auth**: JWT tự phát hành (HS256) thay cho Supabase Auth
+- **Session**: cookie HttpOnly với TTL 7 ngày
+- **Password**: bcryptjs (thay cho Supabase Auth)
+- **OAuth**: Google OAuth (chưa triển khai, chờ Neon DB sẵn sàng)
 
-## Q8 Database [NHẤT QUÁN]
-Neon Postgres làm DB chính.
-Lý do: RLS đầy đủ, schema chuẩn Postgres, phù hợp PRD mục 3.3, kinh nghiệm đã có.
-Free tier 0.5GB đủ ~20 users; vượt ngưỡng sẽ chuyển sang paid có điều kiện.
+### Rationale
+- **JWT** đơn giản, không phụ thuộc vào Supabase
+- **Cookie HttpOnly** bảo mật hơn localStorage
+- **bcryptjs** tiêu chuẩn cho password hashing
+- **Google OAuth** sẽ triển khai sau khi Neon DB ổn định
 
-## Q9 STT/TTS API [HERMES QUYẾT ĐỊNH]
-STT chính: Gemini Flash audio input (free tier).
-Backup: Whisper qua Groq.
-TTS: Gemini Flash TTS preview / Deepgram Flux TTS / Fish Audio S2.1 Pro Free theo thứ tự ưu tiên, tất cả free tier.
+### Implementation
+- **Login**: `POST /api/auth/login` → trả về JWT trong cookie
+- **Register**: `POST /api/auth/register` → tạo user + trả về JWT
+- **Session**: `verifySession()` kiểm tra JWT trong cookie
+- **Middleware**: kiểm tra session JWT trên mọi route không public
 
-## Q10 GitHub Token Scope [CHỐT THEO ZERO — FULL ACCOUNT]
-[HERMES QUYẾT ĐỊNH: Fine-grained PAT với quyền **All repositories** trên toàn bộ account `CThawngs` — lý do: Zero muốn mình (agent) có quyền push/triển code trên mọi project trong account mà không cần cấp thêm sau này.]
+### Security
+- Cookie: `HttpOnly`, `Secure` (production), `SameSite=Lax`
+- JWT: HS256, TTL 7 ngày, secret trong `ZERO_JWT_SECRET`
+- RLS: dùng `auth_uid()` để kiểm tra quyền truy cập
 
-## Q11 Auth flow [HERMES QUYẾT ĐỊNH]
-Dùng JWT do Next.js API route phát hành sau khi xác thực với Neon DB.
-Không dùng session cookie, không dùng Magic Link.
-Refresh token lưu HTTP-only cookie.
-Lý do: không phụ thuộc service bên ngoài, phù hợp kiến trúc Neon + Next.js + Vercel edge.
+---
 
-## Q12 Bảng profiles trong Neon [NHẤT QUÁN]
-Thêm cột processing_minutes_used INT mặc định 0 + processing_minutes_limit INT mặc định theo plan (Free=120, Pro=1200, Ultra=6000).
-Reset về 0 mỗi đầu tháng bằng job nhẹ trong API route.
-Lý do: không cần thay đổi schema lớn, vẫn giữ trong bảng profiles, dễ query + enforce.
+## 3. Storage Migration (Cloudflare R2)
 
-## Phiên làm việc hiện tại
-- Next.js đã build pass, route /api/health đã thêm (chờ Neon env để connect).
-- lib/db.ts + lib/db-types.ts đã có, chờ NEON_DATABASE_URL.
-- PricingScreen 3 gói đã commit, UI đang render đúng trên Next.js.
-- Đang chờ Zero tạo Neon DB + GitHub PAT để tiếp tục Tuần 1-2.
+### Decision
+- **Primary Storage**: Neon Object Storage (Beta) nếu project mới ở `us-east-2`
+- **Fallback Storage**: Cloudflare R2 nếu project cũ hoặc khác vùng
+- **Abstraction Layer**: `lib/storage.ts` để dễ dàng chuyển đổi giữa Neon Object Storage và R2
 
-## Chờ từ Zero
-- GitHub Fine-grained PAT với quyền **All repositories** ✅ đã có (ghi nhận trong session này)
-- NEON_DATABASE_URL
+### Rationale
+- **Neon Object Storage** (Beta) miễn phí, tích hợp tốt với Neon DB
+- **Cloudflare R2** ổn định, S3-compatible, miễn phí tier cao
+- **Abstraction Layer** đảm bảo dễ dàng chuyển đổi khi Neon Object Storage hết Beta
 
-## Phiên làm việc hiện tại (2026-08-15)
-- Next.js đã build pass, route /api/health đã thêm (chờ Neon env để connect).
-- lib/db.ts + lib/db-types.ts đã có, chờ NEON_DATABASE_URL.
-- PricingScreen 3 gói đã commit, UI đang render đúng trên Next.js.
-- đã push code lên GitHub thành công bằng cách nhúng PAT vào URL khi push, không cần cài `gh` CLI.
-- Phiên đã xác nhận docs sạch — không còn nhiễm nội dung Telegram/bot lạ.
+### Implementation
+- **Storage Service**: `lib/storage.ts` hỗ trợ cả Neon Object Storage và R2
+- **Presigned URL**: sinh URL upload/download cho cả hai dịch vụ
+- **Database Tracking**: bảng `uploads` để theo dõi trạng thái upload
+- **RLS**: bảng `uploads` bật RLS để bảo vệ dữ liệu người dùng
 
-## Cách push lên GitHub mà không cần `gh` CLI
-- Bước 1: đã tải `gh.msi` qua curl nhưng lệnh `msiexec` không chạy ở PowerShell do từ khoá `start` hiểu nhầm.
-- Bước 2: bỏ qua việc cài `gh`, push trực tiếp bằng cách nhúng token vào URL:
-  `git push https://<PAT>@github.com/CThawngs/Zero-AI-Note.git main`
-- Bước 3: nếu cần push lần sau, làm tương tự với token mới. Token hiện tại được Zero cung cấp 1 lần qua chat — không lưu vào file, repo hay memory để tránh lộ.
+### Configuration
+- **Neon Object Storage**: `USE_NEON_OBJECT_STORAGE=true`
+- **Cloudflare R2**: `R2_ENDPOINT`, `R2_ACCESS_KEY`, `R2_SECRET_KEY`, `R2_BUCKET`
+
+---
+
+## 4. Admin Hardcode
+
+### Decision
+- **Admin Email**: hardcode trong `.env.local` (`ADMIN_EMAIL`)
+- **RLS**: bảng `coupons` kiểm tra email admin qua RLS
+- **Server-Side Check**: mọi API route Coupon kiểm tra admin trước khi thực thi
+
+### Rationale
+- **Hardcode email** an toàn hơn gõ tay trong code
+- **RLS** bảo vệ dữ liệu cấp database
+- **Server-Side Check** bảo vệ API khỏi gọi trái phép
+
+### Implementation
+- **Environment Variable**: `ADMIN_EMAIL=nguyenchithang2804@gmail.com`
+- **RLS Policy**: `exists (select 1 from profiles where id = auth_uid() and email = current_setting('app.admin_email'))`
+- **API Check**: `isAdmin(request)` kiểm tra session và email
+
+---
+
+## 5. Fake Data Removal
+
+### Decision
+- **Xoá toàn bộ mock data** trong `src/data/mockData.ts`
+- **Thay bằng query thật** tới Neon DB
+- **UI rỗng** khi không có dữ liệu (không dùng placeholder "cho đẹp")
+
+### Rationale
+- **Dữ liệu thật** đảm bảo tính nhất quán
+- **Không fake data** tránh nhầm lẫn trong phát triển
+- **UI rỗng** phản ánh đúng trạng thái hệ thống
+
+### Implementation
+- **Xoá mock data**: `initialNotes`, `initialCoupons`, `initialSourceFiles`
+- **Thêm `useEffect`**: load data khi user đăng nhập
+- **CRUD thật**: dùng `lib/neon/queries.ts` thay vì mock data
+
+---
+
+## 6. Landing Page + Docs
+
+### Decision
+- **Landing Page**: `/` (công khai, không đăng nhập)
+- **Docs Page**: `/docs` (công khai, không đăng nhập)
+- **Nội dung thật**: không placeholder "Lorem ipsum"
+
+### Rationale
+- **Landing page** thu hút người dùng mới
+- **Docs page** giúp người dùng hiểu sản phẩm
+- **Nội dung thật** chuyên nghiệp, dễ SEO
+
+### Implementation
+- **Landing Page**: `app/(landing)/page.tsx`
+- **Docs Page**: `app/docs/page.tsx`
+- **Metadata**: SEO-friendly title và description
+- **Navigation**: link giữa landing, docs, login
+
+---
+
+## 7. Middleware (Bắt buộc đăng nhập)
+
+### Decision
+- **Middleware**: kiểm tra session JWT trên mọi route không public
+- **Redirect**: chưa đăng nhập → `/login`
+- **Admin Check**: route admin kiểm tra role và email
+
+### Rationale
+- **Bảo mật**: ngăn truy cập trái phép vào dashboard
+- **Trải nghiệm người dùng**: redirect tự động khi chưa đăng nhập
+- **Admin**: bảo vệ route admin khỏi truy cập trái phép
+
+### Implementation
+- **Middleware**: `middleware.ts`
+- **Public Routes**: `/`, `/login`, `/register`, `/docs`, `/api/auth/*`, `/api/health`
+- **Admin Routes**: `/admin-coupons` (kiểm tra role và email)
+
+---
+
+## 8. Tech Stack
+
+| Component          | Technology                          | Rationale                                                                 |
+|--------------------|-------------------------------------|----------------------------------------------------------------------------|
+| **Frontend**       | Next.js 16, React 19, Tailwind CSS  | Full-stack framework, SSR/SSG, styling nhanh                              |
+| **Database**       | Neon Postgres (serverless)          | Postgres serverless, RLS, tương thích Vercel                              |
+| **ORM**            | Drizzle ORM                         | Type-safe, nhẹ, hỗ trợ tốt cho Neon                                       |
+| **Auth**           | JWT (HS256) + bcryptjs              | Đơn giản, không phụ thuộc vào bên thứ ba                                  |
+| **Storage**        | Neon Object Storage / Cloudflare R2 | Neon Object Storage (Beta) hoặc R2 (ổn định)                              |
+| **AI**             | Google GenAI, BYOK                  | Google GenAI miễn phí, BYOK cho OpenAI/Anthropic                          |
+| **Deployment**     | Vercel                              | Tích hợp tốt với Next.js, CI/CD đơn giản                                  |
+
+---
+
+## 9. Deployment
+
+### Decision
+- **Hosting**: Vercel
+- **Database**: Neon Postgres
+- **Storage**: Neon Object Storage hoặc Cloudflare R2
+- **CI/CD**: GitHub Actions
+
+### Rationale
+- **Vercel**: tích hợp tốt với Next.js, CI/CD đơn giản
+- **Neon**: Postgres serverless, tương thích Vercel
+- **Storage**: linh hoạt giữa Neon Object Storage và R2
+- **CI/CD**: tự động build và deploy khi push lên `main`
+
+### Implementation
+- **Vercel**: kết nối GitHub repo
+- **Environment Variables**: cấu hình trong Vercel dashboard
+- **CI/CD**: GitHub Actions cho build và test
+
+---
+
+## 10. Future Considerations
+
+### Neon Object Storage
+- Theo dõi khi Neon Object Storage ra khỏi Beta
+- Cập nhật `lib/storage.ts` khi SDK chính thức được phát hành
+
+### Google OAuth
+- Triển khai khi Neon DB ổn định
+- Sử dụng Neon Auth hoặc NextAuth.js
+
+### BYOK (Bring Your Own Key)
+- Mở rộng BYOK cho nhiều nhà cung cấp AI hơn
+- Thêm caching cho API key để giảm latency
+
+### Multi-region Support
+- Triển khai multi-region nếu cần
+- Sử dụng Cloudflare R2 cho storage đa vùng
+
+---
+
+## 11. Migration Checklist
+
+### Completed ✅
+- [x] Database migration (Supabase → Neon)
+- [x] Auth migration (Supabase Auth → JWT)
+- [x] Storage abstraction layer
+- [x] Fake data removal
+- [x] Admin hardcode (environment variable)
+- [x] Middleware (bắt buộc đăng nhập)
+- [x] Landing page + docs page
+- [x] DECISIONS.md documentation
+
+### Pending ⏳
+- [ ] Storage integration (Neon Object Storage or R2)
+- [ ] Google OAuth implementation
+- [ ] BYOK provider caching
+- [ ] Multi-region deployment
+
+---
+
+## 12. Lessons Learned
+
+1. **Schema Migration**: Export schema từ Supabase sang cú pháp Postgres chuẩn cần kiểm tra kỹ constraint và index
+2. **RLS Policy**: Cú pháp RLS của Neon khác Supabase (`auth_uid()` thay cho `auth.uid()`)
+3. **Storage Abstraction**: Viết abstraction layer ngay từ đầu giúp dễ dàng chuyển đổi giữa các dịch vụ storage
+4. **Admin Hardcode**: Sử dụng environment variable cho admin email an toàn hơn gõ tay trong code
+5. **Fake Data**: Xoá fake data sớm để tránh lệ thuộc vào mock data trong phát triển
+6. **Middleware**: Triển khai middleware sớm để bảo vệ route không public
+7. **Documentation**: Ghi lại quyết định kỹ thuật ngay khi triển khai để tránh quên sau này
+
+---
+
+## 13. References
+- [Neon Documentation](https://neon.tech/docs)
+- [Drizzle ORM](https://orm.drizzle.team)
+- [Cloudflare R2](https://developers.cloudflare.com/r2)
+- [Next.js Middleware](https://nextjs.org/docs/middleware)
+- [JWT.io](https://jwt.io)
