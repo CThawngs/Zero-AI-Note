@@ -9,9 +9,12 @@
 - [x] Fix lỗi type ẩn: TranslationKey thiếu 18 keys (vi/en), t() trả string[], setSettingsActiveTab thiếu 'appearance', localStorage SSR guard
 
 ## Tuần 1-2 — Nền tảng
-- [ ] Supabase Auth thật: email/password + Google OAuth + forgot password (reset link)
-- [ ] Schema PRD mục 6 tạo đủ (profiles, notebooks, sources, custom_note_templates, notes, byok_providers, provider_free_models_cache, coupons, subscriptions)
-- [ ] RLS bật trên từng bảng NGAY khi tạo
+- [x] Auth scaffold + JWT routes (login/register/session) + bcrypt password hashing (commit ee5c502)
+- [x] `/api/auth/*` hoạt động, cookie HttpOnly 7 ngày, bcrypt + jose đã cài
+- [ ] Schema PRD mục 6 tạo đủ (9 bảng + RLS + indexes) — đã có `docs/schema.sql`
+- [ ] Tạo Neon project + migrate schema thật + cập nhật `.env.local` `NEON_DATABASE_URL`
+- [ ] `/api/health` trả kết nối DB thật
+- [ ] Gate Free/Paid/Ultra bằng `profiles.plan` + `processing_minutes_used`/`processing_minutes_limit` (Free=120, Pro=1200, Ultra=6000/phút)
 - [ ] Hàng đợi job nền (Inngest/Trigger.dev) dựng xong, test 1 job giả lập chạy được
 
 ## Tuần 3-4 — MVP lõi

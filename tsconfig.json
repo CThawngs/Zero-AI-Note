@@ -30,7 +30,11 @@
     "strict": false,
     "incremental": true,
     "esModuleInterop": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "types": [
+      "node",
+      "next"
+    ]
   },
   "include": [
     "next-env.d.ts",
