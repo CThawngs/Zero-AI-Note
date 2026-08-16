@@ -58,24 +58,26 @@
 ## 3. Storage Migration (Cloudflare R2)
 
 ### Decision
-- **Primary Storage**: Neon Object Storage (Beta) nếu project mới ở `us-east-2`
-- **Fallback Storage**: Cloudflare R2 nếu project cũ hoặc khác vùng
-- **Abstraction Layer**: `lib/storage.ts` để dễ dàng chuyển đổi giữa Neon Object Storage và R2
+- **Primary Storage**: Cloudflare R2 (QUYẾT ĐỊNH CHÍNH THỨC 2026-08-16)
+- **Loại bỏ**: Neon Object Storage (Beta) — project Neon hiện ở `ap-southeast-1`, không đáp ứng yêu cầu `us-east-2` + project mới; Zero chọn **giữ nguyên project Neon ap-southeast-1** (phương án C)
+- **Abstraction Layer**: `lib/storage.ts` để dễ dàng chuyển đổi sau này (nếu Neon Object Storage mở rộng region trong tương lai)
 
 ### Rationale
-- **Neon Object Storage** (Beta) miễn phí, tích hợp tốt với Neon DB
-- **Cloudflare R2** ổn định, S3-compatible, miễn phí tier cao
-- **Abstraction Layer** đảm bảo dễ dàng chuyển đổi khi Neon Object Storage hết Beta
+- **Cloudflare R2** ổn định production, S3-compatible, free tier cao (10GB), không giới hạn region
+- **Giữ project Neon ap-southeast-1**: dữ liệu đã có (profiles, coupons, notes...), tránh di dời lại DB chỉ vì storage
+- **Abstraction Layer** đảm bảo dễ dàng chuyển đổi khi Neon Object Storage hết Beta hoặc mở rộng region
 
 ### Implementation
-- **Storage Service**: `lib/storage.ts` hỗ trợ cả Neon Object Storage và R2
-- **Presigned URL**: sinh URL upload/download cho cả hai dịch vụ
+- **Storage Service**: `lib/storage.ts` — R2 là implementation chính (presign upload/delete/public URL qua AWS SDK)
+- **Presigned URL**: sinh URL upload/download qua S3 Request Presigner
 - **Database Tracking**: bảng `uploads` để theo dõi trạng thái upload
 - **RLS**: bảng `uploads` bật RLS để bảo vệ dữ liệu người dùng
 
-### Configuration
-- **Neon Object Storage**: `USE_NEON_OBJECT_STORAGE=true`
-- **Cloudflare R2**: `R2_ENDPOINT`, `R2_ACCESS_KEY`, `R2_SECRET_KEY`, `R2_BUCKET`
+### Configuration (Cloudflare R2)
+- `R2_ENDPOINT` (vd `https://<accountid>.r2.cloudflarestorage.com`)
+- `R2_ACCESS_KEY`, `R2_SECRET_KEY` (tạo từ Cloudflare Dashboard → R2 → Manage R2 API Tokens)
+- `R2_BUCKET` (tên bucket, vd `zero-ai-note`)
+- `R2_PUBLIC_URL` (tuỳ chọn, domain public custom nếu bật Public Access)
 
 ---
 
