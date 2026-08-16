@@ -1,8 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSql } from '@/lib/db';
-import { hashPassword } from '@/lib/auth/password';
-import { signSession, getSessionCookie } from '@/lib/auth/session';
+import bcrypt from 'bcryptjs';
+import { SignJWT, jwtVerify } from 'jose';
 import { ok, fail } from '@/lib/auth/http';
+import { v4 as uuidv4 } from 'uuid';
+
+const JWT_SECRET = new TextEncoder().encode(process.env.ZERO_JWT_SECRET ?? 'dev-zero-ai-note-secret');
+
+async function signSession(payload: { sub: string; email: string; role: string; plan: string; processingMinutesUsed: number; processingMinutesLimit: number }) {
+  return new SignJWT(payload)
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('7d')
+    .sign(JWT_SECRET);
+}
+
+async function verifySession(token: string) {
+  try {
+    const { payload } = await jwtVerify(token, JWT_SECRET);
+    return payload as { sub: string; email: string; role: string; plan: string; processingMinutesUsed: number; processingMinutesLimit: number };
+  } catch {
+    return null;
+  }
+}
+
+function getSessionCookie(token: string) {
+  return `zero_ai_note_session=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${60 * 60 * 24 * 7}`;
+}
 
 export const runtime = 'nodejs';
 
@@ -23,8 +47,8 @@ export async function POST(request: NextRequest) {
       return fail('Email already registered', 409);
     }
 
-    const passwordHash = await hashPassword(password);
-    const userId = crypto.randomUUID();
+    const passwordHash = await bcrypt.hash(password, 10);
+    const userId = uuidv4();
 
     try {
       await sql`
