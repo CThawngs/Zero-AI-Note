@@ -1,22 +1,34 @@
-/**
- * Neon serverless database for Zero AI Note — rewrite to the simplest buildable form
- * to unblock Next.js build. Connection is created lazily from NEON_DATABASE_URL.
- */
-import { neon, neonConfig } from '@neondatabase/serverless';
+import { neon, neonConfig, Pool } from '@neondatabase/serverless';
 
 neonConfig.fetchConnectionCache = true;
 
+const connectionString: string | undefined = process.env.NEON_DATABASE_URL ?? undefined;
+
 function getConnectionString(): string {
-  const url = process.env.NEON_DATABASE_URL;
-  if (!url) {
+  if (!connectionString) {
     throw new Error(
       'Missing NEON_DATABASE_URL. Add it to .env.local (dev) or Vercel env (prod).'
     );
   }
-  return url;
+  return connectionString;
 }
 
-const getSql = () => neon(getConnectionString());
+let sqlInstance: ReturnType<typeof neon> | null = null;
+let poolInstance: Pool | null = null;
+
+export function getSql() {
+  if (!sqlInstance) {
+    sqlInstance = neon(getConnectionString());
+  }
+  return sqlInstance;
+}
+
+export function getPool() {
+  if (!poolInstance) {
+    poolInstance = new Pool({ connectionString: getConnectionString() });
+  }
+  return poolInstance;
+}
 
 export const sql = getSql();
 
