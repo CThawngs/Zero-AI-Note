@@ -27,10 +27,10 @@ export default function LandingPage() {
               <Link href="/docs" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors">
                 Tài liệu
               </Link>
-              <Link href="/login" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors">
+              <Link href="/app" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors">
                 Đăng nhập
               </Link>
-              <Link href="/login" className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white text-sm font-semibold shadow-md hover:shadow-lg transition-shadow">
+              <Link href="/app" className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white text-sm font-semibold shadow-md hover:shadow-lg transition-shadow">
                 Bắt đầu miễn phí
               </Link>
             </div>
@@ -48,7 +48,7 @@ export default function LandingPage() {
             </p>
 
             <div className="flex items-center justify-center gap-4">
-              <Link href="/login" className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold shadow-lg hover:shadow-xl transition-shadow">
+              <Link href="/app" className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold shadow-lg hover:shadow-xl transition-shadow">
                 Bắt đầu miễn phí
               </Link>
               <Link href="/docs" className="px-6 py-3 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
@@ -88,7 +88,7 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold mb-4">Bắt đầu ngay hôm nay</h2>
           <p className="text-slate-600 dark:text-slate-400 mb-8">Free 100% — không cần thẻ tín dụng, không giới hạn thời gian dùng thử.</p>
-          <Link href="/login" className="inline-block px-8 py-4 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold shadow-lg hover:shadow-xl transition-shadow">
+          <Link href="/app" className="inline-block px-8 py-4 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold shadow-lg hover:shadow-xl transition-shadow">
             Tạo tài khoản miễn phí
           </Link>
         </div>

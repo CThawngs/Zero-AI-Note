@@ -127,7 +127,7 @@ export interface AIProviderItem {
 export interface CouponItem {
   id: string;
   code: string;
-  discount_type: 'percentage' | 'fixed';
+  discount_type: 'percent' | 'fixed';
   discount_value: number;
   applies_to: 'all' | 'paid' | 'pro';
   usage_count: number;

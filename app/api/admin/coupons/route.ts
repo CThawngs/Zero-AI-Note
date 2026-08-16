@@ -40,10 +40,13 @@ export async function POST(request: NextRequest) {
       return fail('Missing required fields', 400);
     }
     
+    // Normalize discount_type to match DB constraint ('percent' | 'fixed')
+    const normType = discount_type === 'percentage' ? 'percent' : discount_type;
+    
     const sql = getSql();
     const rows = await sql`
       insert into coupons (code, discount_type, discount_value, applies_to, usage_limit, expires_at, status)
-      values (${code.toUpperCase()}, ${discount_type}, ${discount_value}, ${applies_to ?? 'all'}, ${usage_limit ?? null}, ${expires_at ?? null}, ${status ?? 'active'})
+      values (${code.toUpperCase()}, ${normType}, ${discount_value}, ${applies_to ?? 'all'}, ${usage_limit ?? null}, ${expires_at ?? null}, ${status ?? 'active'})
       returning *
     `;
     const coupon = (rows as unknown as any[])[0];
@@ -74,15 +77,23 @@ export async function PUT(request: NextRequest) {
     }
     
     const sql = getSql();
-    const safeCode = (code ?? '').toUpperCase().replace(/'/g, "''");
-    const safeType = (discount_type ?? 'percentage').replace(/'/g, "''");
-    const safeApplies = (applies_to ?? 'all').replace(/'/g, "''");
-    const safeStatus = (status ?? 'active').replace(/'/g, "''");
-    const expVal = expires_at ? `'${String(expires_at).replace(/'/g, "''")}'` : 'null';
-    const limitVal = usage_limit ?? 'null';
+    const normType = (discount_type === 'percentage' ? 'percent' : discount_type) ?? 'percent';
+    const safeCode = (code ?? '').toUpperCase();
+    const safeApplies = applies_to ?? 'all';
+    const safeStatus = status ?? 'active';
     
-    const query = `update coupons set code = '${safeCode}', discount_type = '${safeType}', discount_value = ${discount_value ?? 0}, applies_to = '${safeApplies}', usage_limit = ${limitVal}, expires_at = ${expVal}, status = '${safeStatus}' where id = '${id.replace(/'/g, "''")}' returning *`;
-    const rows = await sql.unsafe(query);
+    const rows = await sql`
+      update coupons set
+        code = ${safeCode},
+        discount_type = ${normType},
+        discount_value = ${discount_value ?? 0},
+        applies_to = ${safeApplies},
+        usage_limit = ${usage_limit ?? null},
+        expires_at = ${expires_at ?? null},
+        status = ${safeStatus}
+      where id = ${id}
+      returning *
+    `;
     const row = (rows as unknown as any[])[0];
     
     if (!row) {

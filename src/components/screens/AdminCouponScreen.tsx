@@ -43,7 +43,7 @@ export const AdminCouponScreen: React.FC = () => {
 
   // Form states for Create/Edit
   const [formCode, setFormCode] = useState('');
-  const [formType, setFormType] = useState<'percentage' | 'fixed'>('percentage');
+  const [formType, setFormType] = useState<'percent' | 'fixed'>('percent');
   const [formValue, setFormValue] = useState<number>(20);
   const [formAppliedTo, setFormAppliedTo] = useState<'all' | 'paid' | 'pro'>('all');
   const [formUsageLimit, setFormUsageLimit] = useState<string>('100');
@@ -55,7 +55,7 @@ export const AdminCouponScreen: React.FC = () => {
   const openCreateModal = () => {
     setEditingCoupon(null);
     setFormCode('');
-    setFormType('percentage');
+    setFormType('percent');
     setFormValue(20);
     setFormAppliedTo('all');
     setFormUsageLimit('100');
@@ -67,7 +67,7 @@ export const AdminCouponScreen: React.FC = () => {
   const openEditModal = (coupon: CouponItem) => {
       setEditingCoupon(coupon);
       setFormCode(coupon.code);
-      setFormType(coupon.discount_type ?? 'percentage');
+      setFormType(coupon.discount_type ?? 'percent');
       setFormValue(coupon.discount_value ?? 0);
       setFormAppliedTo(coupon.applies_to ?? 'all');
       setFormUsageLimit(coupon.usage_limit !== null ? String(coupon.usage_limit) : '');
@@ -381,7 +381,7 @@ export const AdminCouponScreen: React.FC = () => {
                         {/* Value */}
                                                 <td className="px-4 py-3.5 whitespace-nowrap">
                                                   <span className="font-bold text-[var(--status-success)]">
-                                                    {coupon.discount_type === 'percentage'
+                                                    {coupon.discount_type === 'percent'
                                                       ? `${language === 'vi' ? 'Giảm' : 'Off'} ${coupon.discount_value}%`
                                                       : `${language === 'vi' ? 'Giảm' : 'Off'} ${Number(coupon.discount_value ?? 0).toLocaleString('vi-VN')}đ`}
                                                   </span>
@@ -497,7 +497,7 @@ export const AdminCouponScreen: React.FC = () => {
 
               <div>
                 <label className={`block text-xs font-semibold mb-1 ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
-                  {language === 'vi' ? 'Giá trị giảm' : 'Discount Value'} ({formType === 'percentage' ? '%' : 'VNĐ'}) <span className="text-[var(--status-error)]">*</span>
+                  {language === 'vi' ? 'Giá trị giảm' : 'Discount Value'} ({formType === 'percent' ? '%' : 'VNĐ'}) <span className="text-[var(--status-error)]">*</span>
                 </label>
                 <input
                   id="input-coupon-value"

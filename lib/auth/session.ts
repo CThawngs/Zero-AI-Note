@@ -10,7 +10,7 @@ export async function signSession(payload: SessionPayload) {
   return new SignJWT(payload as unknown as import('jose').JWTPayload)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime(`in ${SESSION_TTL_SECONDS}s`)
+    .setExpirationTime(Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS)
     .sign(JWT_SECRET);
 }
 

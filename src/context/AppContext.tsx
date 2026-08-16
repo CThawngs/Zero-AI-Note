@@ -746,7 +746,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }));
       }
       
-      const discountVal = coupon.discount_type === 'percentage' ? coupon.discount_value : 50;
+      const discountVal = coupon.discount_type === 'percent' ? coupon.discount_value : 50;
       return {
         success: true,
         message: language === 'vi' 
