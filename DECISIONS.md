@@ -222,9 +222,13 @@
 - [x] Middleware (bắt buộc đăng nhập)
 - [x] Landing page + docs page
 - [x] DECISIONS.md documentation
+- [x] Routing: `/app` = dashboard (login required), `/` = landing (redirect if logged in)
+- [x] Coupon CRUD hoàn chỉnh (admin) + `/api/coupons/apply` (user login)
+- [x] Bảng `uploads` + RLS migrate lên Neon
+- [x] Test thật end-to-end: register → login → coupon CRUD → apply (verified DB)
 
 ### Pending ⏳
-- [ ] Storage integration (Neon Object Storage or R2)
+- [ ] Storage integration (Neon Object Storage or R2) — chờ Zero chốt
 - [ ] Google OAuth implementation
 - [ ] BYOK provider caching
 - [ ] Multi-region deployment
