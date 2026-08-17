@@ -12,7 +12,8 @@ import {
   ShieldCheck, 
   X,
   ChevronRight,
-  Clock
+  Clock,
+  LogOut
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useApp } from '../../context/AppContext';
@@ -31,7 +32,8 @@ export const Sidebar: React.FC = () => {
     t,
     isMobileSidebarOpen,
     setIsMobileSidebarOpen,
-    theme
+    theme,
+    logout
   } = useApp();
 
   const navItems = [
@@ -247,31 +249,45 @@ export const Sidebar: React.FC = () => {
         </motion.button>
 
         {/* User Profile Card */}
-        <motion.div 
-          id="user-profile-card"
-          whileHover={{ scale: 1.01 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => {
-            setCurrentScreen('settings');
-            setIsMobileSidebarOpen(false);
-          }}
-          className="flex items-center justify-between p-2.5 rounded-xl border transition-colors cursor-pointer group bg-[var(--bg-card)] border-[var(--border-color)] hover:border-[var(--accent-primary)]/50 shadow-2xs"
-        >
-          <div className="min-w-0">
-            <p className="text-xs font-semibold truncate text-[var(--text-primary)]">
-              {user.name}
-            </p>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="text-[10px] uppercase font-bold px-1.5 py-0.2 rounded font-mono tracking-tight bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]">
-                {user.plan}
-              </span>
-              <span className="text-[10px] truncate text-[var(--text-muted)]">
-                {user.email}
-              </span>
+        <div className="flex items-center gap-1.5">
+          <motion.div 
+            id="user-profile-card"
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => {
+              setCurrentScreen('settings');
+              setIsMobileSidebarOpen(false);
+            }}
+            className="flex-1 flex items-center justify-between p-2.5 rounded-xl border transition-colors cursor-pointer group bg-[var(--bg-card)] border-[var(--border-color)] hover:border-[var(--accent-primary)]/50 shadow-2xs min-w-0"
+          >
+            <div className="min-w-0 flex-1 pr-1">
+              <p className="text-xs font-semibold truncate text-[var(--text-primary)]">
+                {user.name}
+              </p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="text-[10px] uppercase font-bold px-1.5 py-0.2 rounded font-mono tracking-tight bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]">
+                  {user.plan}
+                </span>
+                <span className="text-[10px] truncate text-[var(--text-muted)]">
+                  {user.email}
+                </span>
+              </div>
             </div>
-          </div>
-          <ChevronRight className="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-[var(--accent-primary)] group-hover:translate-x-0.5 transition-all shrink-0" />
-        </motion.div>
+            <ChevronRight className="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-[var(--accent-primary)] group-hover:translate-x-0.5 transition-all shrink-0" />
+          </motion.div>
+
+          <button
+            id="btn-sidebar-logout"
+            onClick={(e) => {
+              e.stopPropagation();
+              logout();
+            }}
+            title={t('logout') || 'Đăng xuất'}
+            className="p-2.5 rounded-xl border transition-all cursor-pointer active:scale-95 shrink-0 bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10 hover:border-red-500/30"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </aside>
   );

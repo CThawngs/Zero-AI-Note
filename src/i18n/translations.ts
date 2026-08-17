@@ -277,7 +277,8 @@ export const translations = {
     deletePermanently: 'Xoá vĩnh viễn',
     cloudStorageUsage: 'Dung lượng lưu trữ đám mây',
     backToLibrary: 'Quay lại thư viện',
-    audioSummary: 'Tóm tắt âm thanh'
+    audioSummary: 'Tóm tắt âm thanh',
+    logout: 'Đăng xuất'
   },
   en: {
     // Brand
@@ -554,6 +555,7 @@ export const translations = {
     deletePermanently: 'Delete Permanently',
     cloudStorageUsage: 'Cloud Storage Usage',
     backToLibrary: 'Back to Library',
-    audioSummary: 'Audio Summary'
+    audioSummary: 'Audio Summary',
+    logout: 'Log Out'
   }
 };

@@ -22,7 +22,8 @@ import {
   Sparkles,
   Globe,
   Sun,
-  Moon
+  Moon,
+  LogOut
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Modal } from '../common/Modal';
@@ -47,6 +48,7 @@ export const SettingsScreen: React.FC = () => {
     addToast,
     theme,
     language,
+    logout,
     t
   } = useApp();
 
@@ -208,15 +210,30 @@ export const SettingsScreen: React.FC = () => {
                   </div>
                 </div>
 
-                <button
-                  id="btn-open-change-password"
-                  onClick={() => setIsPasswordModalOpen(true)}
-                  className={`px-4 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer self-start sm:self-auto active:scale-95 ${
-                    isDark ? 'bg-[var(--bg-hover)] hover:bg-[var(--border-color)] border-[var(--border-color)] text-[var(--text-primary)]' : 'bg-[var(--bg-hover)] hover:bg-[var(--bg-hover)] border-[var(--border-color)] text-[var(--text-primary)]'
-                  }`}
-                >
-                  {t('changePassword')}
-                </button>
+                <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+                  <button
+                    id="btn-open-change-password"
+                    onClick={() => setIsPasswordModalOpen(true)}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 ${
+                      isDark ? 'bg-[var(--bg-hover)] hover:bg-[var(--border-color)] border-[var(--border-color)] text-[var(--text-primary)]' : 'bg-white hover:bg-gray-50 border-gray-300 text-gray-800 shadow-2xs'
+                    }`}
+                  >
+                    <Key className="w-3.5 h-3.5" />
+                    <span>{t('changePassword')}</span>
+                  </button>
+
+                  <button
+                    id="btn-logout-settings"
+                    onClick={() => logout()}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 ${
+                      isDark ? 'bg-red-500/10 hover:bg-red-500/20 border-red-500/30 text-red-400' : 'bg-red-50 hover:bg-red-100 border-red-200 text-red-700'
+                    }`}
+                    title={language === 'vi' ? 'Đăng xuất tài khoản' : 'Log out of account'}
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>{language === 'vi' ? 'Đăng xuất' : 'Log Out'}</span>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -387,27 +404,33 @@ export const SettingsScreen: React.FC = () => {
             </div>
 
             {/* Danger Zone */}
-            <div className={`p-5 sm:p-6 rounded-2xl border space-y-3 ${
-              isDark ? 'bg-[var(--status-error)]/15 border-[var(--status-error)]/40' : 'bg-[var(--status-error)] border-[var(--status-error)]'
+            <div className={`p-4 sm:p-5 rounded-2xl border transition-colors ${
+              isDark ? 'bg-red-500/5 border-red-500/25' : 'bg-red-50/60 border-red-200'
             }`}>
-              <div className="flex items-center gap-2">
-                <ShieldAlert className="w-5 h-5 text-[var(--status-error)]" />
-                <h3 className="text-xs font-bold text-[var(--status-error)] uppercase tracking-wider">
-                  {t('dangerZone')}
-                </h3>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5">
+                    <ShieldAlert className="w-4 h-4 text-red-500" />
+                    <h3 className="text-xs font-bold text-red-500 uppercase tracking-wider">
+                      {t('dangerZone')}
+                    </h3>
+                  </div>
+                  <p className="text-xs text-red-600/90 dark:text-red-400/80 leading-relaxed max-w-xl">
+                    {language === 'vi' 
+                      ? 'Xóa vĩnh viễn tài khoản và toàn bộ cơ sở dữ liệu ghi chú, tệp nguồn đã lưu trữ. Hành động này không thể hoàn tác.' 
+                      : 'Permanently erase this account, structured notes, uploaded files, and chat history. This cannot be undone.'}
+                  </p>
+                </div>
+
+                <button
+                  id="btn-open-delete-account"
+                  onClick={() => setIsDeleteModalOpen(true)}
+                  className="px-3.5 py-1.5 border border-red-500/40 hover:border-red-500 bg-red-500/10 hover:bg-red-500 text-red-600 hover:text-white dark:text-red-400 dark:hover:text-white text-xs font-semibold rounded-xl shadow-2xs transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 shrink-0 self-start sm:self-auto"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>{t('deleteAccount')}</span>
+                </button>
               </div>
-              <p className={`text-xs ${isDark ? 'text-[var(--status-error)]/80' : 'text-[var(--status-error)]'}`}>
-                {language === 'vi' 
-                  ? 'Xóa vĩnh viễn tài khoản và toàn bộ cơ sở dữ liệu ghi chú, tệp nguồn đã lưu trữ. Hành động này không thể hoàn tác.' 
-                  : 'Permanently erase this account, structured notes, uploaded files, and chat history. This cannot be undone.'}
-              </p>
-              <button
-                id="btn-open-delete-account"
-                onClick={() => setIsDeleteModalOpen(true)}
-                className="px-4 py-2 bg-[var(--status-error)] hover:bg-[var(--status-error)] text-white text-xs font-semibold rounded-xl shadow-xs transition-all cursor-pointer active:scale-95"
-              >
-                {t('deleteAccount')}
-              </button>
             </div>
           </motion.div>
         )}

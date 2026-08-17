@@ -85,6 +85,7 @@ interface AppContextType {
   setAuthMode: (mode: 'login' | 'register') => void;
   user: UserProfile;
   setUser: React.Dispatch<React.SetStateAction<UserProfile>>;
+  logout: () => Promise<void>;
   upgradeToPro: () => void;
   upgradeToUltra: () => void;
   downgradePlan: () => void;
@@ -899,6 +900,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
+  const logout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (e) {
+      console.warn('Logout API call error:', e);
+    }
+    setUser(DEFAULT_USER_PROFILE);
+    addToast(
+      language === 'vi' ? 'Đã đăng xuất' : 'Logged Out',
+      language === 'vi' ? 'Hẹn gặp lại bạn lần sau!' : 'See you next time!',
+      'info'
+    );
+    window.location.href = '/';
+  };
+
   const sendChatMessage = async (text: string, attachedSources?: { type: 'pdf' | 'youtube' | 'doc'; name: string }[]) => {
     if (!text.trim()) return;
     if (!user.id) {
@@ -1079,6 +1095,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setAuthMode,
       user,
       setUser,
+      logout,
       upgradeToPro,
       upgradeToUltra,
       downgradePlan,
