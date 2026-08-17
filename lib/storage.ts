@@ -2,7 +2,9 @@ import { getSql } from '@/lib/db';
 
 /**
  * Storage Abstraction Layer for Zero AI Note
- * BACKEND CHÍNH: Cloudflare R2 (S3-compatible) — quyết định 2026-08-16
+ * DATABASE CHÍNH: Neon Postgres (lưu notes, sources, metadata).
+ * BACKUP STORAGE: Cloudflare R2 (S3-compatible) — dùng khi Neon database đầy.
+ * Quyết định 2026-08-17: Neon database là chính, R2 là backup.
  *
  * Lớp này là nơi DUY NHẤT được phép gọi SDK storage.
  * Nếu tương lai chuyển sang Neon Object Storage (khi mở rộng region),
@@ -20,7 +22,7 @@ export class StorageService {
   private readonly r2Bucket?: string;
 
   constructor() {
-    // Cloudflare R2 config (storage chính)
+    // Cloudflare R2 config (backup storage khi Neon database đầy)
     this.r2Endpoint = process.env.R2_ENDPOINT;
     this.r2AccessKey = process.env.R2_ACCESS_KEY;
     this.r2SecretKey = process.env.R2_SECRET_KEY;

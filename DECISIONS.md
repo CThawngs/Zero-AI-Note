@@ -55,21 +55,24 @@
 
 ---
 
-## 3. Storage Migration (Cloudflare R2)
+## 3. Storage Migration (Neon database chính + Cloudflare R2 backup)
 
 ### Decision
-- **Primary Storage**: Cloudflare R2 (QUYẾT ĐỊNH CHÍNH THỨC 2026-08-16)
+- **Primary Storage**: Neon Postgres database (QUYẾT ĐỊNH CHÍNH THỨC 2026-08-17) — lưu notes, sources, metadata, toàn bộ dữ liệu app
+- **Backup Storage**: Cloudflare R2 (S3-compatible) — dùng khi Neon database đầy, chứa media/file upload
 - **Loại bỏ**: Neon Object Storage (Beta) — project Neon hiện ở `ap-southeast-1`, không đáp ứng yêu cầu `us-east-2` + project mới; Zero chọn **giữ nguyên project Neon ap-southeast-1** (phương án C)
 - **Abstraction Layer**: `lib/storage.ts` để dễ dàng chuyển đổi sau này (nếu Neon Object Storage mở rộng region trong tương lai)
 
 ### Rationale
-- **Cloudflare R2** ổn định production, S3-compatible, free tier cao (10GB), không giới hạn region
+- **Neon Postgres** là database chính, chi phí thấp, serverless, tự scale — phù hợp lưu dữ liệu cấu trúc của app
+- **Cloudflare R2** backup khi Neon đầy (free tier cao 10GB, S3-compatible, không giới hạn region)
 - **Giữ project Neon ap-southeast-1**: dữ liệu đã có (profiles, coupons, notes...), tránh di dời lại DB chỉ vì storage
 - **Abstraction Layer** đảm bảo dễ dàng chuyển đổi khi Neon Object Storage hết Beta hoặc mở rộng region
 
 ### Implementation
-- **Storage Service**: `lib/storage.ts` — R2 là implementation chính (presign upload/delete/public URL qua AWS SDK)
-- **Presigned URL**: sinh URL upload/download qua S3 Request Presigner
+- **Database chính**: Neon Postgres — mọi CRUD notes/sources/coupons/profile qua `lib/neon/queries.ts`
+- **Storage Service**: `lib/storage.ts` — R2 là implementation backup (presign upload/delete/public URL qua AWS SDK)
+- **Presigned URL**: sinh URL upload/download qua S3 Request Presigner (chỉ kích hoạt khi cần backup file)
 - **Database Tracking**: bảng `uploads` để theo dõi trạng thái upload
 - **RLS**: bảng `uploads` bật RLS để bảo vệ dữ liệu người dùng
 
