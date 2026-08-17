@@ -164,7 +164,7 @@ export default function LandingPage() {
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>description</span>
             Zero AI Note
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-5">
             <button
               onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}
               className={`text-sm font-medium px-3 py-1.5 rounded-lg transition-all duration-300 ${isDark ? 'text-neutral-400 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-black hover:bg-gray-200'}`}
