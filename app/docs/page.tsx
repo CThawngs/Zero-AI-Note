@@ -1,11 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 type ThemeMode = 'dark' | 'light';
+type Language  = 'vi' | 'en';
 
-// ── Scroll reveal hook (same as landing) ─────────────────────────────────────
+// ── Scroll reveal ─────────────────────────────────────────────────────────────
 function useScrollReveal() {
   const observe = useCallback((el: Element | null, delay = 0) => {
     if (!el) return;
@@ -28,42 +29,177 @@ function useScrollReveal() {
   return observe;
 }
 
-const sections = [
-  { id: 'intro',    label: 'Giới thiệu' },
-  { id: 'quickstart', label: 'Bắt đầu nhanh' },
-  { id: 'methods',  label: 'Phương pháp ghi chú' },
-  { id: 'tech',     label: 'Kiến trúc kỹ thuật' },
-  { id: 'security', label: 'Bảo mật' },
-  { id: 'routing',  label: 'Routing' },
-  { id: 'api',      label: 'API Endpoints' },
-  { id: 'links',    label: 'Liên kết' },
-];
+// ── i18n content ──────────────────────────────────────────────────────────────
+const i18n = {
+  vi: {
+    home: 'Trang chủ',
+    login: 'Đăng nhập',
+    toc: 'Mục lục',
+    badge: 'Tài liệu chính thức',
+    hero: 'Tài liệu Zero AI Note',
+    heroSub: 'Hướng dẫn đầy đủ về cách sử dụng, kiến trúc kỹ thuật và tích hợp API của Zero AI Note.',
+    cta: 'Bắt đầu miễn phí',
+    ctaReady: 'Sẵn sàng dùng thử?',
+    sections: ['Giới thiệu', 'Bắt đầu nhanh', 'Phương pháp ghi chú', 'Kiến trúc kỹ thuật', 'Bảo mật', 'Routing', 'API Endpoints', 'Liên kết'],
+    intro: {
+      title: 'Giới thiệu',
+      p1: 'Zero AI Note là công cụ ghi chú AI nguồn mở, chuyển đổi video, audio, PDF, YouTube thành ghi chú cấu trúc cao theo các phương pháp học thuật.',
+      p2: 'Dự án sử dụng Neon Postgres cho database, JWT cho authentication, và hỗ trợ Neon Object Storage hoặc Cloudflare R2 cho file storage.',
+    },
+    quickstart: {
+      title: 'Bắt đầu nhanh',
+      steps: [
+        { text: 'Đăng ký tài khoản miễn phí', sub: 'Không cần thẻ tín dụng', linkText: 'Tạo tài khoản' },
+        { text: 'Kéo thả file hoặc dán link YouTube vào khung chat', sub: 'Hỗ trợ video, audio, PDF, DOCX' },
+        { text: 'Chọn phương pháp ghi chú', sub: 'Cornell, Outline, Q&A, Flashcard, Tóm tắt nhanh' },
+        { text: 'Xem kết quả trong Artifact Panel', sub: 'Bên phải màn hình, cập nhật realtime' },
+        { text: 'Xuất bản note hoàn chỉnh', sub: 'Định dạng Markdown, DOCX, PDF, HTML' },
+      ],
+    },
+    methods: {
+      title: 'Phương pháp ghi chú',
+      items: [
+        { name: 'Cornell',        icon: 'view_agenda',          desc: 'Phân tách rõ ràng giữa ý tưởng cốt lõi và nội dung diễn giải, tối ưu cho ôn tập và ghi nhớ.' },
+        { name: 'Outline',        icon: 'format_list_bulleted', desc: 'Cấu trúc cây phân cấp, lý tưởng cho sách giáo trình và tài liệu nghiên cứu chuyên sâu.' },
+        { name: 'Q&A',            icon: 'quiz',                 desc: 'Chuyển đổi bài học thành định dạng Hỏi - Đáp, tự động trắc nghiệm năng lực ghi nhớ.' },
+        { name: 'Flashcard',      icon: 'style',                desc: 'Tạo bộ thẻ ghi nhớ với hai mặt câu hỏi và đáp án, tối ưu cho ôn tập từ vựng và thuật ngữ.' },
+        { name: 'Tóm tắt nhanh', icon: 'bolt',                 desc: 'Phiên bản cô đọng nhất, đọc hiểu chỉ trong 60 giây.' },
+      ],
+    },
+    tech: {
+      title: 'Kiến trúc kỹ thuật',
+      rows: [
+        { label: 'Frontend',  value: 'Next.js 16, React 19, Tailwind CSS 4' },
+        { label: 'Database',  value: 'Neon Postgres serverless với RLS (Row-Level Security)' },
+        { label: 'Auth',      value: 'JWT (HS256) qua cookie HttpOnly, bcryptjs cho password hashing' },
+        { label: 'Storage',   value: 'Neon Object Storage (Beta) hoặc Cloudflare R2 (S3-compatible)' },
+        { label: 'ORM',       value: 'Drizzle ORM' },
+        { label: 'AI',        value: 'Google GenAI, BYOK (Bring Your Own Key) cho OpenAI/Anthropic' },
+      ],
+    },
+    security: {
+      title: 'Bảo mật',
+      desc: 'Dữ liệu người dùng được bảo vệ bởi RLS (Row-Level Security) trên Neon Postgres. Mỗi user chỉ có thể truy cập dữ liệu của chính mình. Admin được xác thực qua',
+      env: 'ADMIN_EMAIL',
+      envSuffix: 'environment variable.',
+    },
+    routing: {
+      title: 'Routing',
+      rows: [
+        { path: '/',     desc: 'Landing page (công khai). Đã đăng nhập → tự redirect về /app.' },
+        { path: '/app',  desc: 'Dashboard (bắt buộc đăng nhập). Chưa đăng nhập → redirect về /.' },
+        { path: '/docs', desc: 'Tài liệu này (công khai, SEO-friendly).' },
+      ],
+    },
+    api: {
+      title: 'API Endpoints',
+      rows: [
+        { method: 'POST', path: '/api/auth/register',  desc: 'Đăng ký. Tự gán role admin nếu email là ADMIN_EMAIL.' },
+        { method: 'POST', path: '/api/auth/login',     desc: 'Đăng nhập, set cookie session JWT (7 ngày).' },
+        { method: 'GET',  path: '/api/auth/session',   desc: 'Kiểm tra session hiện tại.' },
+        { method: 'ANY',  path: '/api/admin/coupons',  desc: 'CRUD Coupon. Chỉ admin — 403 cho user thường.' },
+        { method: 'POST', path: '/api/coupons/apply',  desc: 'Áp mã giảm giá. Yêu cầu đăng nhập.' },
+        { method: 'GET',  path: '/api/health',         desc: 'Health check kết nối database.' },
+      ],
+    },
+    links: {
+      title: 'Liên kết',
+      items: [
+        { href: '/',                                        icon: 'home',       label: 'Trang chủ',         sub: 'Landing page' },
+        { href: '/app?screen=register',                     icon: 'person_add', label: 'Đăng ký tài khoản', sub: 'Bắt đầu miễn phí' },
+        { href: '/app?screen=login',                        icon: 'login',      label: 'Đăng nhập',         sub: 'Truy cập dashboard' },
+        { href: 'https://github.com/CThawngs/Zero-AI-Note', icon: 'code',      label: 'GitHub Repository',  sub: 'Nguồn mở · MIT License', external: true },
+      ],
+    },
+    footer: '© 2026 Zero AI Note. Mọi quyền được bảo lưu.',
+    backHome: 'Quay lại trang chủ',
+  },
+  en: {
+    home: 'Home',
+    login: 'Sign In',
+    toc: 'Contents',
+    badge: 'Official Documentation',
+    hero: 'Zero AI Note Docs',
+    heroSub: 'Complete guide to using Zero AI Note — API integration, technical architecture, and more.',
+    cta: 'Get started free',
+    ctaReady: 'Ready to try it?',
+    sections: ['Introduction', 'Quick Start', 'Note Methods', 'Tech Architecture', 'Security', 'Routing', 'API Endpoints', 'Links'],
+    intro: {
+      title: 'Introduction',
+      p1: 'Zero AI Note is an open-source AI note-taking tool that converts video, audio, PDF, and YouTube into high-structure notes using academic methods.',
+      p2: 'The project uses Neon Postgres for database, JWT for authentication, and supports Neon Object Storage or Cloudflare R2 for file storage.',
+    },
+    quickstart: {
+      title: 'Quick Start',
+      steps: [
+        { text: 'Create a free account', sub: 'No credit card required', linkText: 'Sign up' },
+        { text: 'Drag & drop files or paste a YouTube link', sub: 'Supports video, audio, PDF, DOCX' },
+        { text: 'Choose a note-taking method', sub: 'Cornell, Outline, Q&A, Flashcard, Quick Summary' },
+        { text: 'View results in the Artifact Panel', sub: 'On the right side, updates in realtime' },
+        { text: 'Export your complete note', sub: 'As Markdown, DOCX, PDF, or HTML' },
+      ],
+    },
+    methods: {
+      title: 'Note-taking Methods',
+      items: [
+        { name: 'Cornell',       icon: 'view_agenda',          desc: 'Clear separation between core ideas and elaboration, optimized for review and retention.' },
+        { name: 'Outline',       icon: 'format_list_bulleted', desc: 'Hierarchical tree structure, ideal for textbooks and in-depth research documents.' },
+        { name: 'Q&A',           icon: 'quiz',                 desc: 'Converts lessons into Question & Answer format, automatically testing recall ability.' },
+        { name: 'Flashcard',     icon: 'style',                desc: 'Creates two-sided flashcards with questions and answers, optimized for vocabulary and terminology.' },
+        { name: 'Quick Summary', icon: 'bolt',                 desc: 'The most condensed version — readable in just 60 seconds.' },
+      ],
+    },
+    tech: {
+      title: 'Tech Architecture',
+      rows: [
+        { label: 'Frontend',  value: 'Next.js 16, React 19, Tailwind CSS 4' },
+        { label: 'Database',  value: 'Neon Postgres serverless with RLS (Row-Level Security)' },
+        { label: 'Auth',      value: 'JWT (HS256) via HttpOnly cookie, bcryptjs for password hashing' },
+        { label: 'Storage',   value: 'Neon Object Storage (Beta) or Cloudflare R2 (S3-compatible)' },
+        { label: 'ORM',       value: 'Drizzle ORM' },
+        { label: 'AI',        value: 'Google GenAI, BYOK (Bring Your Own Key) for OpenAI/Anthropic' },
+      ],
+    },
+    security: {
+      title: 'Security',
+      desc: 'User data is protected by RLS (Row-Level Security) on Neon Postgres. Each user can only access their own data. Admin is authenticated via the',
+      env: 'ADMIN_EMAIL',
+      envSuffix: 'environment variable.',
+    },
+    routing: {
+      title: 'Routing',
+      rows: [
+        { path: '/',     desc: 'Landing page (public). Logged in → auto-redirect to /app.' },
+        { path: '/app',  desc: 'Dashboard (login required). Not logged in → redirect to /.' },
+        { path: '/docs', desc: 'This documentation (public, SEO-friendly).' },
+      ],
+    },
+    api: {
+      title: 'API Endpoints',
+      rows: [
+        { method: 'POST', path: '/api/auth/register',  desc: 'Register. Auto-assigns admin role if email matches ADMIN_EMAIL.' },
+        { method: 'POST', path: '/api/auth/login',     desc: 'Login, sets JWT session cookie (7 days).' },
+        { method: 'GET',  path: '/api/auth/session',   desc: 'Check current session.' },
+        { method: 'ANY',  path: '/api/admin/coupons',  desc: 'CRUD Coupons. Admin only — 403 for regular users.' },
+        { method: 'POST', path: '/api/coupons/apply',  desc: 'Apply discount code. Requires login.' },
+        { method: 'GET',  path: '/api/health',         desc: 'Database connection health check.' },
+      ],
+    },
+    links: {
+      title: 'Links',
+      items: [
+        { href: '/',                                        icon: 'home',       label: 'Home',               sub: 'Landing page' },
+        { href: '/app?screen=register',                     icon: 'person_add', label: 'Create Account',     sub: 'Get started free' },
+        { href: '/app?screen=login',                        icon: 'login',      label: 'Sign In',            sub: 'Access dashboard' },
+        { href: 'https://github.com/CThawngs/Zero-AI-Note', icon: 'code',      label: 'GitHub Repository',  sub: 'Open source · MIT License', external: true },
+      ],
+    },
+    footer: '© 2026 Zero AI Note. All rights reserved.',
+    backHome: 'Back to home',
+  },
+};
 
-const noteMethods = [
-  { name: 'Cornell',       icon: 'view_agenda',    desc: 'Phân tách rõ ràng giữa ý tưởng cốt lõi và nội dung diễn giải, tối ưu cho ôn tập và ghi nhớ.' },
-  { name: 'Outline',       icon: 'format_list_bulleted', desc: 'Cấu trúc cây phân cấp, lý tưởng cho sách giáo trình và tài liệu nghiên cứu chuyên sâu.' },
-  { name: 'Q&A',           icon: 'quiz',           desc: 'Chuyển đổi bài học thành định dạng Hỏi - Đáp, tự động trắc nghiệm năng lực ghi nhớ.' },
-  { name: 'Flashcard',     icon: 'style',          desc: 'Tạo bộ thẻ ghi nhớ với hai mặt câu hỏi và đáp án, tối ưu cho ôn tập từ vựng và thuật ngữ.' },
-  { name: 'Tóm tắt nhanh', icon: 'bolt',           desc: 'Phiên bản cô đọng nhất, đọc hiểu chỉ trong 60 giây.' },
-];
-
-const techStack = [
-  { label: 'Frontend',  value: 'Next.js 16, React 19, Tailwind CSS 4' },
-  { label: 'Database',  value: 'Neon Postgres serverless với RLS (Row-Level Security)' },
-  { label: 'Auth',      value: 'JWT (HS256) qua cookie HttpOnly, bcryptjs cho password hashing' },
-  { label: 'Storage',   value: 'Neon Object Storage (Beta) hoặc Cloudflare R2 (S3-compatible)' },
-  { label: 'ORM',       value: 'Drizzle ORM' },
-  { label: 'AI',        value: 'Google GenAI, BYOK (Bring Your Own Key) cho OpenAI/Anthropic' },
-];
-
-const apiEndpoints = [
-  { method: 'POST', path: '/api/auth/register',   desc: 'Đăng ký. Tự gán role admin nếu email là ADMIN_EMAIL.' },
-  { method: 'POST', path: '/api/auth/login',      desc: 'Đăng nhập, set cookie session JWT (7 ngày).' },
-  { method: 'GET',  path: '/api/auth/session',    desc: 'Kiểm tra session hiện tại.' },
-  { method: 'ANY',  path: '/api/admin/coupons',   desc: 'CRUD Coupon. Chỉ admin — 403 cho user thường.' },
-  { method: 'POST', path: '/api/coupons/apply',   desc: 'Áp mã giảm giá. Yêu cầu đăng nhập.' },
-  { method: 'GET',  path: '/api/health',          desc: 'Health check kết nối database.' },
-];
+const sectionIds = ['intro', 'quickstart', 'methods', 'tech', 'security', 'routing', 'api', 'links'];
 
 const methodColor: Record<string, string> = {
   POST: 'text-emerald-400 bg-emerald-400/10',
@@ -77,26 +213,30 @@ const methodColorLight: Record<string, string> = {
 };
 
 export default function DocsPage() {
-  const [theme, setTheme] = useState<ThemeMode>('dark');
-  const [mounted, setMounted] = useState(false);
+  const [theme,         setTheme]         = useState<ThemeMode>('dark');
+  const [lang,          setLang]          = useState<Language>('vi');
+  const [mounted,       setMounted]       = useState(false);
   const [activeSection, setActiveSection] = useState('intro');
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [tocOpen,       setTocOpen]       = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const observe = useScrollReveal();
 
   useEffect(() => {
-    const saved = localStorage.getItem('zero-note-theme') as ThemeMode || 'dark';
-    setTheme(saved);
-    document.documentElement.className = saved === 'dark' ? 'dark' : 'light';
+    const savedTheme = localStorage.getItem('zero-note-theme') as ThemeMode || 'dark';
+    const savedLang  = localStorage.getItem('zero-note-lang')  as Language  || 'vi';
+    setTheme(savedTheme);
+    setLang(savedLang);
+    document.documentElement.className = savedTheme === 'dark' ? 'dark' : 'light';
     setMounted(true);
   }, []);
 
   useEffect(() => {
     if (!mounted) return;
     const handleScroll = () => {
-      for (const s of [...sections].reverse()) {
-        const el = document.getElementById(s.id);
-        if (el && el.getBoundingClientRect().top <= 120) {
-          setActiveSection(s.id);
+      for (const id of [...sectionIds].reverse()) {
+        const el = document.getElementById(id);
+        if (el && el.getBoundingClientRect().top <= 110) {
+          setActiveSection(id);
           return;
         }
       }
@@ -113,43 +253,57 @@ export default function DocsPage() {
     document.documentElement.className = next === 'dark' ? 'dark' : 'light';
   };
 
+  const toggleLang = () => {
+    const next = lang === 'vi' ? 'en' : 'vi';
+    setLang(next);
+    localStorage.setItem('zero-note-lang', next);
+  };
+
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    setMobileNavOpen(false);
+    setTocOpen(false);
+    setMobileMenuOpen(false);
   };
 
   if (!mounted) return null;
 
   const isDark = theme === 'dark';
+  const t = i18n[lang];
 
-  // ── Style tokens (same palette as landing) ───────────────────────────────
-  const bg       = isDark ? 'bg-[#0a0a0a] text-white'        : 'bg-white text-black';
-  const surface  = isDark ? 'bg-[#0f0f0f]'                   : 'bg-gray-50';
-  const border   = isDark ? 'border-white/10'                 : 'border-gray-200';
-  const muted    = isDark ? 'text-neutral-400'                : 'text-gray-500';
-  const code     = isDark ? 'bg-white/8 text-neutral-300'     : 'bg-gray-100 text-gray-700';
-  const hdr      = isDark ? 'bg-[#0a0a0a]/85 border-white/10' : 'bg-white/85 border-gray-200';
+  // ── Style tokens ─────────────────────────────────────────────────────────
+  const bg      = isDark ? 'bg-[#0a0a0a] text-white'        : 'bg-white text-black';
+  const surface = isDark ? 'bg-[#0f0f0f]'                   : 'bg-gray-50';
+  const border  = isDark ? 'border-white/10'                 : 'border-gray-200';
+  const muted   = isDark ? 'text-neutral-400'                : 'text-gray-500';
+  const code    = isDark ? 'bg-white/8 text-neutral-300'     : 'bg-gray-100 text-gray-700';
+  const hdr     = isDark ? 'bg-[#0a0a0a]/90 border-white/10' : 'bg-white/90 border-gray-200';
   const reveal: React.CSSProperties = {
     opacity: 0,
-    transform: 'translateY(24px)',
+    transform: 'translateY(22px)',
     transition: 'opacity 0.55s cubic-bezier(0.16,1,0.3,1), transform 0.55s cubic-bezier(0.16,1,0.3,1)',
   };
+
+  // shared toggle pill (lang + theme) — same as landing desktop
+  const togglePill = `flex items-center gap-1 rounded-lg border px-1 py-0.5 ${isDark ? 'border-white/10 bg-white/5' : 'border-gray-200 bg-gray-100'}`;
+  const toggleBtn  = `text-xs font-semibold px-2.5 py-1 rounded-md transition-all duration-200 ${isDark ? 'text-neutral-300 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-black hover:bg-white'}`;
+  const dividerV   = `w-px h-3.5 ${isDark ? 'bg-white/15' : 'bg-gray-300'}`;
 
   return (
     <div className={`min-h-screen font-sans antialiased transition-colors duration-300 overflow-x-hidden ${bg}`}>
 
-      {/* ── Sticky header ─────────────────────────────────────────────────── */}
+      {/* ══ HEADER ══════════════════════════════════════════════════════════ */}
       <header className={`fixed top-0 w-full z-50 backdrop-blur-xl border-b transition-colors duration-300 ${hdr}`}>
-        <div className="flex items-center justify-between px-4 sm:px-6 py-3 max-w-7xl mx-auto">
+        <div className="flex items-center justify-between px-4 sm:px-6 h-14 max-w-7xl mx-auto">
+
           {/* Logo */}
-          <Link href="/" className={`flex items-center gap-2.5 font-bold text-lg transition-opacity hover:opacity-80 ${isDark ? 'text-white' : 'text-black'}`}>
+          <Link href="/" className={`flex items-center gap-2 font-bold text-base sm:text-lg shrink-0 transition-opacity hover:opacity-80 ${isDark ? 'text-white' : 'text-black'}`}>
             <img src="/logo.png" alt="Zero AI Note Logo" className="w-7 h-7 rounded-full object-contain shrink-0" />
-            <span>Zero AI Note</span>
+            <span className="hidden xs:inline sm:inline">Zero AI Note</span>
           </Link>
 
-          {/* Desktop right actions */}
+          {/* ── Desktop nav (sm+) ────────────────────────────────────────── */}
           <div className="hidden sm:flex items-center gap-3">
-            {/* Back to landing */}
+            {/* Back to home pill */}
             <Link
               href="/"
               className={`flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-full border transition-all duration-200 ${
@@ -159,200 +313,242 @@ export default function DocsPage() {
               }`}
             >
               <span className="material-symbols-outlined leading-none" style={{ fontSize: '16px' }}>arrow_back</span>
-              <span>Trang chủ</span>
+              <span>{t.home}</span>
             </Link>
 
-            {/* Theme toggle */}
-            <button
-              onClick={toggleTheme}
-              className={`p-2 rounded-lg transition-colors ${isDark ? 'text-neutral-400 hover:text-white hover:bg-white/8' : 'text-gray-500 hover:text-black hover:bg-gray-100'}`}
-              aria-label="Toggle theme"
-            >
-              <span className="material-symbols-outlined leading-none" style={{ fontSize: '19px' }}>
-                {isDark ? 'light_mode' : 'dark_mode'}
-              </span>
-            </button>
+            {/* Lang + Theme grouped pill */}
+            <div className={togglePill}>
+              <button onClick={toggleLang} className={toggleBtn} title="Switch Language">
+                {lang === 'vi' ? 'VI' : 'EN'}
+              </button>
+              <div className={dividerV} />
+              <button
+                onClick={toggleTheme}
+                className={`p-1 rounded-md transition-all duration-200 flex items-center justify-center ${isDark ? 'text-neutral-300 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-black hover:bg-white'}`}
+                aria-label="Toggle theme"
+              >
+                <span className="material-symbols-outlined leading-none" style={{ fontSize: '17px' }}>
+                  {isDark ? 'light_mode' : 'dark_mode'}
+                </span>
+              </button>
+            </div>
 
+            {/* Login CTA */}
             <Link
               href="/app?screen=login"
               className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 hover:scale-105 ${isDark ? 'bg-white text-black hover:bg-neutral-200' : 'bg-black text-white hover:bg-gray-800'}`}
             >
-              Đăng nhập
+              {t.login}
             </Link>
           </div>
 
-          {/* Mobile: back + theme */}
-          <div className="flex sm:hidden items-center gap-2">
-            <Link
-              href="/"
-              className={`flex items-center gap-1 text-sm font-medium px-2.5 py-1.5 rounded-lg border transition-colors ${
-                isDark ? 'border-white/10 text-neutral-300 hover:bg-white/8' : 'border-gray-200 text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              <span className="material-symbols-outlined leading-none" style={{ fontSize: '16px' }}>arrow_back</span>
-              <span>Trang chủ</span>
-            </Link>
-            <button
-              onClick={toggleTheme}
-              className={`p-2 rounded-lg transition-colors ${isDark ? 'text-neutral-400 hover:bg-white/8' : 'text-gray-500 hover:bg-gray-100'}`}
-            >
-              <span className="material-symbols-outlined leading-none" style={{ fontSize: '19px' }}>
-                {isDark ? 'light_mode' : 'dark_mode'}
-              </span>
-            </button>
-          </div>
+          {/* ── Mobile hamburger (< sm) ───────────────────────────────────── */}
+          <button
+            className={`sm:hidden w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${
+              isDark ? 'text-neutral-200 hover:bg-white/8' : 'text-gray-800 hover:bg-gray-100'
+            }`}
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            <span className="material-symbols-outlined leading-none" style={{ fontSize: '22px' }}>
+              {mobileMenuOpen ? 'close' : 'menu'}
+            </span>
+          </button>
         </div>
+
+        {/* ── Mobile dropdown menu ─────────────────────────────────────────── */}
+        {mobileMenuOpen && (
+          <div className={`sm:hidden ${isDark ? 'bg-[#0d0d0d] border-white/8' : 'bg-white border-gray-100'} border-t`}>
+            {/* Nav links */}
+            <div className="px-3 pt-3 pb-1 space-y-0.5">
+              <Link
+                href="/"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${
+                  isDark ? 'text-neutral-200 hover:bg-white/6' : 'text-gray-800 hover:bg-gray-50'
+                }`}
+              >
+                <span className={`w-8 h-8 flex items-center justify-center rounded-lg flex-shrink-0 ${isDark ? 'bg-white/8' : 'bg-gray-100'}`}>
+                  <span className="material-symbols-outlined leading-none" style={{ fontSize: '18px' }}>home</span>
+                </span>
+                <span className="text-[15px] font-medium flex-1">{t.home}</span>
+                <span className="material-symbols-outlined leading-none opacity-30" style={{ fontSize: '14px' }}>chevron_right</span>
+              </Link>
+              <Link
+                href="/app?screen=login"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${
+                  isDark ? 'text-neutral-200 hover:bg-white/6' : 'text-gray-800 hover:bg-gray-50'
+                }`}
+              >
+                <span className={`w-8 h-8 flex items-center justify-center rounded-lg flex-shrink-0 ${isDark ? 'bg-white/8' : 'bg-gray-100'}`}>
+                  <span className="material-symbols-outlined leading-none" style={{ fontSize: '18px' }}>login</span>
+                </span>
+                <span className="text-[15px] font-medium flex-1">{t.login}</span>
+                <span className="material-symbols-outlined leading-none opacity-30" style={{ fontSize: '14px' }}>chevron_right</span>
+              </Link>
+            </div>
+
+            {/* Divider */}
+            <div className={`mx-4 my-2 h-px ${isDark ? 'bg-white/8' : 'bg-gray-100'}`} />
+
+            {/* Lang + Theme row */}
+            <div className="px-4 py-2 flex items-center gap-2">
+              <button
+                onClick={toggleLang}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[13px] font-semibold transition-colors ${
+                  isDark ? 'bg-white/6 text-neutral-300 hover:bg-white/10' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <span className="material-symbols-outlined leading-none" style={{ fontSize: '15px' }}>language</span>
+                <span>{lang === 'vi' ? 'Tiếng Việt' : 'English'}</span>
+              </button>
+              <button
+                onClick={toggleTheme}
+                aria-label="Toggle theme"
+                className={`w-10 h-9 flex items-center justify-center rounded-xl flex-shrink-0 transition-colors ${
+                  isDark ? 'bg-white/6 text-neutral-300 hover:bg-white/10' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <span className="material-symbols-outlined leading-none" style={{ fontSize: '18px' }}>
+                  {isDark ? 'light_mode' : 'dark_mode'}
+                </span>
+              </button>
+            </div>
+
+            {/* CTA */}
+            <div className="px-4 pt-1 pb-4">
+              <Link
+                href="/app?screen=register"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`flex items-center justify-center gap-2 w-full py-3 rounded-xl text-[15px] font-semibold transition-all active:scale-[0.98] ${
+                  isDark ? 'bg-white text-black hover:bg-neutral-100' : 'bg-black text-white hover:bg-gray-900'
+                }`}
+              >
+                {t.cta}
+                <span className="material-symbols-outlined leading-none" style={{ fontSize: '16px' }}>arrow_forward</span>
+              </Link>
+            </div>
+          </div>
+        )}
       </header>
 
-      {/* ── Layout ─────────────────────────────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-20">
+      {/* ══ LAYOUT ══════════════════════════════════════════════════════════ */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-14">
         <div className="flex gap-8 xl:gap-14">
 
-          {/* ── Sidebar (xl+ only) ────────────────────────────────────────── */}
+          {/* ── Sidebar TOC (xl+ desktop) ─────────────────────────────────── */}
           <aside className="hidden xl:block w-52 shrink-0">
-            <div className="sticky top-24 pt-8 overflow-y-auto max-h-[calc(100vh-7rem)]">
-              <p className={`text-[11px] font-semibold uppercase tracking-widest mb-3 ${muted}`}>Nội dung</p>
+            <div className="sticky top-20 pt-8 overflow-y-auto max-h-[calc(100vh-6rem)]">
+              <p className={`text-[11px] font-semibold uppercase tracking-widest mb-3 ${muted}`}>{t.toc}</p>
               <nav className="space-y-0.5">
-                {sections.map((s) => (
+                {sectionIds.map((id, idx) => (
                   <button
-                    key={s.id}
-                    onClick={() => scrollTo(s.id)}
+                    key={id}
+                    onClick={() => scrollTo(id)}
                     className={`w-full text-left px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all duration-150 ${
-                      activeSection === s.id
+                      activeSection === id
                         ? isDark ? 'bg-white/10 text-white' : 'bg-gray-100 text-black'
                         : isDark ? 'text-neutral-500 hover:text-neutral-200 hover:bg-white/5' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'
                     }`}
                   >
-                    {s.label}
+                    {t.sections[idx]}
                   </button>
                 ))}
               </nav>
 
-              {/* Get started CTA */}
               <div className={`mt-6 p-4 rounded-xl border ${isDark ? 'border-white/10 bg-white/5' : 'border-gray-200 bg-gray-50'}`}>
-                <p className={`text-xs font-medium mb-2 ${isDark ? 'text-white' : 'text-black'}`}>Sẵn sàng dùng thử?</p>
+                <p className={`text-xs font-medium mb-2 ${isDark ? 'text-white' : 'text-black'}`}>{t.ctaReady}</p>
                 <Link
                   href="/app?screen=register"
                   className={`flex items-center justify-center gap-1.5 w-full py-2 rounded-lg text-xs font-semibold transition-all hover:scale-105 ${isDark ? 'bg-white text-black hover:bg-neutral-100' : 'bg-black text-white hover:bg-gray-800'}`}
                 >
-                  Bắt đầu miễn phí
+                  {t.cta}
                   <span className="material-symbols-outlined leading-none" style={{ fontSize: '14px' }}>arrow_forward</span>
                 </Link>
               </div>
             </div>
           </aside>
 
-          {/* ── Main content ───────────────────────────────────────────────── */}
+          {/* ── Main content ─────────────────────────────────────────────── */}
           <main className="flex-1 min-w-0 pt-8 pb-24">
 
-            {/* TOC accordion — visible on everything below xl */}
+            {/* TOC accordion — below xl */}
             <div className="xl:hidden mb-6">
               <button
-                onClick={() => setMobileNavOpen(!mobileNavOpen)}
+                onClick={() => setTocOpen(!tocOpen)}
                 className={`flex items-center gap-2 w-full px-4 py-3 rounded-xl border text-sm font-medium transition-colors ${
                   isDark ? 'border-white/10 bg-white/5 text-neutral-300' : 'border-gray-200 bg-gray-50 text-gray-700'
                 }`}
               >
                 <span className="material-symbols-outlined leading-none" style={{ fontSize: '18px' }}>toc</span>
-                <span>Mục lục</span>
+                <span>{t.toc}</span>
                 <span
-                  className={`material-symbols-outlined ml-auto leading-none transition-transform duration-200 ${mobileNavOpen ? 'rotate-180' : ''}`}
+                  className={`material-symbols-outlined ml-auto leading-none transition-transform duration-200 ${tocOpen ? 'rotate-180' : ''}`}
                   style={{ fontSize: '18px' }}
                 >expand_more</span>
               </button>
-              {mobileNavOpen && (
+              {tocOpen && (
                 <div className={`mt-1 rounded-xl border overflow-hidden ${isDark ? 'border-white/10 bg-[#111]' : 'border-gray-200 bg-white'}`}>
-                  {sections.map((s) => (
+                  {sectionIds.map((id, idx) => (
                     <button
-                      key={s.id}
-                      onClick={() => scrollTo(s.id)}
+                      key={id}
+                      onClick={() => scrollTo(id)}
                       className={`w-full text-left px-4 py-2.5 text-[13px] font-medium border-b last:border-b-0 transition-colors ${
-                        activeSection === s.id
+                        activeSection === id
                           ? isDark ? 'bg-white/8 text-white' : 'bg-gray-100 text-black'
                           : isDark ? 'border-white/5 text-neutral-300 hover:bg-white/5' : 'border-gray-100 text-gray-700 hover:bg-gray-50'
                       }`}
                     >
-                      {s.label}
+                      {t.sections[idx]}
                     </button>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* ── Hero ──────────────────────────────────────────────────────── */}
-            <div
-              ref={(el) => observe(el, 0)}
-              style={reveal}
-              className="mb-12"
-            >
+            {/* ── Hero ──────────────────────────────────────────────────── */}
+            <div ref={(el) => observe(el, 0)} style={reveal} className="mb-10 sm:mb-12">
               <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium mb-4 ${isDark ? 'bg-white/5 border-white/10 text-neutral-400' : 'bg-gray-100 border-gray-200 text-gray-600'}`}>
                 <span className="material-symbols-outlined leading-none" style={{ fontSize: '14px' }}>menu_book</span>
-                Tài liệu chính thức
+                {t.badge}
               </div>
-              <h1 className={`text-3xl sm:text-4xl font-bold leading-tight mb-3 ${isDark ? 'text-white' : 'text-black'}`}>
-                Tài liệu Zero AI Note
+              <h1 className={`text-2xl sm:text-3xl md:text-4xl font-bold leading-tight mb-3 ${isDark ? 'text-white' : 'text-black'}`}>
+                {t.hero}
               </h1>
-              <p className={`text-base sm:text-lg leading-relaxed max-w-2xl ${muted}`}>
-                Hướng dẫn đầy đủ về cách sử dụng, kiến trúc kỹ thuật và tích hợp API của Zero AI Note.
-              </p>
+              <p className={`text-sm sm:text-base leading-relaxed max-w-2xl ${muted}`}>{t.heroSub}</p>
             </div>
 
-            {/* ── Giới thiệu ─────────────────────────────────────────────── */}
-            <section id="intro" className="mb-12 sm:mb-14 scroll-mt-20">
-              <h2
-                ref={(el) => observe(el, 0)}
-                style={reveal}
-                className={`text-xl sm:text-2xl font-bold mb-4 ${isDark ? 'text-white' : 'text-black'}`}
-              >
-                Giới thiệu
-              </h2>
-              <div
-                ref={(el) => observe(el, 80)}
-                style={reveal}
-                className={`rounded-xl border p-5 sm:p-6 ${surface} ${border}`}
-              >
+            {/* ── Introduction ──────────────────────────────────────────── */}
+            <section id="intro" className="mb-10 sm:mb-12 scroll-mt-20">
+              <h2 ref={(el) => observe(el, 0)} style={reveal} className={`text-lg sm:text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-black'}`}>{t.intro.title}</h2>
+              <div ref={(el) => observe(el, 80)} style={reveal} className={`rounded-xl border p-4 sm:p-6 ${surface} ${border}`}>
                 <p className={`text-sm sm:text-base leading-relaxed mb-3 ${isDark ? 'text-neutral-300' : 'text-gray-700'}`}>
-                  <strong className={isDark ? 'text-white' : 'text-black'}>Zero AI Note</strong> là công cụ ghi chú AI nguồn mở, chuyển đổi video, audio, PDF, YouTube thành ghi chú cấu trúc cao theo các phương pháp học thuật.
+                  <strong className={isDark ? 'text-white' : 'text-black'}>Zero AI Note</strong> {t.intro.p1.replace('Zero AI Note ', '')}
                 </p>
-                <p className={`text-sm sm:text-base leading-relaxed ${isDark ? 'text-neutral-300' : 'text-gray-700'}`}>
-                  Dự án sử dụng Neon Postgres cho database, JWT cho authentication, và hỗ trợ Neon Object Storage hoặc Cloudflare R2 cho file storage.
-                </p>
+                <p className={`text-sm sm:text-base leading-relaxed ${isDark ? 'text-neutral-300' : 'text-gray-700'}`}>{t.intro.p2}</p>
               </div>
             </section>
 
-            {/* ── Bắt đầu nhanh ──────────────────────────────────────────── */}
-            <section id="quickstart" className="mb-12 sm:mb-14 scroll-mt-20">
-              <h2
-                ref={(el) => observe(el, 0)}
-                style={reveal}
-                className={`text-xl sm:text-2xl font-bold mb-4 ${isDark ? 'text-white' : 'text-black'}`}
-              >
-                Bắt đầu nhanh
-              </h2>
+            {/* ── Quick Start ───────────────────────────────────────────── */}
+            <section id="quickstart" className="mb-10 sm:mb-12 scroll-mt-20">
+              <h2 ref={(el) => observe(el, 0)} style={reveal} className={`text-lg sm:text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-black'}`}>{t.quickstart.title}</h2>
               <div className="space-y-2.5">
-                {[
-                  { step: '1', text: 'Đăng ký tài khoản miễn phí', sub: 'Không cần thẻ tín dụng', link: '/app?screen=register', linkText: 'Tạo tài khoản' },
-                  { step: '2', text: 'Kéo thả file hoặc dán link YouTube vào khung chat', sub: 'Hỗ trợ video, audio, PDF, DOCX' },
-                  { step: '3', text: 'Chọn phương pháp ghi chú', sub: 'Cornell, Outline, Q&A, Flashcard, Tóm tắt nhanh' },
-                  { step: '4', text: 'Xem kết quả trong Artifact Panel', sub: 'Bên phải màn hình, cập nhật realtime' },
-                  { step: '5', text: 'Xuất bản note hoàn chỉnh', sub: 'Định dạng Markdown, DOCX, PDF, HTML' },
-                ].map((item, i) => (
+                {t.quickstart.steps.map((item, i) => (
                   <div
                     key={i}
                     ref={(el) => observe(el, i * 70)}
                     style={reveal}
-                    className={`flex items-start gap-3 p-4 rounded-xl border transition-all duration-200 hover:scale-[1.01] ${surface} ${border}`}
+                    className={`flex items-start gap-3 p-3.5 sm:p-4 rounded-xl border transition-all duration-200 hover:scale-[1.01] ${surface} ${border}`}
                   >
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 ${isDark ? 'bg-white text-black' : 'bg-black text-white'}`}>
-                      {item.step}
-                    </div>
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 ${isDark ? 'bg-white text-black' : 'bg-black text-white'}`}>{i + 1}</div>
                     <div className="flex-1 min-w-0">
                       <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-black'}`}>{item.text}</p>
                       <p className={`text-xs mt-0.5 ${muted}`}>{item.sub}</p>
                     </div>
-                    {item.link && (
-                      <Link href={item.link} className={`text-[11px] font-semibold px-2.5 py-1.5 rounded-lg shrink-0 whitespace-nowrap transition-colors ${isDark ? 'bg-white/8 text-neutral-300 hover:bg-white/15' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
-                        {item.linkText}
+                    {i === 0 && 'linkText' in item && (
+                      <Link href="/app?screen=register" className={`text-[11px] font-semibold px-2.5 py-1.5 rounded-lg shrink-0 whitespace-nowrap transition-colors ${isDark ? 'bg-white/8 text-neutral-300 hover:bg-white/15' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+                        {(item as any).linkText}
                       </Link>
                     )}
                   </div>
@@ -360,26 +556,20 @@ export default function DocsPage() {
               </div>
             </section>
 
-            {/* ── Phương pháp ghi chú ────────────────────────────────────── */}
-            <section id="methods" className="mb-12 sm:mb-14 scroll-mt-20">
-              <h2
-                ref={(el) => observe(el, 0)}
-                style={reveal}
-                className={`text-xl sm:text-2xl font-bold mb-4 ${isDark ? 'text-white' : 'text-black'}`}
-              >
-                Phương pháp ghi chú
-              </h2>
+            {/* ── Note Methods ──────────────────────────────────────────── */}
+            <section id="methods" className="mb-10 sm:mb-12 scroll-mt-20">
+              <h2 ref={(el) => observe(el, 0)} style={reveal} className={`text-lg sm:text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-black'}`}>{t.methods.title}</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {noteMethods.map((m, i) => (
+                {t.methods.items.map((m, i) => (
                   <div
                     key={i}
                     ref={(el) => observe(el, i * 60)}
                     style={reveal}
-                    className={`p-5 rounded-xl border transition-all duration-200 hover:scale-[1.02] ${surface} ${border}`}
+                    className={`p-4 sm:p-5 rounded-xl border transition-all duration-200 hover:scale-[1.02] ${surface} ${border}`}
                   >
                     <div className="flex items-center gap-3 mb-2">
-                      <span className={`w-9 h-9 flex items-center justify-center rounded-lg ${isDark ? 'bg-white/8' : 'bg-gray-100'}`}>
-                        <span className="material-symbols-outlined leading-none" style={{ fontSize: '20px' }}>{m.icon}</span>
+                      <span className={`w-8 h-8 flex items-center justify-center rounded-lg ${isDark ? 'bg-white/8' : 'bg-gray-100'}`}>
+                        <span className="material-symbols-outlined leading-none" style={{ fontSize: '18px' }}>{m.icon}</span>
                       </span>
                       <h3 className={`text-sm font-bold ${isDark ? 'text-white' : 'text-black'}`}>{m.name}</h3>
                     </div>
@@ -389,97 +579,55 @@ export default function DocsPage() {
               </div>
             </section>
 
-            {/* ── Kiến trúc kỹ thuật ─────────────────────────────────────── */}
-            <section id="tech" className="mb-12 sm:mb-14 scroll-mt-20">
-              <h2
-                ref={(el) => observe(el, 0)}
-                style={reveal}
-                className={`text-xl sm:text-2xl font-bold mb-4 ${isDark ? 'text-white' : 'text-black'}`}
-              >
-                Kiến trúc kỹ thuật
-              </h2>
-              <div
-                ref={(el) => observe(el, 80)}
-                className={`rounded-xl border overflow-hidden ${border}`}
-              >
-                {techStack.map((t, i) => (
-                  <div
-                    key={i}
-                    className={`flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 px-4 sm:px-5 py-3 sm:py-3.5 border-b last:border-b-0 ${border} ${isDark ? i % 2 === 0 ? 'bg-[#0f0f0f]' : 'bg-white/3' : i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}
-                  >
-                    <span className={`text-[11px] font-bold uppercase tracking-wide shrink-0 sm:w-20 sm:pt-0.5 ${isDark ? 'text-neutral-400' : 'text-gray-500'}`}>{t.label}</span>
-                    <span className={`text-sm leading-relaxed ${isDark ? 'text-neutral-200' : 'text-gray-800'}`}>{t.value}</span>
+            {/* ── Tech Architecture ─────────────────────────────────────── */}
+            <section id="tech" className="mb-10 sm:mb-12 scroll-mt-20">
+              <h2 ref={(el) => observe(el, 0)} style={reveal} className={`text-lg sm:text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-black'}`}>{t.tech.title}</h2>
+              <div ref={(el) => observe(el, 80)} style={reveal} className={`rounded-xl border overflow-hidden ${border}`}>
+                {t.tech.rows.map((row, i) => (
+                  <div key={i} className={`flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 px-4 sm:px-5 py-3 border-b last:border-b-0 ${border} ${isDark ? i % 2 === 0 ? 'bg-[#0f0f0f]' : 'bg-white/3' : i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}>
+                    <span className={`text-[10px] sm:text-[11px] font-bold uppercase tracking-wide shrink-0 sm:w-20 sm:pt-0.5 ${muted}`}>{row.label}</span>
+                    <span className={`text-xs sm:text-sm leading-relaxed ${isDark ? 'text-neutral-200' : 'text-gray-800'}`}>{row.value}</span>
                   </div>
                 ))}
               </div>
             </section>
 
-            {/* ── Bảo mật ────────────────────────────────────────────────── */}
-            <section id="security" className="mb-12 sm:mb-14 scroll-mt-20">
-              <h2
-                ref={(el) => observe(el, 0)}
-                style={reveal}
-                className={`text-xl sm:text-2xl font-bold mb-4 ${isDark ? 'text-white' : 'text-black'}`}
-              >
-                Bảo mật
-              </h2>
-              <div
-                ref={(el) => observe(el, 80)}
-                style={reveal}
-                className={`rounded-xl border p-5 sm:p-6 ${surface} ${border}`}
-              >
+            {/* ── Security ──────────────────────────────────────────────── */}
+            <section id="security" className="mb-10 sm:mb-12 scroll-mt-20">
+              <h2 ref={(el) => observe(el, 0)} style={reveal} className={`text-lg sm:text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-black'}`}>{t.security.title}</h2>
+              <div ref={(el) => observe(el, 80)} style={reveal} className={`rounded-xl border p-4 sm:p-6 ${surface} ${border}`}>
                 <div className="flex items-start gap-3">
-                  <span className={`material-symbols-outlined mt-0.5 shrink-0 ${isDark ? 'text-neutral-400' : 'text-gray-500'}`} style={{ fontSize: '20px' }}>shield</span>
+                  <span className={`material-symbols-outlined mt-0.5 shrink-0 ${muted}`} style={{ fontSize: '20px' }}>shield</span>
                   <p className={`text-sm sm:text-base leading-relaxed ${isDark ? 'text-neutral-300' : 'text-gray-700'}`}>
-                    Dữ liệu người dùng được bảo vệ bởi RLS (Row-Level Security) trên Neon Postgres. Mỗi user chỉ có thể truy cập dữ liệu của chính mình. Admin được xác thực qua{' '}
-                    <code className={`px-1.5 py-0.5 rounded text-[13px] font-mono ${code}`}>ADMIN_EMAIL</code>
-                    {' '}environment variable.
+                    {t.security.desc}{' '}
+                    <code className={`px-1.5 py-0.5 rounded text-[12px] sm:text-[13px] font-mono ${code}`}>{t.security.env}</code>
+                    {' '}{t.security.envSuffix}
                   </p>
                 </div>
               </div>
             </section>
 
-            {/* ── Routing ────────────────────────────────────────────────── */}
-            <section id="routing" className="mb-12 sm:mb-14 scroll-mt-20">
-              <h2
-                ref={(el) => observe(el, 0)}
-                style={reveal}
-                className={`text-xl sm:text-2xl font-bold mb-4 ${isDark ? 'text-white' : 'text-black'}`}
-              >
-                Routing
-              </h2>
-              <div
-                ref={(el) => observe(el, 80)}
-                style={reveal}
-                className={`rounded-xl border overflow-hidden ${border}`}
-              >
-                {[
-                  { path: '/',     desc: 'Landing page (công khai). Đã đăng nhập → tự redirect về /app.' },
-                  { path: '/app',  desc: 'Dashboard (bắt buộc đăng nhập). Chưa đăng nhập → redirect về /.' },
-                  { path: '/docs', desc: 'Tài liệu này (công khai, SEO-friendly).' },
-                ].map((r, i) => (
-                  <div key={i} className={`flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 px-4 sm:px-5 py-3 sm:py-3.5 border-b last:border-b-0 ${border} ${isDark ? 'bg-[#0f0f0f]' : 'bg-gray-50'}`}>
-                    <code className={`text-[12px] sm:text-[13px] font-mono font-semibold shrink-0 ${code} px-2 py-0.5 rounded`}>{r.path}</code>
-                    <span className={`text-sm ${muted}`}>{r.desc}</span>
+            {/* ── Routing ───────────────────────────────────────────────── */}
+            <section id="routing" className="mb-10 sm:mb-12 scroll-mt-20">
+              <h2 ref={(el) => observe(el, 0)} style={reveal} className={`text-lg sm:text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-black'}`}>{t.routing.title}</h2>
+              <div ref={(el) => observe(el, 80)} style={reveal} className={`rounded-xl border overflow-hidden ${border}`}>
+                {t.routing.rows.map((r, i) => (
+                  <div key={i} className={`flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 px-4 sm:px-5 py-3 border-b last:border-b-0 ${border} ${isDark ? 'bg-[#0f0f0f]' : 'bg-gray-50'}`}>
+                    <code className={`text-[11px] sm:text-[12px] font-mono font-semibold shrink-0 ${code} px-2 py-0.5 rounded`}>{r.path}</code>
+                    <span className={`text-xs sm:text-sm ${muted}`}>{r.desc}</span>
                   </div>
                 ))}
               </div>
             </section>
 
-            {/* ── API Endpoints ──────────────────────────────────────────── */}
-            <section id="api" className="mb-12 sm:mb-14 scroll-mt-20">
-              <h2
-                ref={(el) => observe(el, 0)}
-                style={reveal}
-                className={`text-xl sm:text-2xl font-bold mb-4 ${isDark ? 'text-white' : 'text-black'}`}
-              >
-                API Endpoints
-              </h2>
-              <div className="space-y-2.5">
-                {apiEndpoints.map((ep, i) => (
+            {/* ── API Endpoints ─────────────────────────────────────────── */}
+            <section id="api" className="mb-10 sm:mb-12 scroll-mt-20">
+              <h2 ref={(el) => observe(el, 0)} style={reveal} className={`text-lg sm:text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-black'}`}>{t.api.title}</h2>
+              <div className="space-y-2">
+                {t.api.rows.map((ep, i) => (
                   <div
                     key={i}
-                    ref={(el) => observe(el, i * 60)}
+                    ref={(el) => observe(el, i * 55)}
                     style={reveal}
                     className={`p-3.5 sm:p-4 rounded-xl border transition-all duration-200 hover:scale-[1.01] ${surface} ${border}`}
                   >
@@ -487,49 +635,36 @@ export default function DocsPage() {
                       <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 font-mono ${isDark ? methodColor[ep.method] : methodColorLight[ep.method]}`}>
                         {ep.method}
                       </span>
-                      <code className={`text-[12px] sm:text-[13px] font-mono font-semibold break-all ${isDark ? 'text-neutral-200' : 'text-gray-800'}`}>{ep.path}</code>
+                      <code className={`text-[11px] sm:text-[12px] font-mono font-semibold break-all ${isDark ? 'text-neutral-200' : 'text-gray-800'}`}>{ep.path}</code>
                     </div>
-                    <p className={`text-xs sm:text-[13px] ${muted} leading-relaxed`}>{ep.desc}</p>
+                    <p className={`text-xs sm:text-[13px] leading-relaxed ${muted}`}>{ep.desc}</p>
                   </div>
                 ))}
               </div>
             </section>
 
             {/* ── Links ─────────────────────────────────────────────────── */}
-            <section id="links" className="mb-12 sm:mb-14 scroll-mt-20">
-              <h2
-                ref={(el) => observe(el, 0)}
-                style={reveal}
-                className={`text-xl sm:text-2xl font-bold mb-4 ${isDark ? 'text-white' : 'text-black'}`}
-              >
-                Liên kết
-              </h2>
-              <div
-                ref={(el) => observe(el, 80)}
-                style={reveal}
-                className="grid grid-cols-1 sm:grid-cols-2 gap-3"
-              >
-                {[
-                  { href: '/',                                     icon: 'home',        label: 'Trang chủ',           sub: 'Landing page' },
-                  { href: '/app?screen=register',                  icon: 'person_add',  label: 'Đăng ký tài khoản',   sub: 'Bắt đầu miễn phí' },
-                  { href: '/app?screen=login',                     icon: 'login',       label: 'Đăng nhập',           sub: 'Truy cập dashboard' },
-                  { href: 'https://github.com/CThawngs/Zero-AI-Note', icon: 'code',    label: 'GitHub Repository',   sub: 'Nguồn mở · MIT License', external: true },
-                ].map((link, i) => (
+            <section id="links" className="mb-10 sm:mb-12 scroll-mt-20">
+              <h2 ref={(el) => observe(el, 0)} style={reveal} className={`text-lg sm:text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-black'}`}>{t.links.title}</h2>
+              <div ref={(el) => observe(el, 80)} style={reveal} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {t.links.items.map((link, i) => (
                   <Link
                     key={i}
                     href={link.href}
                     target={link.external ? '_blank' : undefined}
                     rel={link.external ? 'noopener noreferrer' : undefined}
-                    className={`flex items-center gap-3.5 p-4 rounded-xl border transition-all duration-200 hover:scale-[1.02] ${surface} ${border}`}
+                    className={`flex items-center gap-3 sm:gap-3.5 p-3.5 sm:p-4 rounded-xl border transition-all duration-200 hover:scale-[1.02] ${surface} ${border}`}
                   >
-                    <span className={`w-9 h-9 flex items-center justify-center rounded-lg shrink-0 ${isDark ? 'bg-white/8' : 'bg-gray-100'}`}>
-                      <span className="material-symbols-outlined leading-none" style={{ fontSize: '20px' }}>{link.icon}</span>
+                    <span className={`w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg shrink-0 ${isDark ? 'bg-white/8' : 'bg-gray-100'}`}>
+                      <span className="material-symbols-outlined leading-none" style={{ fontSize: '18px' }}>{link.icon}</span>
                     </span>
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-black'}`}>{link.label}</p>
                       <p className={`text-xs ${muted}`}>{link.sub}</p>
                     </div>
-                    <span className={`material-symbols-outlined ml-auto leading-none ${muted}`} style={{ fontSize: '16px' }}>{link.external ? 'open_in_new' : 'chevron_right'}</span>
+                    <span className={`material-symbols-outlined ml-auto leading-none shrink-0 ${muted}`} style={{ fontSize: '16px' }}>
+                      {link.external ? 'open_in_new' : 'chevron_right'}
+                    </span>
                   </Link>
                 ))}
               </div>
@@ -539,17 +674,17 @@ export default function DocsPage() {
         </div>
       </div>
 
-      {/* ── Footer ──────────────────────────────────────────────────────────── */}
-      <footer className={`border-t py-8 transition-colors duration-300 ${isDark ? 'border-white/10 bg-[#0a0a0a]' : 'border-gray-200 bg-white'}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className={`flex items-center gap-2.5 font-bold ${isDark ? 'text-white' : 'text-black'}`}>
-            <img src="/logo.png" alt="logo" className="w-6 h-6 rounded-full object-contain" />
-            <span>Zero AI Note</span>
+      {/* ══ FOOTER ══════════════════════════════════════════════════════════ */}
+      <footer className={`border-t py-6 sm:py-8 transition-colors duration-300 ${isDark ? 'border-white/10 bg-[#0a0a0a]' : 'border-gray-200 bg-white'}`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
+          <div className={`flex items-center gap-2 font-bold ${isDark ? 'text-white' : 'text-black'}`}>
+            <img src="/logo.png" alt="logo" className="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-contain" />
+            <span className="text-sm sm:text-base">Zero AI Note</span>
           </div>
-          <p className={`text-sm ${muted}`}>© 2026 Zero AI Note. Mọi quyền được bảo lưu.</p>
-          <Link href="/" className={`text-sm font-medium flex items-center gap-1.5 transition-colors ${isDark ? 'text-neutral-400 hover:text-white' : 'text-gray-500 hover:text-black'}`}>
-            <span className="material-symbols-outlined leading-none" style={{ fontSize: '15px' }}>arrow_back</span>
-            Quay lại trang chủ
+          <p className={`text-xs sm:text-sm ${muted}`}>{t.footer}</p>
+          <Link href="/" className={`text-xs sm:text-sm font-medium flex items-center gap-1.5 transition-colors ${isDark ? 'text-neutral-400 hover:text-white' : 'text-gray-500 hover:text-black'}`}>
+            <span className="material-symbols-outlined leading-none" style={{ fontSize: '14px' }}>arrow_back</span>
+            {t.backHome}
           </Link>
         </div>
       </footer>
