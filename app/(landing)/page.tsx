@@ -147,10 +147,10 @@ export default function LandingPage() {
   return (
     <div className={`min-h-screen font-sans antialiased selection:bg-white selection:text-black transition-colors duration-300 ${bgClass}`}>
       {/* ===== HEADER ===== */}
-      <header className={`fixed top-0 w-full z-50 backdrop-blur-xl border-b transition-colors duration-300 ${isDark ? 'bg-[#0a0a0a]/80 border-white/10' : 'bg-white/80 border-gray-200'}`}>
-        <div className="flex justify-between items-center px-4 sm:px-6 py-3 sm:py-4 max-w-7xl mx-auto">
-          {/* Logo */}
-          <div className={`font-bold text-lg sm:text-xl flex items-center gap-2 ${isDark ? 'text-white' : 'text-black'}`}>
+      <header className={`fixed top-0 w-full z-50 backdrop-blur-xl border-b transition-colors duration-300 ${isDark ? 'bg-[#0a0a0a]/85 border-white/10' : 'bg-white/85 border-gray-200'}`}>
+        <div className="relative flex justify-between items-center px-4 sm:px-6 py-3 sm:py-4 max-w-7xl mx-auto">
+          {/* Left: Logo */}
+          <Link href="/" className={`font-bold text-lg sm:text-xl flex items-center gap-2 transition-opacity hover:opacity-90 ${isDark ? 'text-white' : 'text-black'}`}>
             <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 sm:w-7 sm:h-7" aria-hidden="true">
               <path
                 d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"
@@ -159,53 +159,75 @@ export default function LandingPage() {
               <path d="M13 2v5h5" className={isDark ? 'stroke-[#0a0a0a]' : 'stroke-white'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               <path d="M8 13h8M8 17h5" className={isDark ? 'stroke-[#0a0a0a]' : 'stroke-white'} strokeWidth="1.5" strokeLinecap="round" />
             </svg>
-            Zero AI Note
-          </div>
+            <span>Zero AI Note</span>
+          </Link>
 
-          {/* Desktop nav */}
-          <nav className="hidden md:flex items-center">
-            {/* Language & Theme toggles — compact group */}
-            <div className={`flex items-center gap-1 mr-6 rounded-lg border px-1 py-0.5 ${isDark ? 'border-white/10 bg-white/5' : 'border-gray-200 bg-gray-100'}`}>
+          {/* Center: Docs Page Link (Dead Center on desktop) */}
+          <nav className="hidden md:flex items-center justify-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <Link
+              href="/docs"
+              className={`text-sm font-medium px-4 py-1.5 rounded-full border transition-all duration-200 flex items-center gap-2 shadow-xs ${
+                isDark
+                  ? 'border-white/10 bg-white/5 text-neutral-300 hover:text-white hover:border-white/25 hover:bg-white/10'
+                  : 'border-gray-200 bg-gray-50 text-gray-700 hover:text-black hover:border-gray-300 hover:bg-gray-100'
+              }`}
+            >
+              <span className="material-symbols-outlined text-base" style={{ fontSize: '18px' }}>
+                menu_book
+              </span>
+              <span>{t.nav.docs}</span>
+            </Link>
+          </nav>
+
+          {/* Right: Actions & Toggles (Desktop) */}
+          <div className="hidden md:flex items-center gap-4 sm:gap-5">
+            {/* Language & Theme toggles */}
+            <div className={`flex items-center gap-1 rounded-lg border px-1 py-0.5 ${isDark ? 'border-white/10 bg-white/5' : 'border-gray-200 bg-gray-100'}`}>
               <button
                 onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}
-                className={`text-xs font-semibold px-2.5 py-1.5 rounded-md transition-all duration-200 ${isDark ? 'text-neutral-300 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-black hover:bg-white'}`}
+                className={`text-xs font-semibold px-2.5 py-1 rounded-md transition-all duration-200 ${isDark ? 'text-neutral-300 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-black hover:bg-white'}`}
+                title="Toggle Language"
               >
                 {lang === 'vi' ? 'VI' : 'EN'}
               </button>
-              <div className={`w-px h-4 ${isDark ? 'bg-white/15' : 'bg-gray-300'}`} />
+              <div className={`w-px h-3.5 ${isDark ? 'bg-white/15' : 'bg-gray-300'}`} />
               <button
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                className={`p-1.5 rounded-md transition-all duration-200 ${isDark ? 'text-neutral-300 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-black hover:bg-white'}`}
+                className={`p-1 rounded-md transition-all duration-200 flex items-center justify-center ${isDark ? 'text-neutral-300 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-black hover:bg-white'}`}
+                aria-label="Toggle theme"
               >
-                <span className="material-symbols-outlined text-base" style={{ fontSize: '18px' }}>
+                <span className="material-symbols-outlined text-base leading-none" style={{ fontSize: '17px' }}>
                   {isDark ? 'light_mode' : 'dark_mode'}
                 </span>
               </button>
             </div>
 
-            {/* Separator */}
-            <div className={`w-px h-5 mr-6 ${isDark ? 'bg-white/10' : 'bg-gray-200'}`} />
-
-            {/* Nav links */}
-            <Link href="/docs" className={`text-sm font-medium transition-colors duration-200 mr-6 ${isDark ? 'text-neutral-400 hover:text-white' : 'text-gray-600 hover:text-black'}`}>
-              {t.nav.docs}
-            </Link>
-            <Link href="/app?screen=login" className={`text-sm font-medium transition-colors duration-200 mr-6 ${isDark ? 'text-neutral-400 hover:text-white' : 'text-gray-600 hover:text-black'}`}>
+            {/* Login link */}
+            <Link
+              href="/app?screen=login"
+              className={`text-sm font-medium transition-colors duration-200 ${isDark ? 'text-neutral-300 hover:text-white' : 'text-gray-700 hover:text-black'}`}
+            >
               {t.nav.login}
             </Link>
 
             {/* CTA */}
-            <Link href="/app?screen=register" className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105 ${isDark ? 'bg-white hover:bg-neutral-200 text-black' : 'bg-black hover:bg-gray-800 text-white'}`}>
+            <Link
+              href="/app?screen=register"
+              className={`px-4 sm:px-5 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${isDark ? 'bg-white hover:bg-neutral-200 text-black' : 'bg-black hover:bg-gray-800 text-white'}`}
+            >
               {t.nav.cta}
             </Link>
-          </nav>
+          </div>
 
-          {/* Mobile hamburger */}
+          {/* Mobile hamburger button */}
           <button
-            className="md:hidden p-2 rounded-lg transition-colors"
+            className={`md:hidden p-2 rounded-lg border transition-colors ${
+              isDark ? 'border-white/10 hover:bg-white/5 text-neutral-200' : 'border-gray-200 hover:bg-gray-100 text-gray-800'
+            }`}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
           >
-            <span className="material-symbols-outlined text-2xl">
+            <span className="material-symbols-outlined text-2xl leading-none">
               {mobileMenuOpen ? 'close' : 'menu'}
             </span>
           </button>
@@ -213,31 +235,71 @@ export default function LandingPage() {
 
         {/* Mobile menu dropdown */}
         {mobileMenuOpen && (
-          <div className={`md:hidden border-t px-4 py-4 space-y-3 ${isDark ? 'bg-[#0a0a0a] border-white/10' : 'bg-white border-gray-200'}`}>
-            <Link href="/docs" onClick={() => setMobileMenuOpen(false)} className={`block text-sm font-medium py-2 ${isDark ? 'text-neutral-300' : 'text-gray-700'}`}>
-              {t.nav.docs}
-            </Link>
-            <Link href="/app" onClick={() => setMobileMenuOpen(false)} className={`block text-sm font-medium py-2 ${isDark ? 'text-neutral-300' : 'text-gray-700'}`}>
-              {t.nav.login}
-            </Link>
-            <Link href="/app" onClick={() => setMobileMenuOpen(false)} className={`block w-full text-center py-2.5 rounded-lg text-sm font-medium ${isDark ? 'bg-white text-black' : 'bg-black text-white'}`}>
-              {t.nav.cta}
-            </Link>
-            <div className="flex items-center gap-3 pt-2">
-              <button
-                onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}
-                className={`text-xs font-semibold px-3 py-1.5 rounded-lg border ${isDark ? 'border-white/15 text-neutral-300' : 'border-gray-200 text-gray-600'}`}
+          <div className={`md:hidden border-t px-4 py-5 space-y-4 backdrop-blur-2xl transition-all ${isDark ? 'bg-[#0a0a0a]/95 border-white/10' : 'bg-white/95 border-gray-200'}`}>
+            <div className="flex flex-col space-y-2">
+              <Link
+                href="/docs"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`flex items-center justify-between px-3.5 py-3 rounded-xl text-base font-medium border transition-colors ${
+                  isDark
+                    ? 'bg-white/5 border-white/10 text-neutral-200 hover:bg-white/10'
+                    : 'bg-gray-50 border-gray-200 text-gray-800 hover:bg-gray-100'
+                }`}
               >
-                {lang === 'vi' ? 'VI → EN' : 'EN → VI'}
-              </button>
-              <button
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                className={`p-1.5 rounded-lg border ${isDark ? 'border-white/15 text-neutral-300' : 'border-gray-200 text-gray-600'}`}
+                <div className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-xl">menu_book</span>
+                  <span>{t.nav.docs}</span>
+                </div>
+                <span className="material-symbols-outlined text-sm opacity-50">arrow_forward_ios</span>
+              </Link>
+              <Link
+                href="/app?screen=login"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`flex items-center justify-between px-3.5 py-3 rounded-xl text-base font-medium transition-colors ${
+                  isDark ? 'text-neutral-300 hover:bg-white/5' : 'text-gray-700 hover:bg-gray-100'
+                }`}
               >
-                <span className="material-symbols-outlined text-base" style={{ fontSize: '18px' }}>
-                  {isDark ? 'light_mode' : 'dark_mode'}
-                </span>
-              </button>
+                <div className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-xl">login</span>
+                  <span>{t.nav.login}</span>
+                </div>
+                <span className="material-symbols-outlined text-sm opacity-50">arrow_forward_ios</span>
+              </Link>
+            </div>
+
+            <div className={`pt-3 border-t flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 ${isDark ? 'border-white/10' : 'border-gray-200'}`}>
+              <div className="flex items-center justify-between gap-2">
+                <button
+                  onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}
+                  className={`text-xs font-semibold px-3 py-2 rounded-lg border transition-all flex items-center gap-1.5 ${
+                    isDark ? 'border-white/15 bg-white/5 text-neutral-200' : 'border-gray-200 bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-sm">language</span>
+                  {lang === 'vi' ? 'Tiếng Việt' : 'English'}
+                </button>
+                <button
+                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                  className={`p-2 rounded-lg border transition-all flex items-center justify-center ${
+                    isDark ? 'border-white/15 bg-white/5 text-neutral-200' : 'border-gray-200 bg-gray-100 text-gray-700'
+                  }`}
+                  aria-label="Toggle theme"
+                >
+                  <span className="material-symbols-outlined text-lg">
+                    {isDark ? 'light_mode' : 'dark_mode'}
+                  </span>
+                </button>
+              </div>
+
+              <Link
+                href="/app?screen=register"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`text-center py-2.5 px-4 rounded-lg text-sm font-semibold transition-all shadow-sm ${
+                  isDark ? 'bg-white text-black hover:bg-neutral-200' : 'bg-black text-white hover:bg-gray-800'
+                }`}
+              >
+                {t.nav.cta}
+              </Link>
             </div>
           </div>
         )}
