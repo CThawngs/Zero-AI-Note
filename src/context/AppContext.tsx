@@ -183,48 +183,75 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Theme & Language states with local storage caching (guard for SSR/Next.js prerender)
-  const getLocal = (key: string) => {
-    if (typeof window === 'undefined') return null;
-    try { return window.localStorage.getItem(key); } catch { return null; }
-  };
-
   // Default is Theme "Monochrome" (mono) in Light mode for new accounts
-  const [colorPalette, setColorPaletteState] = useState<ColorPalette>(() => {
-    return (getLocal('zero_ai_palette') as ColorPalette) || 'mono';
-  });
-
-  const [theme, setThemeState] = useState<Theme>(() => {
-    return (getLocal('zero_ai_theme') as Theme) || 'light';
-  });
-  
-  const [language, setLanguageState] = useState<Language>(() => {
-    return (getLocal('zero_ai_lang') as Language) || 'vi';
-  });
+  const [colorPalette, setColorPaletteState] = useState<ColorPalette>('mono');
+  const [theme, setThemeState] = useState<Theme>('light');
+  const [language, setLanguageState] = useState<Language>('vi');
+  const [mounted, setMounted] = useState(false);
 
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
 
-  // Sync color palette and theme mode to documentElement
+  // Hydrate saved settings on client mount safely
   useEffect(() => {
-    localStorage.setItem('zero_ai_palette', colorPalette);
-    document.documentElement.setAttribute('data-theme', colorPalette);
-  }, [colorPalette]);
+    setMounted(true);
+    try {
+      const savedPalette = window.localStorage.getItem('zero_ai_palette') as ColorPalette;
+      if (savedPalette) {
+        setColorPaletteState(savedPalette);
+        document.documentElement.setAttribute('data-theme', savedPalette);
+      } else {
+        document.documentElement.setAttribute('data-theme', 'mono');
+      }
 
-  // Sync theme dark/light class to document body
-  useEffect(() => {
-    localStorage.setItem('zero_ai_theme', theme);
-    if (theme === 'light') {
-      document.documentElement.classList.add('light');
-    } else {
-      document.documentElement.classList.remove('light');
+      const savedTheme = window.localStorage.getItem('zero_ai_theme') as Theme;
+      if (savedTheme) {
+        setThemeState(savedTheme);
+        if (savedTheme === 'light') {
+          document.documentElement.classList.add('light');
+        } else {
+          document.documentElement.classList.remove('light');
+        }
+      } else {
+        document.documentElement.classList.add('light');
+      }
+
+      const savedLang = window.localStorage.getItem('zero_ai_lang') as Language;
+      if (savedLang) setLanguageState(savedLang);
+    } catch (e) {
+      console.warn('Failed to hydrate local storage settings:', e);
     }
-  }, [theme]);
+  }, []);
+
+  // Sync color palette to documentElement
+  useEffect(() => {
+    if (!mounted) return;
+    try {
+      window.localStorage.setItem('zero_ai_palette', colorPalette);
+      document.documentElement.setAttribute('data-theme', colorPalette);
+    } catch {}
+  }, [colorPalette, mounted]);
+
+  // Sync theme dark/light class to document
+  useEffect(() => {
+    if (!mounted) return;
+    try {
+      window.localStorage.setItem('zero_ai_theme', theme);
+      if (theme === 'light') {
+        document.documentElement.classList.add('light');
+      } else {
+        document.documentElement.classList.remove('light');
+      }
+    } catch {}
+  }, [theme, mounted]);
 
   // Sync language
   useEffect(() => {
-    localStorage.setItem('zero_ai_lang', language);
-  }, [language]);
+    if (!mounted) return;
+    try {
+      window.localStorage.setItem('zero_ai_lang', language);
+    } catch {}
+  }, [language, mounted]);
 
   const setColorPalette = (newPalette: ColorPalette) => {
     setColorPaletteState(newPalette);

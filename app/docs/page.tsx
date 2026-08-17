@@ -213,7 +213,7 @@ const methodColorLight: Record<string, string> = {
 };
 
 export default function DocsPage() {
-  const [theme,         setTheme]         = useState<ThemeMode>('dark');
+  const [theme,         setTheme]         = useState<ThemeMode>('light');
   const [lang,          setLang]          = useState<Language>('vi');
   const [mounted,       setMounted]       = useState(false);
   const [activeSection, setActiveSection] = useState('intro');
@@ -222,11 +222,17 @@ export default function DocsPage() {
   const observe = useScrollReveal();
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('zero-note-theme') as ThemeMode || 'dark';
-    const savedLang  = localStorage.getItem('zero-note-lang')  as Language  || 'vi';
-    setTheme(savedTheme);
-    setLang(savedLang);
-    document.documentElement.className = savedTheme === 'dark' ? 'dark' : 'light';
+    try {
+      const savedTheme = localStorage.getItem('zero-note-theme') as ThemeMode;
+      const savedLang  = localStorage.getItem('zero-note-lang')  as Language;
+      if (savedTheme) {
+        setTheme(savedTheme);
+        document.documentElement.className = savedTheme === 'dark' ? 'dark' : 'light';
+      } else {
+        document.documentElement.className = 'light';
+      }
+      if (savedLang) setLang(savedLang);
+    } catch {}
     setMounted(true);
   }, []);
 
@@ -249,14 +255,18 @@ export default function DocsPage() {
   const toggleTheme = () => {
     const next = theme === 'dark' ? 'light' : 'dark';
     setTheme(next);
-    localStorage.setItem('zero-note-theme', next);
-    document.documentElement.className = next === 'dark' ? 'dark' : 'light';
+    try {
+      localStorage.setItem('zero-note-theme', next);
+      document.documentElement.className = next === 'dark' ? 'dark' : 'light';
+    } catch {}
   };
 
   const toggleLang = () => {
     const next = lang === 'vi' ? 'en' : 'vi';
     setLang(next);
-    localStorage.setItem('zero-note-lang', next);
+    try {
+      localStorage.setItem('zero-note-lang', next);
+    } catch {}
   };
 
   const scrollTo = (id: string) => {
@@ -264,8 +274,6 @@ export default function DocsPage() {
     setTocOpen(false);
     setMobileMenuOpen(false);
   };
-
-  if (!mounted) return null;
 
   const isDark = theme === 'dark';
   const t = i18n[lang];

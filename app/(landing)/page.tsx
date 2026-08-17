@@ -135,7 +135,7 @@ function useScrollReveal() {
 
 export default function LandingPage() {
   const [lang, setLang] = useState<Language>('vi');
-  const [theme, setTheme] = useState<ThemeMode>('dark');
+  const [theme, setTheme] = useState<ThemeMode>('light');
   const [mounted, setMounted] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -149,29 +149,38 @@ export default function LandingPage() {
   };
 
   useEffect(() => {
-    const savedLang = localStorage.getItem('zero-note-lang') as Language || 'vi';
-    const savedTheme = localStorage.getItem('zero-note-theme') as ThemeMode || 'dark';
-    setLang(savedLang);
-    setTheme(savedTheme);
+    try {
+      const savedLang = localStorage.getItem('zero-note-lang') as Language;
+      if (savedLang) setLang(savedLang);
+
+      const savedTheme = localStorage.getItem('zero-note-theme') as ThemeMode;
+      if (savedTheme) {
+        setTheme(savedTheme);
+        document.documentElement.className = savedTheme === 'dark' ? 'dark' : 'light';
+      } else {
+        document.documentElement.className = 'light';
+      }
+    } catch {}
     setMounted(true);
-    document.documentElement.className = savedTheme === 'dark' ? 'dark' : 'light';
   }, []);
 
   useEffect(() => {
     if (!mounted) return;
-    localStorage.setItem('zero-note-lang', lang);
+    try {
+      localStorage.setItem('zero-note-lang', lang);
+    } catch {}
   }, [lang, mounted]);
 
   useEffect(() => {
     if (!mounted) return;
-    localStorage.setItem('zero-note-theme', theme);
-    document.documentElement.className = theme === 'dark' ? 'dark' : 'light';
+    try {
+      localStorage.setItem('zero-note-theme', theme);
+      document.documentElement.className = theme === 'dark' ? 'dark' : 'light';
+    } catch {}
   }, [theme, mounted]);
 
   const t = content[lang];
   const isDark = theme === 'dark';
-
-  if (!mounted) return null;
 
   const bgClass = isDark ? 'bg-[#0a0a0a] text-white' : 'bg-white text-black';
   const surfaceClass = isDark ? 'bg-[#0f0f0f]' : 'bg-gray-50';
