@@ -217,21 +217,28 @@ export const LoginScreen: React.FC = () => {
       <div className={`absolute -top-48 -left-48 w-[400px] h-[400px] rounded-full blur-3xl pointer-events-none opacity-50 ${isDark ? 'bg-white/3' : 'bg-black/3'}`} />
       <div className={`absolute -bottom-48 -right-48 w-[400px] h-[400px] rounded-full blur-3xl pointer-events-none opacity-50 ${isDark ? 'bg-white/3' : 'bg-black/3'}`} />
 
-      {/* Top Bar */}
+      {/* Top Bar: Main branding & toggles */}
       <header className="fixed top-0 inset-x-0 z-30 flex items-center justify-between px-3 sm:px-6 py-2.5 sm:py-3 pointer-events-none">
-        <button
-          id="login-back-home"
-          onClick={(e) => { e.stopPropagation(); goBackToLanding(); }}
-          className={`pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all duration-200 cursor-pointer active:scale-95 shadow-sm ${
-            isDark
-              ? 'border-white/10 bg-[#111]/90 backdrop-blur-md text-neutral-300 hover:text-white hover:border-white/25 hover:bg-white/10'
-              : 'border-gray-200 bg-white/90 backdrop-blur-md text-gray-700 hover:text-black hover:border-gray-300 hover:bg-gray-100'
-          }`}
-          title={vi ? 'Quay lại trang chủ' : 'Back to Home'}
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span>{vi ? 'Trang chủ' : 'Home'}</span>
-        </button>
+        <div className="pointer-events-auto flex items-center gap-2 sm:gap-3">
+          <button
+            id="login-back-home"
+            onClick={(e) => { e.stopPropagation(); goBackToLanding(); }}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all duration-200 cursor-pointer active:scale-95 shadow-sm ${
+              isDark
+                ? 'border-white/10 bg-[#111]/90 backdrop-blur-md text-neutral-200 hover:text-white hover:border-white/25 hover:bg-white/10'
+                : 'border-gray-200 bg-white/90 backdrop-blur-md text-gray-800 hover:text-black hover:border-gray-300 hover:bg-gray-100'
+            }`}
+            title={vi ? 'Quay lại trang chủ' : 'Back to Home'}
+          >
+            <img
+              src="/logo.png"
+              alt="Zero AI Note Logo"
+              className="w-5 h-5 rounded-full object-contain shrink-0"
+            />
+            <span className="font-bold">Zero AI Note</span>
+            <span className={`text-[11px] opacity-60 ml-0.5 hidden xs:inline`}>· {vi ? 'Trang chủ' : 'Home'}</span>
+          </button>
+        </div>
 
         <div className={`pointer-events-auto flex items-center gap-1 rounded-lg border px-1 py-0.5 shadow-sm backdrop-blur-md ${
           isDark ? 'border-white/10 bg-[#111]/90' : 'border-gray-200 bg-white/90'
@@ -271,29 +278,30 @@ export const LoginScreen: React.FC = () => {
         style={{ scrollbarWidth: 'thin' }}
       >
         <div className="p-4 sm:p-5 md:p-6">
-          {/* Brand header */}
-          <div className="flex items-center justify-between mb-3.5 sm:mb-4">
-            <div className="flex items-center gap-2.5">
-              <img
-                src="/logo.png"
-                alt="Zero AI Note Logo"
-                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-contain flex-shrink-0"
-              />
-              <div>
-                <h1 className={`text-sm sm:text-base font-bold leading-tight ${isDark ? 'text-white' : 'text-black'}`}>
-                  {t('brandName')}
-                </h1>
-                <p className={`text-[10px] sm:text-[11px] leading-tight mt-0.5 ${muted}`}>
-                  {vi ? 'Ghi chú thông minh với AI' : 'AI-powered note taking'}
-                </p>
-              </div>
+          {/* Header row: Tab switcher + Close button (No duplicate logo inside card) */}
+          <div className="flex items-center justify-between gap-2.5 mb-3.5 sm:mb-4">
+            <div className={`flex flex-1 p-0.5 sm:p-1 rounded-lg sm:rounded-xl gap-1 ${tabBg}`}>
+              {(['login', 'register'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  id={`tab-${tab}`}
+                  onClick={() => { setActiveTab(tab); setErrors({}); }}
+                  className={`flex-1 py-1.5 sm:py-2 text-xs sm:text-[13px] font-semibold rounded-md sm:rounded-lg transition-all duration-200 cursor-pointer active:scale-[0.98] ${
+                    activeTab === tab ? `${tabActive} shadow-sm` : tabInactive
+                  }`}
+                >
+                  {tab === 'login'
+                    ? (vi ? 'Đăng nhập' : 'Sign In')
+                    : (vi ? 'Đăng ký' : 'Sign Up')}
+                </button>
+              ))}
             </div>
 
             <button
               id="btn-close-auth"
               onClick={goBackToLanding}
               title={vi ? 'Thoát về trang chủ' : 'Close and return home'}
-              className={`p-1.5 rounded-lg border transition-all cursor-pointer active:scale-90 flex items-center justify-center ${
+              className={`p-1.5 rounded-lg border transition-all cursor-pointer active:scale-90 flex items-center justify-center shrink-0 ${
                 isDark
                   ? 'border-white/10 bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10'
                   : 'border-gray-200 bg-gray-50 text-gray-500 hover:text-black hover:bg-gray-100'
@@ -301,24 +309,6 @@ export const LoginScreen: React.FC = () => {
             >
               <X className="w-4 h-4" />
             </button>
-          </div>
-
-          {/* Tab switcher */}
-          <div className={`flex p-0.5 sm:p-1 rounded-lg sm:rounded-xl gap-1 mb-3.5 sm:mb-4 ${tabBg}`}>
-            {(['login', 'register'] as const).map((tab) => (
-              <button
-                key={tab}
-                id={`tab-${tab}`}
-                onClick={() => { setActiveTab(tab); setErrors({}); }}
-                className={`flex-1 py-1.5 sm:py-2 text-xs sm:text-[13px] font-semibold rounded-md sm:rounded-lg transition-all duration-200 cursor-pointer active:scale-[0.98] ${
-                  activeTab === tab ? `${tabActive} shadow-sm` : tabInactive
-                }`}
-              >
-                {tab === 'login'
-                  ? (vi ? 'Đăng nhập' : 'Sign In')
-                  : (vi ? 'Đăng ký' : 'Sign Up')}
-              </button>
-            ))}
           </div>
 
           {/* General Error Banner */}
