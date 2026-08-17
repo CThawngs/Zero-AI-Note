@@ -249,84 +249,93 @@ export default function LandingPage() {
 
           {/* Mobile hamburger button */}
           <button
-            className={`md:hidden p-2 rounded-lg border transition-colors ${
-              isDark ? 'border-white/10 hover:bg-white/5 text-neutral-200' : 'border-gray-200 hover:bg-gray-100 text-gray-800'
+            className={`md:hidden w-9 h-9 flex items-center justify-center rounded-lg transition-colors ${
+              isDark ? 'hover:bg-white/8 text-neutral-200' : 'hover:bg-gray-100 text-gray-800'
             }`}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             aria-label="Toggle menu"
           >
-            <span className="material-symbols-outlined text-2xl leading-none">
+            <span className="material-symbols-outlined leading-none" style={{ fontSize: '22px' }}>
               {mobileMenuOpen ? 'close' : 'menu'}
             </span>
           </button>
         </div>
 
-        {/* Mobile menu dropdown */}
+        {/* Mobile menu — full-width sheet */}
         {mobileMenuOpen && (
-          <div className={`md:hidden border-t px-4 py-5 space-y-4 backdrop-blur-2xl transition-all ${isDark ? 'bg-[#0a0a0a]/95 border-white/10' : 'bg-white/95 border-gray-200'}`}>
-            <div className="flex flex-col space-y-2">
+          <div className={`md:hidden ${isDark ? 'bg-[#0d0d0d] border-white/8' : 'bg-white border-gray-100'} border-t`}>
+            {/* Nav links */}
+            <div className="px-3 pt-3 pb-1 space-y-0.5">
               <Link
                 href="/docs"
                 onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center justify-between px-3.5 py-3 rounded-xl text-base font-medium border transition-colors ${
-                  isDark
-                    ? 'bg-white/5 border-white/10 text-neutral-200 hover:bg-white/10'
-                    : 'bg-gray-50 border-gray-200 text-gray-800 hover:bg-gray-100'
+                className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${
+                  isDark ? 'text-neutral-200 hover:bg-white/6 active:bg-white/10' : 'text-gray-800 hover:bg-gray-50 active:bg-gray-100'
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-xl">menu_book</span>
-                  <span>{t.nav.docs}</span>
-                </div>
-                <span className="material-symbols-outlined text-sm opacity-50">arrow_forward_ios</span>
+                <span className={`w-8 h-8 flex items-center justify-center rounded-lg flex-shrink-0 ${isDark ? 'bg-white/8' : 'bg-gray-100'}`}>
+                  <span className="material-symbols-outlined text-base leading-none" style={{ fontSize: '18px' }}>menu_book</span>
+                </span>
+                <span className="text-[15px] font-medium flex-1">{t.nav.docs}</span>
+                <span className={`material-symbols-outlined text-xs opacity-30`} style={{ fontSize: '14px' }}>chevron_right</span>
               </Link>
+
               <Link
                 href="/app?screen=login"
                 onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center justify-between px-3.5 py-3 rounded-xl text-base font-medium transition-colors ${
-                  isDark ? 'text-neutral-300 hover:bg-white/5' : 'text-gray-700 hover:bg-gray-100'
+                className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${
+                  isDark ? 'text-neutral-200 hover:bg-white/6 active:bg-white/10' : 'text-gray-800 hover:bg-gray-50 active:bg-gray-100'
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-xl">login</span>
-                  <span>{t.nav.login}</span>
-                </div>
-                <span className="material-symbols-outlined text-sm opacity-50">arrow_forward_ios</span>
+                <span className={`w-8 h-8 flex items-center justify-center rounded-lg flex-shrink-0 ${isDark ? 'bg-white/8' : 'bg-gray-100'}`}>
+                  <span className="material-symbols-outlined text-base leading-none" style={{ fontSize: '18px' }}>login</span>
+                </span>
+                <span className="text-[15px] font-medium flex-1">{t.nav.login}</span>
+                <span className={`material-symbols-outlined text-xs opacity-30`} style={{ fontSize: '14px' }}>chevron_right</span>
               </Link>
             </div>
 
-            <div className={`pt-3 border-t flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 ${isDark ? 'border-white/10' : 'border-gray-200'}`}>
-              <div className="flex items-center justify-between gap-2">
-                <button
-                  onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}
-                  className={`text-xs font-semibold px-3 py-2 rounded-lg border transition-all flex items-center gap-1.5 ${
-                    isDark ? 'border-white/15 bg-white/5 text-neutral-200' : 'border-gray-200 bg-gray-100 text-gray-700'
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-sm">language</span>
-                  {lang === 'vi' ? 'Tiếng Việt' : 'English'}
-                </button>
-                <button
-                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                  className={`p-2 rounded-lg border transition-all flex items-center justify-center ${
-                    isDark ? 'border-white/15 bg-white/5 text-neutral-200' : 'border-gray-200 bg-gray-100 text-gray-700'
-                  }`}
-                  aria-label="Toggle theme"
-                >
-                  <span className="material-symbols-outlined text-lg">
-                    {isDark ? 'light_mode' : 'dark_mode'}
-                  </span>
-                </button>
-              </div>
+            {/* Divider */}
+            <div className={`mx-4 my-2 h-px ${isDark ? 'bg-white/8' : 'bg-gray-100'}`} />
 
+            {/* Toggles row */}
+            <div className="px-4 py-2 flex items-center gap-2">
+              {/* Language toggle */}
+              <button
+                onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[13px] font-semibold transition-colors ${
+                  isDark ? 'bg-white/6 text-neutral-300 hover:bg-white/10 active:bg-white/15' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <span className="material-symbols-outlined leading-none" style={{ fontSize: '15px' }}>language</span>
+                <span>{lang === 'vi' ? 'Tiếng Việt' : 'English'}</span>
+              </button>
+
+              {/* Theme toggle */}
+              <button
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                aria-label="Toggle theme"
+                className={`w-10 h-9 flex items-center justify-center rounded-xl transition-colors flex-shrink-0 ${
+                  isDark ? 'bg-white/6 text-neutral-300 hover:bg-white/10 active:bg-white/15' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                <span className="material-symbols-outlined leading-none" style={{ fontSize: '18px' }}>
+                  {isDark ? 'light_mode' : 'dark_mode'}
+                </span>
+              </button>
+            </div>
+
+            {/* CTA button */}
+            <div className="px-4 pt-1 pb-5">
               <Link
                 href="/app?screen=register"
                 onClick={() => setMobileMenuOpen(false)}
-                className={`text-center py-2.5 px-4 rounded-lg text-sm font-semibold transition-all shadow-sm ${
-                  isDark ? 'bg-white text-black hover:bg-neutral-200' : 'bg-black text-white hover:bg-gray-800'
+                className={`flex items-center justify-center gap-2 w-full py-3 rounded-xl text-[15px] font-semibold transition-all active:scale-[0.98] ${
+                  isDark ? 'bg-white text-black hover:bg-neutral-100' : 'bg-black text-white hover:bg-gray-900'
                 }`}
               >
                 {t.nav.cta}
+                <span className="material-symbols-outlined leading-none" style={{ fontSize: '16px' }}>arrow_forward</span>
               </Link>
             </div>
           </div>
