@@ -44,7 +44,7 @@ const i18n = {
     intro: {
       title: 'Giới thiệu',
       p1: 'Zero AI Note là công cụ ghi chú AI nguồn mở, chuyển đổi video, audio, PDF, YouTube thành ghi chú cấu trúc cao theo các phương pháp học thuật.',
-      p2: 'Dự án sử dụng Neon Postgres cho database, JWT cho authentication, và hỗ trợ Neon Object Storage hoặc Cloudflare R2 cho file storage.',
+      p2: 'Dự án sử dụng Neon Postgres cho database (lưu trữ chính), JWT cho authentication, và Cloudflare R2 làm backup file storage khi Neon database đầy.',
     },
     quickstart: {
       title: 'Bắt đầu nhanh',
@@ -72,7 +72,7 @@ const i18n = {
         { label: 'Frontend',  value: 'Next.js 16, React 19, Tailwind CSS 4' },
         { label: 'Database',  value: 'Neon Postgres serverless với RLS (Row-Level Security)' },
         { label: 'Auth',      value: 'JWT (HS256) qua cookie HttpOnly, bcryptjs cho password hashing' },
-        { label: 'Storage',   value: 'Neon Object Storage (Beta) hoặc Cloudflare R2 (S3-compatible)' },
+        { label: 'Storage',   value: 'Cloudflare R2 (S3-compatible) — backup khi Neon database đầy' },
         { label: 'ORM',       value: 'Drizzle ORM' },
         { label: 'AI',        value: 'Google GenAI, BYOK (Bring Your Own Key) cho OpenAI/Anthropic' },
       ],
@@ -127,7 +127,7 @@ const i18n = {
     intro: {
       title: 'Introduction',
       p1: 'Zero AI Note is an open-source AI note-taking tool that converts video, audio, PDF, and YouTube into high-structure notes using academic methods.',
-      p2: 'The project uses Neon Postgres for database, JWT for authentication, and supports Neon Object Storage or Cloudflare R2 for file storage.',
+      p2: 'The project uses Neon Postgres for database (primary storage), JWT for authentication, and Cloudflare R2 as backup file storage when the Neon database fills up.',
     },
     quickstart: {
       title: 'Quick Start',
@@ -155,7 +155,7 @@ const i18n = {
         { label: 'Frontend',  value: 'Next.js 16, React 19, Tailwind CSS 4' },
         { label: 'Database',  value: 'Neon Postgres serverless with RLS (Row-Level Security)' },
         { label: 'Auth',      value: 'JWT (HS256) via HttpOnly cookie, bcryptjs for password hashing' },
-        { label: 'Storage',   value: 'Neon Object Storage (Beta) or Cloudflare R2 (S3-compatible)' },
+        { label: 'Storage',   value: 'Cloudflare R2 (S3-compatible) — backup when Neon database is full' },
         { label: 'ORM',       value: 'Drizzle ORM' },
         { label: 'AI',        value: 'Google GenAI, BYOK (Bring Your Own Key) for OpenAI/Anthropic' },
       ],

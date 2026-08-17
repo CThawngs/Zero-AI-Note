@@ -47,10 +47,10 @@
 - Route coupon kiểm tra `isAdmin()` server-side (không chỉ RLS/UI)
 - RLS coupons: `admin manages coupons` — only admin role
 
-### Storage (mục 3) — QUYẾT ĐỊNH: Cloudflare R2 ✅ 2026-08-16
+### Storage (mục 3) — QUYẾT ĐỊNH: Neon database chính + Cloudflare R2 backup (2026-08-17)
 - `lib/storage.ts` là lớp trừu tượng chung (interface StorageService)
-- **Chính thức dùng Cloudflare R2** (S3-compatible) — Zero giữ nguyên project Neon `ap-southeast-1`
-- Neon Object Storage (Beta) không dùng vì cần project mới ở `us-east-2`
+- **Neon Postgres**: lưu trữ chính (notes, sources, metadata, toàn bộ dữ liệu app)
+- **Cloudflare R2**: backup file storage — dùng khi Neon database đầy, chứa media/file upload (S3-compatible)
 - Env cần: `R2_ENDPOINT`, `R2_ACCESS_KEY`, `R2_SECRET_KEY`, `R2_BUCKET`
 
 ### Nguyên tắc bất biến
