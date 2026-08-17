@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { AuthModal } from '@/src/components/common/AuthModal';
 
 type Language = 'vi' | 'en';
 type ThemeMode = 'dark' | 'light';
@@ -45,8 +46,8 @@ const content = {
       link: 'Xem đầy đủ bảng giá',
       plans: [
         { name: 'Miễn phí', desc: 'Trải nghiệm cơ bản cho cá nhân.', price: '0đ', period: '/tháng', features: ['3 giờ xử lý / tháng', 'File tối đa 30 phút', 'Xuất PDF cơ bản'], cta: 'Tạo tài khoản' },
-        { name: 'Pro', desc: 'Dành cho nghiên cứu sinh & chuyên gia.', price: '99K', period: '/tháng', features: ['50 giờ xử lý / tháng', 'File tối đa 2 giờ/phiên', 'Mọi định dạng học thuật', 'Ưu tiên xử lý'], cta: 'Nâng cấp Pro' },
-        { name: 'Ultra', desc: 'Giải pháp tối ưu cho tổ chức.', price: '199K', period: '/tháng', features: ['Tất lý giờ xử lý/tháng', 'Tốc độ cao nhất', 'Xuất DOCX cao cấp', 'Hỗ trợ ưu tiên qua email', 'Phân tích đa file'], cta: 'Nâng cấp Ultra', badge: 'Ultra' }
+        { name: 'Pro', desc: 'Dành cho nghiên cứu sinh & chuyên gia.', price: '99.000đ', period: '/tháng', highlight: true, badge: 'Phổ biến', features: ['50 giờ xử lý / tháng', 'File tối đa 2 giờ/phiên', 'Mọi định dạng học thuật', 'Ưu tiên xử lý'], cta: 'Nâng cấp Pro' },
+        { name: 'Ultra', desc: 'Giải pháp tối ưu cho tổ chức.', price: '199.000đ', period: '/tháng', features: ['200 giờ xử lý/tháng', 'Tốc độ cao nhất', 'Xuất DOCX cao cấp', 'Hỗ trợ ưu tiên qua email', 'Phân tích đa file'], cta: 'Nâng cấp Ultra' }
       ]
     },
     cta: {
@@ -93,9 +94,9 @@ const content = {
       title: 'Start free, upgrade when you need',
       link: 'View full pricing',
       plans: [
-        { name: 'Free', desc: 'Basic experience for individuals.', price: '0đ', period: '/month', features: ['3 hours processing / month', 'Max file 30 min', 'Basic PDF export'], cta: 'Create account' },
-        { name: 'Pro', desc: 'For researchers & professionals.', price: '99K', period: '/month', features: ['50 hours processing / month', 'Max file 2 hours/session', 'All academic formats', 'Priority processing'], cta: 'Upgrade to Pro' },
-        { name: 'Ultra', desc: 'Best for organizations.', price: '199K', period: '/month', features: ['Unlimited processing/month', 'Highest speed', 'Advanced DOCX export', 'Priority email support', 'Multi-file analysis'], cta: 'Upgrade to Ultra', badge: 'Ultra' }
+        { name: 'Free', desc: 'Basic experience for individuals.', price: '$0', period: '/month', features: ['3 hours processing / month', 'Max file 30 min', 'Basic PDF export'], cta: 'Create account' },
+        { name: 'Pro', desc: 'For researchers & professionals.', price: '$4', period: '/month', highlight: true, badge: 'Hot', features: ['50 hours processing / month', 'Max file 2 hours/session', 'All academic formats', 'Priority processing'], cta: 'Upgrade to Pro' },
+        { name: 'Ultra', desc: 'Best for organizations.', price: '$8', period: '/month', features: ['200 hours processing/month', 'Highest speed', 'Advanced DOCX export', 'Priority email support', 'Multi-file analysis'], cta: 'Upgrade to Ultra' }
       ]
     },
     cta: {
@@ -137,7 +138,15 @@ export default function LandingPage() {
   const [theme, setTheme] = useState<ThemeMode>('dark');
   const [mounted, setMounted] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
   const observe = useScrollReveal();
+
+  const openAuth = (mode: 'login' | 'register') => {
+    setAuthModalMode(mode);
+    setAuthModalOpen(true);
+    setMobileMenuOpen(false);
+  };
 
   useEffect(() => {
     const savedLang = localStorage.getItem('zero-note-lang') as Language || 'vi';
@@ -230,21 +239,21 @@ export default function LandingPage() {
               </button>
             </div>
 
-            {/* Login link */}
-            <Link
-              href="/app?screen=login"
-              className={`text-sm font-medium transition-colors duration-200 ${isDark ? 'text-neutral-300 hover:text-white' : 'text-gray-700 hover:text-black'}`}
+            {/* Login button */}
+            <button
+              onClick={() => openAuth('login')}
+              className={`text-sm font-medium transition-colors duration-200 cursor-pointer ${isDark ? 'text-neutral-300 hover:text-white' : 'text-gray-700 hover:text-black'}`}
             >
               {t.nav.login}
-            </Link>
+            </button>
 
             {/* CTA */}
-            <Link
-              href="/app?screen=register"
-              className={`px-4 sm:px-5 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm ${isDark ? 'bg-white hover:bg-neutral-200 text-black' : 'bg-black hover:bg-gray-800 text-white'}`}
+            <button
+              onClick={() => openAuth('register')}
+              className={`px-4 sm:px-5 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105 shadow-sm cursor-pointer ${isDark ? 'bg-white hover:bg-neutral-200 text-black' : 'bg-black hover:bg-gray-800 text-white'}`}
             >
               {t.nav.cta}
-            </Link>
+            </button>
           </div>
 
           {/* Mobile hamburger button */}
@@ -280,10 +289,9 @@ export default function LandingPage() {
                 <span className={`material-symbols-outlined text-xs opacity-30`} style={{ fontSize: '14px' }}>chevron_right</span>
               </Link>
 
-              <Link
-                href="/app?screen=login"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-colors ${
+              <button
+                onClick={() => openAuth('login')}
+                className={`flex items-center gap-3 w-full text-left px-3 py-3 rounded-xl transition-colors cursor-pointer ${
                   isDark ? 'text-neutral-200 hover:bg-white/6 active:bg-white/10' : 'text-gray-800 hover:bg-gray-50 active:bg-gray-100'
                 }`}
               >
@@ -292,7 +300,7 @@ export default function LandingPage() {
                 </span>
                 <span className="text-[15px] font-medium flex-1">{t.nav.login}</span>
                 <span className={`material-symbols-outlined text-xs opacity-30`} style={{ fontSize: '14px' }}>chevron_right</span>
-              </Link>
+              </button>
             </div>
 
             {/* Divider */}
@@ -327,16 +335,15 @@ export default function LandingPage() {
 
             {/* CTA button */}
             <div className="px-4 pt-1 pb-5">
-              <Link
-                href="/app?screen=register"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center justify-center gap-2 w-full py-3 rounded-xl text-[15px] font-semibold transition-all active:scale-[0.98] ${
+              <button
+                onClick={() => openAuth('register')}
+                className={`flex items-center justify-center gap-2 w-full py-3 rounded-xl text-[15px] font-semibold transition-all active:scale-[0.98] cursor-pointer ${
                   isDark ? 'bg-white text-black hover:bg-neutral-100' : 'bg-black text-white hover:bg-gray-900'
                 }`}
               >
                 {t.nav.cta}
                 <span className="material-symbols-outlined leading-none" style={{ fontSize: '16px' }}>arrow_forward</span>
-              </Link>
+              </button>
             </div>
           </div>
         )}
@@ -360,10 +367,13 @@ export default function LandingPage() {
               {t.hero.sub}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2 sm:pt-4">
-              <Link href="/app?screen=register" className={`font-medium py-3 px-6 rounded-lg transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2 text-sm sm:text-base ${isDark ? 'bg-white hover:bg-neutral-200 text-black' : 'bg-black hover:bg-gray-800 text-white'}`}>
+              <button
+                onClick={() => openAuth('register')}
+                className={`font-medium py-3 px-6 rounded-lg transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2 text-sm sm:text-base cursor-pointer ${isDark ? 'bg-white hover:bg-neutral-200 text-black' : 'bg-black hover:bg-gray-800 text-white'}`}
+              >
                 {t.hero.cta}
                 <span className="material-symbols-outlined text-sm">arrow_forward</span>
-              </Link>
+              </button>
               <Link href="/docs" className={`border font-medium py-3 px-6 rounded-lg transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2 text-sm sm:text-base ${isDark ? 'border-white/20 hover:bg-white/5 text-white' : 'border-gray-300 hover:bg-gray-100 text-black'}`}>
                 <span className="material-symbols-outlined text-sm">menu_book</span>
                 {t.hero.cta2}
@@ -570,12 +580,12 @@ export default function LandingPage() {
                       </li>
                     ))}
                   </ul>
-                  <Link
-                    href="/app?screen=register"
-                    className={`w-full py-3 rounded-lg font-medium text-center transition-all duration-200 block ${isDark ? (isUltra ? 'bg-white hover:bg-neutral-200 text-black' : 'border border-white/20 hover:bg-white/5 text-white') : (isUltra ? 'bg-black hover:bg-gray-800 text-white' : 'border border-gray-300 hover:bg-gray-100 text-black')}`}
+                  <button
+                    onClick={() => openAuth('register')}
+                    className={`w-full py-3 rounded-lg font-medium text-center transition-all duration-200 block cursor-pointer ${isDark ? (isUltra ? 'bg-white hover:bg-neutral-200 text-black' : 'border border-white/20 hover:bg-white/5 text-white') : (isUltra ? 'bg-black hover:bg-gray-800 text-white' : 'border border-gray-300 hover:bg-gray-100 text-black')}`}
                   >
                     {plan.cta}
-                  </Link>
+                  </button>
                 </div>
               );
             })}
@@ -587,9 +597,12 @@ export default function LandingPage() {
           <div className="relative z-10 max-w-2xl mx-auto">
             <h2 className={`text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 ${isDark ? 'text-white' : 'text-black'}`}>{t.cta.title}</h2>
             <p className={`text-base sm:text-lg ${textMuted} mb-6 sm:mb-8`}>{t.cta.sub}</p>
-            <Link href="/app?screen=register" className={`inline-block font-medium py-3 sm:py-4 px-6 sm:px-8 rounded-lg transition-all duration-300 hover:scale-105 text-base sm:text-lg ${isDark ? 'bg-white hover:bg-neutral-200 text-black' : 'bg-black hover:bg-gray-800 text-white'}`}>
+            <button
+              onClick={() => openAuth('register')}
+              className={`inline-block font-medium py-3 sm:py-4 px-6 sm:px-8 rounded-lg transition-all duration-300 hover:scale-105 text-base sm:text-lg cursor-pointer ${isDark ? 'bg-white hover:bg-neutral-200 text-black' : 'bg-black hover:bg-gray-800 text-white'}`}
+            >
               {t.cta.cta}
-            </Link>
+            </button>
           </div>
         </section>
       </main>
@@ -617,6 +630,15 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* ===== AUTH MODAL POPUP ===== */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        initialMode={authModalMode}
+        lang={lang}
+        isDark={isDark}
+      />
     </div>
   );
 }

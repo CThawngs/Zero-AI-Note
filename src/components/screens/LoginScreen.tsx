@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Eye, EyeOff, Lock, Mail, ArrowRight, ArrowLeft, Sun, Moon, Globe, X, User } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, ArrowRight, ArrowLeft, Sun, Moon, Globe, X, User, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 export const LoginScreen: React.FC = () => {
@@ -32,22 +32,83 @@ export const LoginScreen: React.FC = () => {
   const [forgotEmail, setForgotEmail] = useState('');
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
+  // Field errors
+  const [errors, setErrors] = useState<{
+    email?: string;
+    password?: string;
+    forgotEmail?: string;
+    general?: string;
+  }>({});
+  const [touched, setTouched] = useState<{
+    email?: boolean;
+    password?: boolean;
+    forgotEmail?: boolean;
+  }>({});
+  const [successInfo, setSuccessInfo] = useState<string | null>(null);
+
   const isDark = theme === 'dark';
   const vi = language === 'vi';
 
   const goBackToLanding = () => { window.location.href = '/'; };
 
+  const validateEmail = (val: string): string | undefined => {
+    if (!val.trim()) return vi ? 'Vui lòng nhập địa chỉ email' : 'Please enter your email address';
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(val.trim())) return vi ? 'Email không hợp lệ (ví dụ: name@example.com)' : 'Invalid email format (e.g. name@example.com)';
+    return undefined;
+  };
+
+  const validatePassword = (val: string, mode: 'login' | 'register'): string | undefined => {
+    if (!val) return vi ? 'Vui lòng nhập mật khẩu' : 'Please enter your password';
+    if (mode === 'register' && val.length < 8) return vi ? 'Mật khẩu phải có ít nhất 8 ký tự' : 'Password must be at least 8 characters';
+    if (mode === 'login' && val.length < 6) return vi ? 'Mật khẩu phải có ít nhất 6 ký tự' : 'Password must be at least 6 characters';
+    return undefined;
+  };
+
+  const handleEmailChange = (val: string) => {
+    setEmail(val);
+    if (touched.email || errors.email) {
+      setErrors((prev) => ({ ...prev, email: validateEmail(val), general: undefined }));
+    }
+  };
+
+  const handlePasswordChange = (val: string) => {
+    setPassword(val);
+    if (touched.password || errors.password) {
+      setErrors((prev) => ({ ...prev, password: validatePassword(val, activeTab), general: undefined }));
+    }
+  };
+
+  const handleBlur = (field: 'email' | 'password') => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    if (field === 'email') {
+      setErrors((prev) => ({ ...prev, email: validateEmail(email) }));
+    } else if (field === 'password') {
+      setErrors((prev) => ({ ...prev, password: validatePassword(password, activeTab) }));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const emailErr = validateEmail(email);
+    const passErr = validatePassword(password, 'login');
+
+    if (emailErr || passErr) {
+      setTouched({ email: true, password: true });
+      setErrors({ email: emailErr, password: passErr });
+      return;
+    }
+
     setIsLoading(true);
+    setErrors({});
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: email.trim(), password }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Login failed');
+      if (!res.ok) throw new Error(data.error ?? (vi ? 'Đăng nhập thất bại' : 'Login failed'));
       setUser(data.user);
       addToast(
         vi ? 'Đăng nhập thành công' : 'Logged in successfully',
@@ -56,11 +117,14 @@ export const LoginScreen: React.FC = () => {
       );
       setCurrentScreen('chat');
     } catch (err) {
-      addToast(
-        vi ? 'Đăng nhập thất bại' : 'Login failed',
-        err instanceof Error ? err.message : 'Unknown error',
-        'error'
-      );
+      const msg = err instanceof Error ? err.message : (vi ? 'Đăng nhập thất bại' : 'Login failed');
+      if (msg.toLowerCase().includes('password') || msg.toLowerCase().includes('mật khẩu')) {
+        setErrors({ password: msg });
+      } else if (msg.toLowerCase().includes('user') || msg.toLowerCase().includes('email') || msg.toLowerCase().includes('tài khoản')) {
+        setErrors({ email: msg });
+      } else {
+        setErrors({ general: msg });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -68,15 +132,25 @@ export const LoginScreen: React.FC = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    const emailErr = validateEmail(email);
+    const passErr = validatePassword(password, 'register');
+
+    if (emailErr || passErr) {
+      setTouched({ email: true, password: true });
+      setErrors({ email: emailErr, password: passErr });
+      return;
+    }
+
     setIsLoading(true);
+    setErrors({});
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, displayName: displayName || email.split('@')[0] }),
+        body: JSON.stringify({ email: email.trim(), password, displayName: displayName.trim() || email.trim().split('@')[0] }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Registration failed');
+      if (!res.ok) throw new Error(data.error ?? (vi ? 'Đăng ký thất bại' : 'Registration failed'));
       setUser(data.user);
       addToast(
         vi ? 'Đăng ký thành công' : 'Registration successful',
@@ -85,11 +159,12 @@ export const LoginScreen: React.FC = () => {
       );
       setCurrentScreen('chat');
     } catch (err) {
-      addToast(
-        vi ? 'Đăng ký thất bại' : 'Registration failed',
-        err instanceof Error ? err.message : 'Unknown error',
-        'error'
-      );
+      const msg = err instanceof Error ? err.message : (vi ? 'Đăng ký thất bại' : 'Registration failed');
+      if (msg.toLowerCase().includes('email') || msg.toLowerCase().includes('exists') || msg.toLowerCase().includes('tồn tại')) {
+        setErrors({ email: msg });
+      } else {
+        setErrors({ general: msg });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -105,6 +180,11 @@ export const LoginScreen: React.FC = () => {
 
   const handleForgotPassword = (e: React.FormEvent) => {
     e.preventDefault();
+    const emailErr = validateEmail(forgotEmail || email);
+    if (emailErr) {
+      setErrors((prev) => ({ ...prev, forgotEmail: emailErr }));
+      return;
+    }
     setIsForgotPasswordOpen(false);
     addToast(
       vi ? 'Đã gửi email khôi phục' : 'Recovery email dispatched',
@@ -118,46 +198,15 @@ export const LoginScreen: React.FC = () => {
   const card       = isDark ? 'bg-[#111111] border-white/8' : 'bg-white border-gray-200/80';
   const inputBg    = isDark ? 'bg-[#0c0c0c] border-white/10 text-white placeholder-neutral-600'
                             : 'bg-gray-50 border-gray-200 text-black placeholder-gray-400';
-  const inputFocus = isDark ? 'focus:border-white/30 focus:bg-[#111] focus:ring-2 focus:ring-white/5'
-                            : 'focus:border-gray-400 focus:bg-white focus:ring-2 focus:ring-black/5';
+  const inputFocus = isDark ? 'focus:border-white/30 focus:bg-[#111] focus:ring-1 focus:ring-white/5'
+                            : 'focus:border-gray-400 focus:bg-white focus:ring-1 focus:ring-black/5';
+  const inputErr   = 'border-red-500/80 focus:border-red-500 focus:ring-1 focus:ring-red-500/20';
   const muted      = isDark ? 'text-neutral-500'           : 'text-gray-500';
   const sub        = isDark ? 'text-neutral-400'           : 'text-gray-600';
   const divider    = isDark ? 'border-white/8'             : 'border-gray-200';
   const tabBg      = isDark ? 'bg-white/5'                 : 'bg-gray-100';
   const tabActive  = isDark ? 'bg-white text-black'       : 'bg-black text-white';
   const tabInactive = isDark ? 'text-neutral-400 hover:text-neutral-200' : 'text-gray-500 hover:text-gray-800';
-
-  // ── Input field component ─────────────────────────────────────────────────
-  const InputField = ({
-    id, type = 'text', label, placeholder, value, onChange, icon: Icon, rightSlot, rightSlot2
-  }: {
-    id: string; type?: string; label: string; placeholder: string;
-    value: string; onChange: (v: string) => void;
-    icon: React.FC<{ className?: string }>;
-    rightSlot?: React.ReactNode; rightSlot2?: React.ReactNode;
-  }) => (
-    <div>
-      <label htmlFor={id} className={`block text-[11px] sm:text-xs font-medium mb-1 ${sub}`}>{label}</label>
-      <div className="relative group">
-        <Icon className={`w-3.5 h-3.5 sm:w-[15px] sm:h-[15px] absolute left-3 sm:left-3.5 top-1/2 -translate-y-1/2 transition-colors ${
-          focusedField === id ? (isDark ? 'text-neutral-300' : 'text-gray-600') : (isDark ? 'text-neutral-600' : 'text-gray-400')
-        }`} />
-        <input
-          id={id}
-          type={type}
-          required
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onFocus={() => setFocusedField(id)}
-          onBlur={() => setFocusedField(null)}
-          placeholder={placeholder}
-          className={`w-full border rounded-lg sm:rounded-xl pl-8 sm:pl-9.5 ${rightSlot ? 'pr-9 sm:pr-10' : 'pr-3 sm:pr-4'} py-2 sm:py-2.5 text-xs sm:text-sm outline-none transition-all duration-200 ${inputBg} ${inputFocus}`}
-        />
-        {rightSlot}
-        {rightSlot2}
-      </div>
-    </div>
-  );
 
   return (
     <div
@@ -168,9 +217,8 @@ export const LoginScreen: React.FC = () => {
       <div className={`absolute -top-48 -left-48 w-[400px] h-[400px] rounded-full blur-3xl pointer-events-none opacity-50 ${isDark ? 'bg-white/3' : 'bg-black/3'}`} />
       <div className={`absolute -bottom-48 -right-48 w-[400px] h-[400px] rounded-full blur-3xl pointer-events-none opacity-50 ${isDark ? 'bg-white/3' : 'bg-black/3'}`} />
 
-      {/* Top Bar: Separate navigation & toggles that never collide with the card */}
+      {/* Top Bar */}
       <header className="fixed top-0 inset-x-0 z-30 flex items-center justify-between px-3 sm:px-6 py-2.5 sm:py-3 pointer-events-none">
-        {/* Back to Home Button */}
         <button
           id="login-back-home"
           onClick={(e) => { e.stopPropagation(); goBackToLanding(); }}
@@ -185,7 +233,6 @@ export const LoginScreen: React.FC = () => {
           <span>{vi ? 'Trang chủ' : 'Home'}</span>
         </button>
 
-        {/* Grouped Lang + Theme Toggles */}
         <div className={`pointer-events-auto flex items-center gap-1 rounded-lg border px-1 py-0.5 shadow-sm backdrop-blur-md ${
           isDark ? 'border-white/10 bg-[#111]/90' : 'border-gray-200 bg-white/90'
         }`}>
@@ -214,7 +261,7 @@ export const LoginScreen: React.FC = () => {
         </div>
       </header>
 
-      {/* Card — with max-height & clean scrolling for compact viewport optimization */}
+      {/* Card */}
       <motion.div
         initial={{ opacity: 0, y: 15, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -224,7 +271,7 @@ export const LoginScreen: React.FC = () => {
         style={{ scrollbarWidth: 'thin' }}
       >
         <div className="p-4 sm:p-5 md:p-6">
-          {/* Brand header with cleanly integrated close button */}
+          {/* Brand header */}
           <div className="flex items-center justify-between mb-3.5 sm:mb-4">
             <div className="flex items-center gap-2.5">
               <img
@@ -242,7 +289,6 @@ export const LoginScreen: React.FC = () => {
               </div>
             </div>
 
-            {/* In-card close button: clearly visible with border & hover */}
             <button
               id="btn-close-auth"
               onClick={goBackToLanding}
@@ -263,7 +309,7 @@ export const LoginScreen: React.FC = () => {
               <button
                 key={tab}
                 id={`tab-${tab}`}
-                onClick={() => setActiveTab(tab)}
+                onClick={() => { setActiveTab(tab); setErrors({}); }}
                 className={`flex-1 py-1.5 sm:py-2 text-xs sm:text-[13px] font-semibold rounded-md sm:rounded-lg transition-all duration-200 cursor-pointer active:scale-[0.98] ${
                   activeTab === tab ? `${tabActive} shadow-sm` : tabInactive
                 }`}
@@ -274,6 +320,16 @@ export const LoginScreen: React.FC = () => {
               </button>
             ))}
           </div>
+
+          {/* General Error Banner */}
+          {errors.general && (
+            <div className={`mb-3 p-2.5 rounded-xl border flex items-start gap-2 text-xs ${
+              isDark ? 'bg-red-500/10 border-red-500/20 text-red-300' : 'bg-red-50 border-red-200 text-red-800'
+            }`}>
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{errors.general}</span>
+            </div>
+          )}
 
           {/* Welcome text */}
           <div className="mb-3 sm:mb-4">
@@ -302,29 +358,50 @@ export const LoginScreen: React.FC = () => {
                   transition={{ duration: 0.18, ease: 'easeInOut' }}
                   style={{ overflow: 'hidden' }}
                 >
-                  <InputField
-                    id="register-name-input"
-                    label={vi ? 'Tên hiển thị (tuỳ chọn)' : 'Display name (optional)'}
-                    placeholder={vi ? 'Nguyễn Văn A' : 'Your full name'}
-                    value={displayName}
-                    onChange={setDisplayName}
-                    icon={User}
-                    type="text"
-                  />
+                  <label htmlFor="register-name-input" className={`block text-[11px] sm:text-xs font-medium mb-1 ${sub}`}>
+                    {vi ? 'Tên hiển thị (tuỳ chọn)' : 'Display name (optional)'}
+                  </label>
+                  <div className="relative">
+                    <User className={`w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 ${muted}`} />
+                    <input
+                      id="register-name-input"
+                      type="text"
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      placeholder={vi ? 'Nguyễn Văn A' : 'Your full name'}
+                      className={`w-full border rounded-lg sm:rounded-xl pl-8 sm:pl-9.5 pr-3 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm outline-none transition-all duration-200 ${inputBg} ${inputFocus}`}
+                    />
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
             {/* Email */}
-            <InputField
-              id="login-email-input"
-              type="email"
-              label={vi ? 'Địa chỉ Email' : 'Email Address'}
-              placeholder="name@example.com"
-              value={email}
-              onChange={setEmail}
-              icon={Mail}
-            />
+            <div>
+              <label htmlFor="login-email-input" className={`block text-[11px] sm:text-xs font-medium mb-1 ${sub}`}>
+                {vi ? 'Địa chỉ Email' : 'Email Address'}
+              </label>
+              <div className="relative">
+                <Mail className={`w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 ${errors.email ? 'text-red-500' : muted}`} />
+                <input
+                  id="login-email-input"
+                  type="email"
+                  value={email}
+                  onChange={(e) => handleEmailChange(e.target.value)}
+                  onBlur={() => handleBlur('email')}
+                  placeholder="name@example.com"
+                  className={`w-full border rounded-lg sm:rounded-xl pl-8 sm:pl-9.5 pr-3 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm outline-none transition-all duration-200 ${inputBg} ${
+                    errors.email ? inputErr : inputFocus
+                  }`}
+                />
+              </div>
+              {errors.email && (
+                <p className="text-red-500 text-[11px] font-medium mt-1 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3 shrink-0" />
+                  {errors.email}
+                </p>
+              )}
+            </div>
 
             {/* Password */}
             <div>
@@ -344,34 +421,37 @@ export const LoginScreen: React.FC = () => {
                 )}
               </div>
               <div className="relative">
-                <Lock className={`w-3.5 h-3.5 sm:w-[15px] sm:h-[15px] absolute left-3 sm:left-3.5 top-1/2 -translate-y-1/2 transition-colors ${
-                  focusedField === 'login-password-input' ? (isDark ? 'text-neutral-300' : 'text-gray-600') : (isDark ? 'text-neutral-600' : 'text-gray-400')
-                }`} />
+                <Lock className={`w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 ${errors.password ? 'text-red-500' : muted}`} />
                 <input
                   id="login-password-input"
                   type={showPassword ? 'text' : 'password'}
-                  required
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  onFocus={() => setFocusedField('login-password-input')}
-                  onBlur={() => setFocusedField(null)}
+                  onChange={(e) => handlePasswordChange(e.target.value)}
+                  onBlur={() => handleBlur('password')}
                   placeholder="••••••••••••"
-                  className={`w-full border rounded-lg sm:rounded-xl pl-8 sm:pl-9.5 pr-9 sm:pr-10 py-2 sm:py-2.5 text-xs sm:text-sm outline-none transition-all duration-200 ${inputBg} ${inputFocus}`}
+                  className={`w-full border rounded-lg sm:rounded-xl pl-8 sm:pl-9.5 pr-9 sm:pr-10 py-2 sm:py-2.5 text-xs sm:text-sm outline-none transition-all duration-200 ${inputBg} ${
+                    errors.password ? inputErr : inputFocus
+                  }`}
                 />
                 <button
                   type="button"
                   id="btn-toggle-password"
                   onClick={() => setShowPassword(!showPassword)}
-                  className={`absolute right-3 sm:right-3.5 top-1/2 -translate-y-1/2 transition-colors cursor-pointer ${muted} hover:opacity-80`}
+                  className={`absolute right-3 top-1/2 -translate-y-1/2 transition-colors cursor-pointer ${muted} hover:opacity-80`}
                 >
                   {showPassword ? <EyeOff className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
                 </button>
               </div>
-              {activeTab === 'register' && (
+              {errors.password ? (
+                <p className="text-red-500 text-[11px] font-medium mt-1 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3 shrink-0" />
+                  {errors.password}
+                </p>
+              ) : activeTab === 'register' ? (
                 <p className={`text-[10px] sm:text-[11px] mt-1 ${muted}`}>
                   {vi ? 'Tối thiểu 8 ký tự.' : 'Minimum 8 characters.'}
                 </p>
-              )}
+              ) : null}
             </div>
 
             {/* Submit */}
@@ -389,7 +469,7 @@ export const LoginScreen: React.FC = () => {
                 <>
                   <span>
                     {activeTab === 'login'
-                      ? (vi ? 'Đăng nhập' : 'Sign In')
+                      ? (vi ? 'Đăng nhập vào hệ thống' : 'Sign in to Workspace')
                       : (vi ? 'Tạo tài khoản miễn phí' : 'Create Free Account')}
                   </span>
                   <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -471,16 +551,29 @@ export const LoginScreen: React.FC = () => {
               </div>
 
               <form onSubmit={handleForgotPassword} className="space-y-2.5">
-                <div className="relative">
-                  <Mail className={`w-3.5 h-3.5 sm:w-[15px] sm:h-[15px] absolute left-3 sm:left-3.5 top-1/2 -translate-y-1/2 ${muted}`} />
-                  <input
-                    type="email"
-                    required
-                    value={forgotEmail}
-                    onChange={(e) => setForgotEmail(e.target.value)}
-                    placeholder="name@example.com"
-                    className={`w-full border rounded-lg sm:rounded-xl pl-8 sm:pl-9.5 pr-3 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm outline-none transition-all duration-200 ${inputBg} ${inputFocus}`}
-                  />
+                <div>
+                  <div className="relative">
+                    <Mail className={`w-3.5 h-3.5 sm:w-[15px] sm:h-[15px] absolute left-3 sm:left-3.5 top-1/2 -translate-y-1/2 ${muted}`} />
+                    <input
+                      type="email"
+                      required
+                      value={forgotEmail}
+                      onChange={(e) => {
+                        setForgotEmail(e.target.value);
+                        if (errors.forgotEmail) setErrors((prev) => ({ ...prev, forgotEmail: undefined }));
+                      }}
+                      placeholder="name@example.com"
+                      className={`w-full border rounded-lg sm:rounded-xl pl-8 sm:pl-9.5 pr-3 sm:pr-4 py-2 sm:py-2.5 text-xs sm:text-sm outline-none transition-all duration-200 ${inputBg} ${
+                        errors.forgotEmail ? inputErr : inputFocus
+                      }`}
+                    />
+                  </div>
+                  {errors.forgotEmail && (
+                    <p className="text-red-500 text-[11px] font-medium mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3 shrink-0" />
+                      {errors.forgotEmail}
+                    </p>
+                  )}
                 </div>
                 <div className="flex gap-2 pt-1">
                   <button
