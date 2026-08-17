@@ -81,6 +81,8 @@ interface AppContextType {
   // Navigation & User
   currentScreen: ScreenType;
   setCurrentScreen: (screen: ScreenType) => void;
+  authMode: 'login' | 'register';
+  setAuthMode: (mode: 'login' | 'register') => void;
   user: UserProfile;
   setUser: React.Dispatch<React.SetStateAction<UserProfile>>;
   upgradeToPro: () => void;
@@ -269,7 +271,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const [currentScreen, setCurrentScreenState] = useState<ScreenType>('login'); // Start with login screen
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [user, setUser] = useState<UserProfile>(DEFAULT_USER_PROFILE);
+
+  // Read query param ?screen=login|register when no user
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !user.id) {
+      const params = new URLSearchParams(window.location.search);
+      const screen = params.get('screen');
+      if (screen === 'login' || screen === 'register') {
+        setAuthMode(screen);
+      }
+    }
+  }, [user.id]);
   const [notes, setNotes] = useState<NoteItem[]>(EMPTY_NOTES);
   const [archivedNotes, setArchivedNotes] = useState<NoteItem[]>(EMPTY_ARCHIVED_NOTES);
   const [activeNote, setActiveNote] = useState<NoteItem | null>(null);
@@ -1036,6 +1050,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setIsSidebarCollapsed,
       currentScreen,
       setCurrentScreen,
+      authMode,
+      setAuthMode,
       user,
       setUser,
       upgradeToPro,

@@ -46,13 +46,8 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // /app (dashboard) requires login
-  if (pathname.startsWith('/app')) {
-    if (!session) {
-      return NextResponse.redirect(new URL('/', request.url));
-    }
-    return NextResponse.next();
-  }
+  // /app is now public — login/register screens handled by AppContext
+  // (previous login requirement removed per landing page UX update)
 
   return NextResponse.next();
 }

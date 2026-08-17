@@ -12,10 +12,18 @@ export const LoginScreen: React.FC = () => {
     toggleTheme,
     language,
     toggleLanguage,
-    t
+    t,
+    authMode,
+    setAuthMode
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
+  const [activeTab, setActiveTab] = useState<'login' | 'register'>(authMode || 'login');
+
+  React.useEffect(() => {
+    if (authMode) {
+      setActiveTab(authMode);
+    }
+  }, [authMode]);
   const [email, setEmail] = useState('user@example.com');
   const [password, setPassword] = useState('••••••••••••');
   const [showPassword, setShowPassword] = useState(false);

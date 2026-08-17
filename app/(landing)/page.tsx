@@ -151,7 +151,14 @@ export default function LandingPage() {
         <div className="flex justify-between items-center px-4 sm:px-6 py-3 sm:py-4 max-w-7xl mx-auto">
           {/* Logo */}
           <div className={`font-bold text-lg sm:text-xl flex items-center gap-2 ${isDark ? 'text-white' : 'text-black'}`}>
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>description</span>
+            <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 sm:w-7 sm:h-7" aria-hidden="true">
+              <path
+                d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"
+                className={isDark ? 'fill-white' : 'fill-black'}
+              />
+              <path d="M13 2v5h5" className={isDark ? 'stroke-[#0a0a0a]' : 'stroke-white'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M8 13h8M8 17h5" className={isDark ? 'stroke-[#0a0a0a]' : 'stroke-white'} strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
             Zero AI Note
           </div>
 
@@ -183,12 +190,12 @@ export default function LandingPage() {
             <Link href="/docs" className={`text-sm font-medium transition-colors duration-200 mr-6 ${isDark ? 'text-neutral-400 hover:text-white' : 'text-gray-600 hover:text-black'}`}>
               {t.nav.docs}
             </Link>
-            <Link href="/app" className={`text-sm font-medium transition-colors duration-200 mr-6 ${isDark ? 'text-neutral-400 hover:text-white' : 'text-gray-600 hover:text-black'}`}>
+            <Link href="/app?screen=login" className={`text-sm font-medium transition-colors duration-200 mr-6 ${isDark ? 'text-neutral-400 hover:text-white' : 'text-gray-600 hover:text-black'}`}>
               {t.nav.login}
             </Link>
 
             {/* CTA */}
-            <Link href="/app" className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105 ${isDark ? 'bg-white hover:bg-neutral-200 text-black' : 'bg-black hover:bg-gray-800 text-white'}`}>
+            <Link href="/app?screen=register" className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105 ${isDark ? 'bg-white hover:bg-neutral-200 text-black' : 'bg-black hover:bg-gray-800 text-white'}`}>
               {t.nav.cta}
             </Link>
           </nav>
@@ -254,7 +261,7 @@ export default function LandingPage() {
               {t.hero.sub}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2 sm:pt-4">
-              <Link href="/app" className={`font-medium py-3 px-6 rounded-lg transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2 text-sm sm:text-base ${isDark ? 'bg-white hover:bg-neutral-200 text-black' : 'bg-black hover:bg-gray-800 text-white'}`}>
+              <Link href="/app?screen=register" className={`font-medium py-3 px-6 rounded-lg transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2 text-sm sm:text-base ${isDark ? 'bg-white hover:bg-neutral-200 text-black' : 'bg-black hover:bg-gray-800 text-white'}`}>
                 {t.hero.cta}
                 <span className="material-symbols-outlined text-sm">arrow_forward</span>
               </Link>
@@ -402,7 +409,7 @@ export default function LandingPage() {
                     ))}
                   </ul>
                   <Link
-                    href="/app"
+                    href="/app?screen=register"
                     className={`w-full py-3 rounded-lg font-medium text-center transition-all duration-200 block ${isDark ? (isUltra ? 'bg-white hover:bg-neutral-200 text-black' : 'border border-white/20 hover:bg-white/5 text-white') : (isUltra ? 'bg-black hover:bg-gray-800 text-white' : 'border border-gray-300 hover:bg-gray-100 text-black')}`}
                   >
                     {plan.cta}
@@ -418,7 +425,7 @@ export default function LandingPage() {
           <div className="relative z-10 max-w-2xl mx-auto">
             <h2 className={`text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 ${isDark ? 'text-white' : 'text-black'}`}>{t.cta.title}</h2>
             <p className={`text-base sm:text-lg ${textMuted} mb-6 sm:mb-8`}>{t.cta.sub}</p>
-            <Link href="/app" className={`inline-block font-medium py-3 sm:py-4 px-6 sm:px-8 rounded-lg transition-all duration-300 hover:scale-105 text-base sm:text-lg ${isDark ? 'bg-white hover:bg-neutral-200 text-black' : 'bg-black hover:bg-gray-800 text-white'}`}>
+            <Link href="/app?screen=register" className={`inline-block font-medium py-3 sm:py-4 px-6 sm:px-8 rounded-lg transition-all duration-300 hover:scale-105 text-base sm:text-lg ${isDark ? 'bg-white hover:bg-neutral-200 text-black' : 'bg-black hover:bg-gray-800 text-white'}`}>
               {t.cta.cta}
             </Link>
           </div>
@@ -430,7 +437,11 @@ export default function LandingPage() {
         <div className="flex flex-col md:flex-row justify-between items-center px-4 sm:px-6 max-w-7xl mx-auto gap-4">
           <div className="flex flex-col items-center md:items-start gap-2">
             <div className={`font-bold text-lg sm:text-xl flex items-center gap-2 ${isDark ? 'text-white' : 'text-black'}`}>
-              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>description</span>
+              <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6" aria-hidden="true">
+                <path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z" className={isDark ? 'fill-white' : 'fill-black'} />
+                <path d="M13 2v5h5" className={isDark ? 'stroke-[#0a0a0a]' : 'stroke-white'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M8 13h8M8 17h5" className={isDark ? 'stroke-[#0a0a0a]' : 'stroke-white'} strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
               Zero AI Note
             </div>
             <div className={`text-sm ${textMuted}`}>{t.footer}</div>
