@@ -238,27 +238,42 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               style={{ scrollbarWidth: 'thin' }}
             >
               <div className="p-4 sm:p-5">
-                {/* Header row: Brand + Close Button */}
-                <div className="flex items-center justify-between mb-3.5">
-                  <div className="flex items-center gap-2.5">
-                    <img
-                      src="/logo.png"
-                      alt="Zero AI Note"
-                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-contain shrink-0"
-                    />
-                    <div>
-                      <h2 className="text-sm sm:text-base font-bold leading-tight">Zero AI Note</h2>
-                      <p className={`text-[10px] sm:text-[11px] leading-tight ${textMuted}`}>
-                        {vi ? 'Ghi chú thông minh AI' : 'AI-powered note taking'}
-                      </p>
+                {/* Header row: Tabs / Title + Close Button (No duplicate logo) */}
+                <div className="flex items-center justify-between gap-2.5 mb-3.5">
+                  {mode !== 'forgot' ? (
+                    <div className={`flex flex-1 p-0.5 rounded-lg sm:rounded-xl gap-1 ${tabBg}`}>
+                      <button
+                        type="button"
+                        onClick={() => { setMode('login'); setErrors({}); setSuccessInfo(null); }}
+                        className={`flex-1 py-1.5 text-xs sm:text-[13px] font-semibold rounded-md sm:rounded-lg transition-all duration-200 cursor-pointer active:scale-[0.98] ${
+                          mode === 'login' ? `${tabActive} shadow-sm` : tabInactive
+                        }`}
+                      >
+                        {vi ? 'Đăng nhập' : 'Sign In'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setMode('register'); setErrors({}); setSuccessInfo(null); }}
+                        className={`flex-1 py-1.5 text-xs sm:text-[13px] font-semibold rounded-md sm:rounded-lg transition-all duration-200 cursor-pointer active:scale-[0.98] ${
+                          mode === 'register' ? `${tabActive} shadow-sm` : tabInactive
+                        }`}
+                      >
+                        {vi ? 'Đăng ký' : 'Sign Up'}
+                      </button>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="flex items-center gap-2 flex-1">
+                      <span className="text-xs sm:text-sm font-semibold">
+                        {vi ? 'Khôi phục mật khẩu' : 'Password Recovery'}
+                      </span>
+                    </div>
+                  )}
 
                   {/* Close button */}
                   <button
                     onClick={onClose}
                     title={vi ? 'Đóng' : 'Close'}
-                    className={`p-1.5 rounded-lg border transition-all cursor-pointer active:scale-90 flex items-center justify-center ${
+                    className={`p-1.5 rounded-lg border transition-all cursor-pointer active:scale-90 flex items-center justify-center shrink-0 ${
                       isDark
                         ? 'border-white/10 bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10'
                         : 'border-gray-200 bg-gray-50 text-gray-500 hover:text-black hover:bg-gray-100'
@@ -267,43 +282,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </button>
                 </div>
-
-                {/* Tab switcher — Login / Register */}
-                {mode !== 'forgot' ? (
-                  <div className={`flex p-0.5 rounded-lg sm:rounded-xl gap-1 mb-3.5 ${tabBg}`}>
-                    <button
-                      type="button"
-                      onClick={() => { setMode('login'); setErrors({}); setSuccessInfo(null); }}
-                      className={`flex-1 py-1.5 text-xs sm:text-[13px] font-semibold rounded-md sm:rounded-lg transition-all duration-200 cursor-pointer active:scale-[0.98] ${
-                        mode === 'login' ? `${tabActive} shadow-sm` : tabInactive
-                      }`}
-                    >
-                      {vi ? 'Đăng nhập' : 'Sign In'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setMode('register'); setErrors({}); setSuccessInfo(null); }}
-                      className={`flex-1 py-1.5 text-xs sm:text-[13px] font-semibold rounded-md sm:rounded-lg transition-all duration-200 cursor-pointer active:scale-[0.98] ${
-                        mode === 'register' ? `${tabActive} shadow-sm` : tabInactive
-                      }`}
-                    >
-                      {vi ? 'Đăng ký' : 'Sign Up'}
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between mb-3.5 pb-2 border-b border-white/5">
-                    <span className="text-xs sm:text-sm font-semibold">
-                      {vi ? 'Khôi phục mật khẩu' : 'Password Recovery'}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => { setMode('login'); setErrors({}); setSuccessInfo(null); }}
-                      className={`text-xs hover:underline cursor-pointer ${textMuted}`}
-                    >
-                      {vi ? '← Quay lại Đăng nhập' : '← Back to Sign In'}
-                    </button>
-                  </div>
-                )}
 
                 {/* Success Banner */}
                 {successInfo && (
