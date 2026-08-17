@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     const sql = getSql();
     const exists = await sql`select id from profiles where email = ${normalizedEmail}`;
     if (Array.isArray(exists) && exists.length > 0) {
-      return fail('Email already registered', 409);
+      return fail('Địa chỉ email này đã được đăng ký tài khoản trước đó rồi. Vui lòng chuyển sang Đăng nhập.', 409);
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     } catch (insertErr) {
       const msg = insertErr instanceof Error ? insertErr.message : String(insertErr);
       if (msg.toLowerCase().includes('duplicate') || msg.toLowerCase().includes('unique')) {
-        return fail('Email already registered', 409);
+        return fail('Địa chỉ email này đã được đăng ký tài khoản trước đó rồi. Vui lòng chuyển sang Đăng nhập.', 409);
       }
       throw insertErr;
     }

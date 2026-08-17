@@ -4,6 +4,7 @@ import { AppProvider, useApp } from './context/AppContext';
 import { Sidebar } from './components/common/Sidebar';
 import { Header } from './components/common/Header';
 import { ToastContainer } from './components/common/ToastContainer';
+import { SetPasswordModal } from './components/common/SetPasswordModal';
 import { LoginScreen } from './components/screens/LoginScreen';
 import { ChatScreen } from './components/screens/ChatScreen';
 import { LibraryScreen } from './components/screens/LibraryScreen';
@@ -76,6 +77,9 @@ const MainApp: React.FC = () => {
 
       {/* Global Toast Container */}
       <ToastContainer />
+
+      {/* Forced Password Setup Modal for Google accounts */}
+      <SetPasswordModal />
     </div>
   );
 };

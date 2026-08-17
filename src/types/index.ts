@@ -39,6 +39,7 @@ export interface UserProfile {
     code: string;
     discountPercent: number;
   };
+  needsPasswordSetup?: boolean;
 }
 
 export interface NoteItem {

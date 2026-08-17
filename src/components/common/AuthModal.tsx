@@ -26,11 +26,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Google Login Dialog state
+  const [isGooglePromptOpen, setIsGooglePromptOpen] = useState(false);
+  const [googleEmail, setGoogleEmail] = useState('');
+  const [googleName, setGoogleName] = useState('');
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
   // Field errors
   const [errors, setErrors] = useState<{
     email?: string;
     password?: string;
     general?: string;
+    isDuplicateEmail?: boolean;
   }>({});
   const [touched, setTouched] = useState<{
     email?: boolean;
@@ -47,6 +54,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setErrors({});
       setTouched({});
       setSuccessInfo(null);
+      setIsGooglePromptOpen(false);
     }
   }, [isOpen, initialMode]);
 
@@ -79,7 +87,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setEmail(val);
     if (touched.email || errors.email) {
       const err = validateEmail(val);
-      setErrors((prev) => ({ ...prev, email: err, general: undefined }));
+      setErrors((prev) => ({ ...prev, email: err, general: undefined, isDuplicateEmail: false }));
     }
   };
 
@@ -121,7 +129,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? (vi ? 'Đăng nhập thất bại' : 'Login failed'));
-      // Success -> Redirect to app
       window.location.href = '/app';
     } catch (err) {
       const msg = err instanceof Error ? err.message : (vi ? 'Đã có lỗi xảy ra' : 'An error occurred');
@@ -161,13 +168,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? (vi ? 'Đăng ký thất bại' : 'Registration failed'));
-      // Success -> Redirect to app
+      if (!res.ok) {
+        if (res.status === 409 || (data.error && (data.error.includes('đã được đăng ký') || data.error.includes('already registered')))) {
+          setErrors({
+            email: vi
+              ? 'Địa chỉ email này đã được đăng ký tài khoản trước đó rồi.'
+              : 'This email address is already registered.',
+            isDuplicateEmail: true,
+          });
+          return;
+        }
+        throw new Error(data.error ?? (vi ? 'Đăng ký thất bại' : 'Registration failed'));
+      }
       window.location.href = '/app';
     } catch (err) {
       const msg = err instanceof Error ? err.message : (vi ? 'Đã có lỗi xảy ra' : 'An error occurred');
       if (msg.toLowerCase().includes('email') || msg.toLowerCase().includes('exists') || msg.toLowerCase().includes('tồn tại')) {
-        setErrors({ email: msg });
+        setErrors({ email: msg, isDuplicateEmail: true });
       } else {
         setErrors({ general: msg });
       }
@@ -192,12 +209,37 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setErrors({});
   };
 
-  const handleGoogleLogin = () => {
-    setSuccessInfo(
-      vi
-        ? 'Google OAuth sẽ khả dụng khi kết nối Neon Auth hoàn tất.'
-        : 'Google OAuth will be available once Neon Auth is enabled.'
-    );
+  // Google OAuth flow
+  const handleGoogleAuthSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const targetEmail = googleEmail.trim() || email.trim();
+    const emailErr = validateEmail(targetEmail);
+    if (emailErr) {
+      setErrors({ email: emailErr });
+      return;
+    }
+
+    setIsGoogleLoading(true);
+    setErrors({});
+    try {
+      const res = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: targetEmail,
+          displayName: googleName.trim() || targetEmail.split('@')[0],
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Google authentication failed');
+
+      // Success -> Redirect to app
+      window.location.href = '/app';
+    } catch (err) {
+      setErrors({ general: err instanceof Error ? err.message : 'Google authentication failed' });
+      setIsGoogleLoading(false);
+    }
   };
 
   // Style tokens
@@ -226,7 +268,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             className="fixed inset-0 bg-black/60 backdrop-blur-xs cursor-pointer"
           />
 
-          {/* Modal Container — below navbar (pt-16 sm:pt-20) with pointer-events-none */}
+          {/* Modal Container */}
           <div className="fixed inset-0 flex items-center justify-center p-3 sm:p-4 pointer-events-none z-40 pt-16 sm:pt-20">
             <motion.div
               key="auth-card"
@@ -238,9 +280,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               style={{ scrollbarWidth: 'thin' }}
             >
               <div className="p-4 sm:p-5">
-                {/* Header row: Tabs / Title + Close Button (No duplicate logo) */}
+                {/* Header row: Tabs / Title + Close Button */}
                 <div className="flex items-center justify-between gap-2.5 mb-3.5">
-                  {mode !== 'forgot' ? (
+                  {isGooglePromptOpen ? (
+                    <div className="flex items-center gap-2 flex-1">
+                      <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                        <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.4l3.7 2.9C6.5 7.4 9 5 12 5z" />
+                        <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z" />
+                        <path fill="#FBBC05" d="M5.6 14.7c-.2-.7-.4-1.5-.4-2.7 0-1.1.2-1.9.4-2.7L1.9 6.4C.7 8.8 0 10.4 0 12s.7 3.2 1.9 5.6l3.7-2.9z" />
+                        <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.3L1.9 16c1.8 3.8 5.6 7 10.1 7z" />
+                      </svg>
+                      <span className="text-xs sm:text-sm font-semibold">
+                        {vi ? 'Đăng nhập với Google' : 'Sign in with Google'}
+                      </span>
+                    </div>
+                  ) : mode !== 'forgot' ? (
                     <div className={`flex flex-1 p-0.5 rounded-lg sm:rounded-xl gap-1 ${tabBg}`}>
                       <button
                         type="button"
@@ -303,8 +357,62 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   </div>
                 )}
 
-                {/* ── FORGOT PASSWORD FORM ── */}
-                {mode === 'forgot' ? (
+                {/* ── GOOGLE AUTH DIALOG ── */}
+                {isGooglePromptOpen ? (
+                  <form onSubmit={handleGoogleAuthSubmit} className="space-y-3">
+                    <p className={`text-xs ${textMuted}`}>
+                      {vi
+                        ? 'Nhập địa chỉ tài khoản Google của bạn để đăng nhập hoặc tạo tài khoản mới ngay lập tức.'
+                        : 'Enter your Google account email to sign in or create an account instantly.'}
+                    </p>
+
+                    <div>
+                      <label className={`block text-[11px] font-medium mb-1 ${textMuted}`}>
+                        {vi ? 'Email Google' : 'Google Email'}
+                      </label>
+                      <div className="relative">
+                        <Mail className={`w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 ${textMuted}`} />
+                        <input
+                          type="email"
+                          required
+                          value={googleEmail}
+                          onChange={(e) => setGoogleEmail(e.target.value)}
+                          placeholder="example@gmail.com"
+                          className={`w-full border rounded-lg pl-8.5 pr-3 py-2 text-xs sm:text-sm outline-none transition-all ${inputBg} ${inputFocus}`}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setIsGooglePromptOpen(false)}
+                        className={`flex-1 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all ${
+                          isDark ? 'bg-white/6 text-neutral-300 hover:bg-white/10' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {vi ? 'Quay lại' : 'Back'}
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isGoogleLoading}
+                        className={`flex-1 py-2 rounded-lg font-semibold text-xs sm:text-[13px] flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                          isDark ? 'bg-white hover:bg-neutral-100 text-black' : 'bg-black hover:bg-gray-900 text-white'
+                        }`}
+                      >
+                        {isGoogleLoading ? (
+                          <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <>
+                            <span>{vi ? 'Tiếp tục' : 'Continue'}</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                ) : mode === 'forgot' ? (
+                  /* ── FORGOT PASSWORD FORM ── */
                   <form onSubmit={handleForgotPassword} className="space-y-3">
                     <p className={`text-xs ${textMuted}`}>
                       {vi
@@ -337,15 +445,26 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       )}
                     </div>
 
-                    <button
-                      type="submit"
-                      disabled={isLoading}
-                      className={`w-full py-2.5 px-4 rounded-lg font-semibold text-xs sm:text-[13px] flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer ${
-                        isDark ? 'bg-white hover:bg-neutral-100 text-black' : 'bg-black hover:bg-gray-900 text-white'
-                      }`}
-                    >
-                      {vi ? 'Gửi liên kết đặt lại' : 'Send Reset Link'}
-                    </button>
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => { setMode('login'); setErrors({}); }}
+                        className={`flex-1 py-2 rounded-lg text-xs font-medium cursor-pointer transition-all ${
+                          isDark ? 'bg-white/6 text-neutral-300 hover:bg-white/10' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {vi ? 'Quay lại' : 'Back'}
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isLoading}
+                        className={`flex-1 py-2 rounded-lg font-semibold text-xs sm:text-[13px] flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                          isDark ? 'bg-white hover:bg-neutral-100 text-black' : 'bg-black hover:bg-gray-900 text-white'
+                        }`}
+                      >
+                        {vi ? 'Gửi liên kết' : 'Send Link'}
+                      </button>
+                    </div>
                   </form>
                 ) : (
                   /* ── LOGIN & REGISTER FORM ── */
@@ -397,10 +516,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         />
                       </div>
                       {errors.email && (
-                        <p className="text-red-500 text-[11px] font-medium mt-1 flex items-center gap-1">
-                          <AlertCircle className="w-3 h-3 shrink-0" />
-                          {errors.email}
-                        </p>
+                        <div className="mt-1 space-y-1">
+                          <p className="text-red-500 text-[11px] font-medium flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3 shrink-0" />
+                            {errors.email}
+                          </p>
+                          {errors.isDuplicateEmail && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setMode('login');
+                                setErrors({});
+                              }}
+                              className="text-[11px] text-blue-400 hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                            >
+                              <span>👉 {vi ? 'Chuyển sang Đăng nhập với email này' : 'Switch to Sign In with this email'}</span>
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
 
@@ -491,7 +624,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     {/* Google OAuth Button */}
                     <button
                       type="button"
-                      onClick={handleGoogleLogin}
+                      onClick={() => {
+                        setGoogleEmail(email.trim());
+                        setIsGooglePromptOpen(true);
+                      }}
                       className={`w-full py-2 px-3 rounded-lg border text-xs sm:text-[12px] font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.98] ${dividerClass} ${
                         isDark ? 'hover:bg-white/5 text-neutral-200' : 'hover:bg-gray-50 text-gray-800'
                       }`}

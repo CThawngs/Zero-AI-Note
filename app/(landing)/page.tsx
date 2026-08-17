@@ -553,15 +553,15 @@ export default function LandingPage() {
           </Link>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 text-left mt-6 sm:mt-8">
             {t.pricing.plans.map((plan, i) => {
-              const isUltra = plan.badge === 'Ultra';
+              const isHighlight = plan.highlight === true;
               return (
                 <div
                   key={i}
                   ref={(el) => observe(el, i * 120)}
                   style={revealStyle}
-                  className={`${surfaceClass} border rounded-xl transition-[transform,box-shadow,background] duration-300 hover:scale-[1.02] hover:shadow-lg flex flex-col p-5 sm:p-6 relative ${isDark ? (isUltra ? 'border-white/30' : 'border-white/10') : (isUltra ? 'border-black/30' : 'border-gray-200')} ${i === 2 ? 'sm:col-span-2 md:col-span-1' : ''}`}
+                  className={`${surfaceClass} border rounded-xl transition-[transform,box-shadow,background] duration-300 hover:scale-[1.02] hover:shadow-lg flex flex-col p-5 sm:p-6 relative ${isDark ? (isHighlight ? 'border-white/40' : 'border-white/10') : (isHighlight ? 'border-black/40' : 'border-gray-200')} ${i === 2 ? 'sm:col-span-2 md:col-span-1' : ''}`}
                 >
-                  {isUltra && (
+                  {isHighlight && (
                     <div className={`absolute top-0 right-0 ${isDark ? 'bg-white text-black' : 'bg-black text-white'} text-xs font-medium py-1 px-3 rounded-bl-lg rounded-tr-xl`}>
                       {plan.badge}
                     </div>

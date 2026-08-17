@@ -274,6 +274,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [user, setUser] = useState<UserProfile>(DEFAULT_USER_PROFILE);
 
+  // Check auth session on startup
+  useEffect(() => {
+    async function checkSession() {
+      try {
+        const res = await fetch('/api/auth/session');
+        const data = await res.json();
+        if (data.authenticated && data.user) {
+          setUser({
+            id: data.user.id,
+            email: data.user.email,
+            name: data.user.displayName || data.user.email.split('@')[0],
+            avatar: '',
+            role: data.user.role || 'user',
+            plan: data.user.plan || 'free',
+            needsPasswordSetup: Boolean(data.user.needsPasswordSetup),
+          });
+          setCurrentScreenState('chat');
+        }
+      } catch (err) {
+        console.error('Session check failed:', err);
+      }
+    }
+    checkSession();
+  }, []);
+
   // Read query param ?screen=login|register when no user
   useEffect(() => {
     if (typeof window !== 'undefined' && !user.id) {
