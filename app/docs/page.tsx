@@ -123,11 +123,11 @@ export default function DocsPage() {
   const isDark = theme === 'dark';
 
   // ── Style tokens (same palette as landing) ───────────────────────────────
-  const bg       = isDark ? 'bg-[#0a0a0a] text-white'       : 'bg-white text-black';
-  const surface  = isDark ? 'bg-[#0f0f0f]'                  : 'bg-gray-50';
-  const border   = isDark ? 'border-white/10'                : 'border-gray-200';
-  const muted    = isDark ? 'text-neutral-400'               : 'text-gray-500';
-  const code     = isDark ? 'bg-white/8 text-neutral-300'    : 'bg-gray-100 text-gray-700';
+  const bg       = isDark ? 'bg-[#0a0a0a] text-white'        : 'bg-white text-black';
+  const surface  = isDark ? 'bg-[#0f0f0f]'                   : 'bg-gray-50';
+  const border   = isDark ? 'border-white/10'                 : 'border-gray-200';
+  const muted    = isDark ? 'text-neutral-400'                : 'text-gray-500';
+  const code     = isDark ? 'bg-white/8 text-neutral-300'     : 'bg-gray-100 text-gray-700';
   const hdr      = isDark ? 'bg-[#0a0a0a]/85 border-white/10' : 'bg-white/85 border-gray-200';
   const reveal: React.CSSProperties = {
     opacity: 0,
@@ -136,7 +136,7 @@ export default function DocsPage() {
   };
 
   return (
-    <div className={`min-h-screen font-sans antialiased transition-colors duration-300 ${bg}`}>
+    <div className={`min-h-screen font-sans antialiased transition-colors duration-300 overflow-x-hidden ${bg}`}>
 
       {/* ── Sticky header ─────────────────────────────────────────────────── */}
       <header className={`fixed top-0 w-full z-50 backdrop-blur-xl border-b transition-colors duration-300 ${hdr}`}>
@@ -206,11 +206,11 @@ export default function DocsPage() {
 
       {/* ── Layout ─────────────────────────────────────────────────────────── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-20">
-        <div className="flex gap-10 xl:gap-16">
+        <div className="flex gap-8 xl:gap-14">
 
-          {/* ── Sidebar (desktop) ─────────────────────────────────────────── */}
-          <aside className="hidden lg:block w-52 xl:w-60 shrink-0">
-            <div className="sticky top-24 pt-8">
+          {/* ── Sidebar (xl+ only) ────────────────────────────────────────── */}
+          <aside className="hidden xl:block w-52 shrink-0">
+            <div className="sticky top-24 pt-8 overflow-y-auto max-h-[calc(100vh-7rem)]">
               <p className={`text-[11px] font-semibold uppercase tracking-widest mb-3 ${muted}`}>Nội dung</p>
               <nav className="space-y-0.5">
                 {sections.map((s) => (
@@ -229,7 +229,7 @@ export default function DocsPage() {
               </nav>
 
               {/* Get started CTA */}
-              <div className={`mt-8 p-4 rounded-xl border ${isDark ? 'border-white/10 bg-white/5' : 'border-gray-200 bg-gray-50'}`}>
+              <div className={`mt-6 p-4 rounded-xl border ${isDark ? 'border-white/10 bg-white/5' : 'border-gray-200 bg-gray-50'}`}>
                 <p className={`text-xs font-medium mb-2 ${isDark ? 'text-white' : 'text-black'}`}>Sẵn sàng dùng thử?</p>
                 <Link
                   href="/app?screen=register"
@@ -245,17 +245,20 @@ export default function DocsPage() {
           {/* ── Main content ───────────────────────────────────────────────── */}
           <main className="flex-1 min-w-0 pt-8 pb-24">
 
-            {/* Mobile section jump */}
-            <div className="lg:hidden mb-6">
+            {/* TOC accordion — visible on everything below xl */}
+            <div className="xl:hidden mb-6">
               <button
                 onClick={() => setMobileNavOpen(!mobileNavOpen)}
-                className={`flex items-center gap-2 w-full px-4 py-2.5 rounded-xl border text-sm font-medium transition-colors ${
+                className={`flex items-center gap-2 w-full px-4 py-3 rounded-xl border text-sm font-medium transition-colors ${
                   isDark ? 'border-white/10 bg-white/5 text-neutral-300' : 'border-gray-200 bg-gray-50 text-gray-700'
                 }`}
               >
                 <span className="material-symbols-outlined leading-none" style={{ fontSize: '18px' }}>toc</span>
                 <span>Mục lục</span>
-                <span className={`material-symbols-outlined ml-auto leading-none transition-transform ${mobileNavOpen ? 'rotate-180' : ''}`} style={{ fontSize: '18px' }}>expand_more</span>
+                <span
+                  className={`material-symbols-outlined ml-auto leading-none transition-transform duration-200 ${mobileNavOpen ? 'rotate-180' : ''}`}
+                  style={{ fontSize: '18px' }}
+                >expand_more</span>
               </button>
               {mobileNavOpen && (
                 <div className={`mt-1 rounded-xl border overflow-hidden ${isDark ? 'border-white/10 bg-[#111]' : 'border-gray-200 bg-white'}`}>
@@ -263,8 +266,10 @@ export default function DocsPage() {
                     <button
                       key={s.id}
                       onClick={() => scrollTo(s.id)}
-                      className={`w-full text-left px-4 py-2.5 text-sm font-medium border-b last:border-b-0 transition-colors ${
-                        isDark ? 'border-white/5 text-neutral-300 hover:bg-white/6' : 'border-gray-100 text-gray-700 hover:bg-gray-50'
+                      className={`w-full text-left px-4 py-2.5 text-[13px] font-medium border-b last:border-b-0 transition-colors ${
+                        activeSection === s.id
+                          ? isDark ? 'bg-white/8 text-white' : 'bg-gray-100 text-black'
+                          : isDark ? 'border-white/5 text-neutral-300 hover:bg-white/5' : 'border-gray-100 text-gray-700 hover:bg-gray-50'
                       }`}
                     >
                       {s.label}
@@ -293,7 +298,7 @@ export default function DocsPage() {
             </div>
 
             {/* ── Giới thiệu ─────────────────────────────────────────────── */}
-            <section id="intro" className="mb-14 scroll-mt-24">
+            <section id="intro" className="mb-12 sm:mb-14 scroll-mt-20">
               <h2
                 ref={(el) => observe(el, 0)}
                 style={reveal}
@@ -316,7 +321,7 @@ export default function DocsPage() {
             </section>
 
             {/* ── Bắt đầu nhanh ──────────────────────────────────────────── */}
-            <section id="quickstart" className="mb-14 scroll-mt-24">
+            <section id="quickstart" className="mb-12 sm:mb-14 scroll-mt-20">
               <h2
                 ref={(el) => observe(el, 0)}
                 style={reveal}
@@ -324,7 +329,7 @@ export default function DocsPage() {
               >
                 Bắt đầu nhanh
               </h2>
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {[
                   { step: '1', text: 'Đăng ký tài khoản miễn phí', sub: 'Không cần thẻ tín dụng', link: '/app?screen=register', linkText: 'Tạo tài khoản' },
                   { step: '2', text: 'Kéo thả file hoặc dán link YouTube vào khung chat', sub: 'Hỗ trợ video, audio, PDF, DOCX' },
@@ -336,7 +341,7 @@ export default function DocsPage() {
                     key={i}
                     ref={(el) => observe(el, i * 70)}
                     style={reveal}
-                    className={`flex items-start gap-4 p-4 rounded-xl border transition-all duration-200 hover:scale-[1.01] ${surface} ${border}`}
+                    className={`flex items-start gap-3 p-4 rounded-xl border transition-all duration-200 hover:scale-[1.01] ${surface} ${border}`}
                   >
                     <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 ${isDark ? 'bg-white text-black' : 'bg-black text-white'}`}>
                       {item.step}
@@ -346,7 +351,7 @@ export default function DocsPage() {
                       <p className={`text-xs mt-0.5 ${muted}`}>{item.sub}</p>
                     </div>
                     {item.link && (
-                      <Link href={item.link} className={`text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0 transition-colors ${isDark ? 'bg-white/8 text-neutral-300 hover:bg-white/15' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+                      <Link href={item.link} className={`text-[11px] font-semibold px-2.5 py-1.5 rounded-lg shrink-0 whitespace-nowrap transition-colors ${isDark ? 'bg-white/8 text-neutral-300 hover:bg-white/15' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
                         {item.linkText}
                       </Link>
                     )}
@@ -356,7 +361,7 @@ export default function DocsPage() {
             </section>
 
             {/* ── Phương pháp ghi chú ────────────────────────────────────── */}
-            <section id="methods" className="mb-14 scroll-mt-24">
+            <section id="methods" className="mb-12 sm:mb-14 scroll-mt-20">
               <h2
                 ref={(el) => observe(el, 0)}
                 style={reveal}
@@ -385,7 +390,7 @@ export default function DocsPage() {
             </section>
 
             {/* ── Kiến trúc kỹ thuật ─────────────────────────────────────── */}
-            <section id="tech" className="mb-14 scroll-mt-24">
+            <section id="tech" className="mb-12 sm:mb-14 scroll-mt-20">
               <h2
                 ref={(el) => observe(el, 0)}
                 style={reveal}
@@ -400,17 +405,17 @@ export default function DocsPage() {
                 {techStack.map((t, i) => (
                   <div
                     key={i}
-                    className={`flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 px-5 py-3.5 border-b last:border-b-0 ${border} ${surface} ${i % 2 === 0 ? '' : isDark ? 'bg-white/3' : 'bg-gray-50/70'}`}
+                    className={`flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 px-4 sm:px-5 py-3 sm:py-3.5 border-b last:border-b-0 ${border} ${isDark ? i % 2 === 0 ? 'bg-[#0f0f0f]' : 'bg-white/3' : i % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}
                   >
-                    <span className={`text-xs font-bold uppercase tracking-wide shrink-0 sm:w-20 sm:pt-0.5 ${isDark ? 'text-neutral-400' : 'text-gray-500'}`}>{t.label}</span>
-                    <span className={`text-sm ${isDark ? 'text-neutral-200' : 'text-gray-800'}`}>{t.value}</span>
+                    <span className={`text-[11px] font-bold uppercase tracking-wide shrink-0 sm:w-20 sm:pt-0.5 ${isDark ? 'text-neutral-400' : 'text-gray-500'}`}>{t.label}</span>
+                    <span className={`text-sm leading-relaxed ${isDark ? 'text-neutral-200' : 'text-gray-800'}`}>{t.value}</span>
                   </div>
                 ))}
               </div>
             </section>
 
             {/* ── Bảo mật ────────────────────────────────────────────────── */}
-            <section id="security" className="mb-14 scroll-mt-24">
+            <section id="security" className="mb-12 sm:mb-14 scroll-mt-20">
               <h2
                 ref={(el) => observe(el, 0)}
                 style={reveal}
@@ -435,7 +440,7 @@ export default function DocsPage() {
             </section>
 
             {/* ── Routing ────────────────────────────────────────────────── */}
-            <section id="routing" className="mb-14 scroll-mt-24">
+            <section id="routing" className="mb-12 sm:mb-14 scroll-mt-20">
               <h2
                 ref={(el) => observe(el, 0)}
                 style={reveal}
@@ -453,8 +458,8 @@ export default function DocsPage() {
                   { path: '/app',  desc: 'Dashboard (bắt buộc đăng nhập). Chưa đăng nhập → redirect về /.' },
                   { path: '/docs', desc: 'Tài liệu này (công khai, SEO-friendly).' },
                 ].map((r, i) => (
-                  <div key={i} className={`flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4 px-5 py-3.5 border-b last:border-b-0 ${border} ${isDark ? 'bg-[#0f0f0f]' : 'bg-gray-50'}`}>
-                    <code className={`text-[13px] font-mono font-semibold shrink-0 ${code} px-2 py-0.5 rounded`}>{r.path}</code>
+                  <div key={i} className={`flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 px-4 sm:px-5 py-3 sm:py-3.5 border-b last:border-b-0 ${border} ${isDark ? 'bg-[#0f0f0f]' : 'bg-gray-50'}`}>
+                    <code className={`text-[12px] sm:text-[13px] font-mono font-semibold shrink-0 ${code} px-2 py-0.5 rounded`}>{r.path}</code>
                     <span className={`text-sm ${muted}`}>{r.desc}</span>
                   </div>
                 ))}
@@ -462,7 +467,7 @@ export default function DocsPage() {
             </section>
 
             {/* ── API Endpoints ──────────────────────────────────────────── */}
-            <section id="api" className="mb-14 scroll-mt-24">
+            <section id="api" className="mb-12 sm:mb-14 scroll-mt-20">
               <h2
                 ref={(el) => observe(el, 0)}
                 style={reveal}
@@ -476,20 +481,22 @@ export default function DocsPage() {
                     key={i}
                     ref={(el) => observe(el, i * 60)}
                     style={reveal}
-                    className={`flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-4 rounded-xl border transition-all duration-200 hover:scale-[1.01] ${surface} ${border}`}
+                    className={`p-3.5 sm:p-4 rounded-xl border transition-all duration-200 hover:scale-[1.01] ${surface} ${border}`}
                   >
-                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded shrink-0 font-mono ${isDark ? methodColor[ep.method] : methodColorLight[ep.method]}`}>
-                      {ep.method}
-                    </span>
-                    <code className={`text-[13px] font-mono font-semibold shrink-0 ${isDark ? 'text-neutral-200' : 'text-gray-800'}`}>{ep.path}</code>
-                    <span className={`text-xs sm:text-sm ${muted} sm:ml-1`}>{ep.desc}</span>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 font-mono ${isDark ? methodColor[ep.method] : methodColorLight[ep.method]}`}>
+                        {ep.method}
+                      </span>
+                      <code className={`text-[12px] sm:text-[13px] font-mono font-semibold break-all ${isDark ? 'text-neutral-200' : 'text-gray-800'}`}>{ep.path}</code>
+                    </div>
+                    <p className={`text-xs sm:text-[13px] ${muted} leading-relaxed`}>{ep.desc}</p>
                   </div>
                 ))}
               </div>
             </section>
 
             {/* ── Links ─────────────────────────────────────────────────── */}
-            <section id="links" className="mb-14 scroll-mt-24">
+            <section id="links" className="mb-12 sm:mb-14 scroll-mt-20">
               <h2
                 ref={(el) => observe(el, 0)}
                 style={reveal}
