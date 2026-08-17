@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Eye, EyeOff, Lock, Mail, ArrowRight, Sun, Moon, Globe, X, User } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, ArrowRight, ArrowLeft, Sun, Moon, Globe, X, User } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 export const LoginScreen: React.FC = () => {
@@ -161,32 +161,58 @@ export const LoginScreen: React.FC = () => {
 
   return (
     <div
-      className={`min-h-screen w-full flex items-center justify-center p-3 sm:p-4 md:p-6 ${bg} transition-colors duration-300 relative overflow-hidden`}
+      className={`min-h-screen w-full flex flex-col items-center justify-center p-3 sm:p-4 md:p-6 ${bg} transition-colors duration-300 relative overflow-hidden`}
       onClick={goBackToLanding}
     >
       {/* Ambient glows */}
       <div className={`absolute -top-48 -left-48 w-[400px] h-[400px] rounded-full blur-3xl pointer-events-none opacity-50 ${isDark ? 'bg-white/3' : 'bg-black/3'}`} />
       <div className={`absolute -bottom-48 -right-48 w-[400px] h-[400px] rounded-full blur-3xl pointer-events-none opacity-50 ${isDark ? 'bg-white/3' : 'bg-black/3'}`} />
 
-      {/* Top-right controls */}
-      <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20 flex items-center gap-1.5">
+      {/* Top Bar: Separate navigation & toggles that never collide with the card */}
+      <header className="fixed top-0 inset-x-0 z-30 flex items-center justify-between px-3 sm:px-6 py-2.5 sm:py-3 pointer-events-none">
+        {/* Back to Home Button */}
         <button
-          id="login-lang-toggle"
-          onClick={(e) => { e.stopPropagation(); toggleLanguage(); }}
-          className={`flex items-center gap-1 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-lg border text-[11px] sm:text-xs font-semibold transition-all cursor-pointer active:scale-95 ${card} ${sub} hover:opacity-80`}
+          id="login-back-home"
+          onClick={(e) => { e.stopPropagation(); goBackToLanding(); }}
+          className={`pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-all duration-200 cursor-pointer active:scale-95 shadow-sm ${
+            isDark
+              ? 'border-white/10 bg-[#111]/90 backdrop-blur-md text-neutral-300 hover:text-white hover:border-white/25 hover:bg-white/10'
+              : 'border-gray-200 bg-white/90 backdrop-blur-md text-gray-700 hover:text-black hover:border-gray-300 hover:bg-gray-100'
+          }`}
+          title={vi ? 'Quay lại trang chủ' : 'Back to Home'}
         >
-          <Globe className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-          <span>{language.toUpperCase()}</span>
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>{vi ? 'Trang chủ' : 'Home'}</span>
         </button>
-        <button
-          id="login-theme-toggle"
-          onClick={(e) => { e.stopPropagation(); toggleTheme(); }}
-          className={`p-1.5 sm:p-2 rounded-lg border transition-all cursor-pointer active:scale-95 ${card} ${sub} hover:opacity-80`}
-          title={isDark ? t('lightMode') : t('darkMode')}
-        >
-          {isDark ? <Sun className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Moon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
-        </button>
-      </div>
+
+        {/* Grouped Lang + Theme Toggles */}
+        <div className={`pointer-events-auto flex items-center gap-1 rounded-lg border px-1 py-0.5 shadow-sm backdrop-blur-md ${
+          isDark ? 'border-white/10 bg-[#111]/90' : 'border-gray-200 bg-white/90'
+        }`}>
+          <button
+            id="login-lang-toggle"
+            onClick={(e) => { e.stopPropagation(); toggleLanguage(); }}
+            className={`text-xs font-semibold px-2 py-1 rounded-md transition-all cursor-pointer active:scale-95 ${
+              isDark ? 'text-neutral-300 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-black hover:bg-gray-100'
+            }`}
+            title="Switch Language"
+          >
+            {language.toUpperCase()}
+          </button>
+          <div className={`w-px h-3.5 ${isDark ? 'bg-white/15' : 'bg-gray-300'}`} />
+          <button
+            id="login-theme-toggle"
+            onClick={(e) => { e.stopPropagation(); toggleTheme(); }}
+            className={`p-1 rounded-md transition-all cursor-pointer active:scale-95 flex items-center justify-center ${
+              isDark ? 'text-neutral-300 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-black hover:bg-gray-100'
+            }`}
+            title={isDark ? t('lightMode') : t('darkMode')}
+            aria-label="Toggle theme"
+          >
+            {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+          </button>
+        </div>
+      </header>
 
       {/* Card — with max-height & clean scrolling for compact viewport optimization */}
       <motion.div
@@ -194,37 +220,41 @@ export const LoginScreen: React.FC = () => {
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
         onClick={(e) => e.stopPropagation()}
-        className={`relative z-10 w-full max-w-[390px] sm:max-w-[420px] max-h-[calc(100vh-2rem)] sm:max-h-[92vh] overflow-y-auto border rounded-xl sm:rounded-2xl shadow-2xl ${card}`}
+        className={`relative z-10 w-full max-w-[390px] sm:max-w-[420px] max-h-[calc(100vh-5rem)] sm:max-h-[88vh] overflow-y-auto border rounded-xl sm:rounded-2xl shadow-2xl mt-8 sm:mt-0 ${card}`}
         style={{ scrollbarWidth: 'thin' }}
       >
-        {/* Close button */}
-        <button
-          id="btn-close-auth"
-          onClick={goBackToLanding}
-          title={vi ? 'Thoát' : 'Close'}
-          className={`absolute top-2.5 right-2.5 sm:top-3 sm:right-3 z-10 w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center transition-all cursor-pointer active:scale-90 ${
-            isDark ? 'text-neutral-500 hover:text-neutral-200 hover:bg-white/8' : 'text-gray-400 hover:text-gray-700 hover:bg-gray-100'
-          }`}
-        >
-          <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-        </button>
-
         <div className="p-4 sm:p-5 md:p-6">
-          {/* Brand header */}
-          <div className="flex items-center gap-2.5 mb-3.5 sm:mb-4">
-            <img
-              src="/logo.png"
-              alt="Zero AI Note Logo"
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-contain flex-shrink-0"
-            />
-            <div>
-              <h1 className={`text-sm sm:text-base font-bold leading-tight ${isDark ? 'text-white' : 'text-black'}`}>
-                {t('brandName')}
-              </h1>
-              <p className={`text-[10px] sm:text-[11px] leading-tight mt-0.5 ${muted}`}>
-                {vi ? 'Ghi chú thông minh với AI' : 'AI-powered note taking'}
-              </p>
+          {/* Brand header with cleanly integrated close button */}
+          <div className="flex items-center justify-between mb-3.5 sm:mb-4">
+            <div className="flex items-center gap-2.5">
+              <img
+                src="/logo.png"
+                alt="Zero AI Note Logo"
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-contain flex-shrink-0"
+              />
+              <div>
+                <h1 className={`text-sm sm:text-base font-bold leading-tight ${isDark ? 'text-white' : 'text-black'}`}>
+                  {t('brandName')}
+                </h1>
+                <p className={`text-[10px] sm:text-[11px] leading-tight mt-0.5 ${muted}`}>
+                  {vi ? 'Ghi chú thông minh với AI' : 'AI-powered note taking'}
+                </p>
+              </div>
             </div>
+
+            {/* In-card close button: clearly visible with border & hover */}
+            <button
+              id="btn-close-auth"
+              onClick={goBackToLanding}
+              title={vi ? 'Thoát về trang chủ' : 'Close and return home'}
+              className={`p-1.5 rounded-lg border transition-all cursor-pointer active:scale-90 flex items-center justify-center ${
+                isDark
+                  ? 'border-white/10 bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10'
+                  : 'border-gray-200 bg-gray-50 text-gray-500 hover:text-black hover:bg-gray-100'
+              }`}
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
 
           {/* Tab switcher */}
