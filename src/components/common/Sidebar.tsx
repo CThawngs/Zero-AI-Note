@@ -255,29 +255,19 @@ export const Sidebar: React.FC = () => {
             setCurrentScreen('settings');
             setIsMobileSidebarOpen(false);
           }}
-          className="flex items-center justify-between p-2 rounded-xl border transition-colors cursor-pointer group bg-[var(--bg-card)] border-[var(--border-color)] hover:border-[var(--accent-primary)]/50 shadow-2xs"
+          className="flex items-center justify-between p-2.5 rounded-xl border transition-colors cursor-pointer group bg-[var(--bg-card)] border-[var(--border-color)] hover:border-[var(--accent-primary)]/50 shadow-2xs"
         >
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="relative shrink-0">
-              <img
-                src={user.avatar || '/logo.png'}
-                alt={user.name}
-                className="w-8 h-8 rounded-full object-cover ring-1 ring-[var(--accent-primary)]/40"
-              />
-              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[var(--bg-card)] bg-[var(--status-success)]" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs font-semibold truncate text-[var(--text-primary)]">
-                {user.name}
-              </p>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] uppercase font-bold px-1.5 py-0.2 rounded font-mono tracking-tight bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]">
-                  {user.plan}
-                </span>
-                <span className="text-[10px] truncate text-[var(--text-muted)]">
-                  {user.email}
-                </span>
-              </div>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold truncate text-[var(--text-primary)]">
+              {user.name}
+            </p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="text-[10px] uppercase font-bold px-1.5 py-0.2 rounded font-mono tracking-tight bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]">
+                {user.plan}
+              </span>
+              <span className="text-[10px] truncate text-[var(--text-muted)]">
+                {user.email}
+              </span>
             </div>
           </div>
           <ChevronRight className="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-[var(--accent-primary)] group-hover:translate-x-0.5 transition-all shrink-0" />

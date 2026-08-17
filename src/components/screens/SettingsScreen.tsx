@@ -194,24 +194,17 @@ export const SettingsScreen: React.FC = () => {
                 {language === 'vi' ? 'Hồ sơ Người dùng' : 'User Profile'}
               </h3>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <img
-                    src={user.avatar}
-                    alt={user.name}
-                    className="w-14 h-14 rounded-2xl object-cover ring-2 ring-[var(--accent-primary)]/40"
-                  />
-                  <div>
-                    <h4 className={`text-base font-bold ${isDark ? 'text-[var(--text-primary)]' : 'text-[var(--text-primary)]'}`}>{user.name}</h4>
-                    <p className={`text-xs ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>{user.email}</p>
-                    <div className="mt-1 flex items-center gap-2">
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded ${
-                        user.plan === 'pro' 
-                          ? 'bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] border border-[var(--accent-primary)]/30' 
-                          : isDark ? 'bg-[var(--bg-hover)] text-[var(--text-secondary)]' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)]'
-                      }`}>
-                        {user.plan === 'pro' ? '★ ' + t('proPlan') : t('freePlan')}
-                      </span>
-                    </div>
+                <div>
+                  <h4 className={`text-base font-bold ${isDark ? 'text-[var(--text-primary)]' : 'text-[var(--text-primary)]'}`}>{user.name}</h4>
+                  <p className={`text-xs ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>{user.email}</p>
+                  <div className="mt-1 flex items-center gap-2">
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded ${
+                      user.plan === 'pro' 
+                        ? 'bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] border border-[var(--accent-primary)]/30' 
+                        : isDark ? 'bg-[var(--bg-hover)] text-[var(--text-secondary)]' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)]'
+                    }`}>
+                      {user.plan === 'pro' ? '★ ' + t('proPlan') : t('freePlan')}
+                    </span>
                   </div>
                 </div>
 
