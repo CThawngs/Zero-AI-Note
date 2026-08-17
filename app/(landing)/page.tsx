@@ -582,7 +582,7 @@ export default function LandingPage() {
                   </ul>
                   <button
                     onClick={() => openAuth('register')}
-                    className={`w-full py-3 rounded-lg font-medium text-center transition-all duration-200 block cursor-pointer ${isDark ? (isUltra ? 'bg-white hover:bg-neutral-200 text-black' : 'border border-white/20 hover:bg-white/5 text-white') : (isUltra ? 'bg-black hover:bg-gray-800 text-white' : 'border border-gray-300 hover:bg-gray-100 text-black')}`}
+                    className={`w-full py-3 rounded-lg font-medium text-center transition-all duration-200 block cursor-pointer ${isDark ? (isHighlight ? 'bg-white hover:bg-neutral-200 text-black' : 'border border-white/20 hover:bg-white/5 text-white') : (isHighlight ? 'bg-black hover:bg-gray-800 text-white' : 'border border-gray-300 hover:bg-gray-100 text-black')}`}
                   >
                     {plan.cta}
                   </button>

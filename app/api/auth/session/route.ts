@@ -27,8 +27,9 @@ export async function GET(request: NextRequest) {
         where id = ${session.sub} or email = ${session.email}
       `;
       if (Array.isArray(rows) && rows.length > 0) {
-        needsPasswordSetup = !rows[0].password_hash;
-        displayName = rows[0].display_name ?? null;
+        const row = rows[0] as unknown as { password_hash: string | null; display_name: string | null; plan: string; role: string };
+        needsPasswordSetup = !row.password_hash;
+        displayName = row.display_name ?? null;
       }
     } catch {
       // If DB error, fallback safely

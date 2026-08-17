@@ -35,11 +35,22 @@ export async function POST(request: NextRequest) {
     let processingMinutesLimit = 120;
     let hasPassword = false;
 
+    type UserRow = {
+      id: string;
+      email: string;
+      display_name: string | null;
+      role: string;
+      plan: string;
+      processing_minutes_used: number;
+      processing_minutes_limit: number;
+      password_hash: string | null;
+    };
+
     if (Array.isArray(existingRows) && existingRows.length > 0) {
       // ── MERGE / LINK ACCOUNT ──
       // User already exists (either created via email/password or prior Google login).
       // Reuse existing account to guarantee 1 email = 1 account.
-      const existingUser = existingRows[0];
+      const existingUser = existingRows[0] as unknown as UserRow;
       userId = existingUser.id;
       role = existingUser.role ?? role;
       plan = existingUser.plan ?? plan;
