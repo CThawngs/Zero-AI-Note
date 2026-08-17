@@ -11,8 +11,8 @@ import {
   Settings, 
   ShieldCheck, 
   X,
-  ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Clock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useApp } from '../../context/AppContext';
@@ -82,7 +82,9 @@ export const Sidebar: React.FC = () => {
       <div className="p-4 pb-2 border-b border-[var(--border-color)] shrink-0">
         {/* Brand & Mobile Close */}
         <div className="flex items-center justify-between mb-3">
-          <div 
+          <motion.div 
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => {
               setCurrentScreen('chat');
               setIsMobileSidebarOpen(false);
@@ -98,11 +100,11 @@ export const Sidebar: React.FC = () => {
               <h1 className="text-sm font-bold tracking-tight flex items-center gap-1.5 text-[var(--text-primary)]">
                 {t('brandName')}
               </h1>
-              <span className="text-xs uppercase tracking-wider font-semibold block leading-tight text-[var(--accent-primary)]">
+              <span className="text-[11px] uppercase tracking-wider font-semibold block leading-tight text-[var(--accent-primary)]">
                 {t('brandTagline')}
               </span>
             </div>
-          </div>
+          </motion.div>
 
           {/* Mobile / Tablet close button */}
           <button
@@ -115,17 +117,19 @@ export const Sidebar: React.FC = () => {
         </div>
 
         {/* Primary "+ Note mới" button */}
-        <button
+        <motion.button
           id="btn-new-note"
+          whileHover={{ scale: 1.02, y: -1 }}
+          whileTap={{ scale: 0.97 }}
           onClick={() => {
             startNewChatNote();
             setIsMobileSidebarOpen(false);
           }}
-          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl active:scale-[0.97] text-xs font-bold transition-all cursor-pointer shadow-md bg-[var(--accent-primary)] hover:opacity-90 active:opacity-100 text-[var(--accent-text)] shadow-[var(--accent-primary)]/25"
+          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md bg-[var(--accent-primary)] hover:opacity-90 active:opacity-100 text-[var(--accent-text)] shadow-[var(--accent-primary)]/20"
         >
           <Plus className="w-4 h-4 stroke-[2.5]" />
           <span>{t('newNote')}</span>
-        </button>
+        </motion.button>
       </div>
 
       {/* Middle Scrollable Section: Search + Navigation + Note History */}
@@ -146,29 +150,35 @@ export const Sidebar: React.FC = () => {
         </div>
 
         {/* Navigation list */}
-        <nav className="space-y-0.5">
+        <nav className="space-y-1">
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isNavActive(item);
             return (
-              <button
+              <motion.button
                 key={item.id}
                 id={`sidebar-nav-${item.id}`}
+                whileHover={{ x: 3 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => handleNavClick(item)}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all relative cursor-pointer active:scale-[0.99] ${
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all relative cursor-pointer ${
                   active
-                    ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] shadow-2xs font-semibold border border-[var(--accent-primary)]/30'
+                    ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-semibold border border-[var(--accent-primary)]/25'
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
                 }`}
               >
                 {active && (
-                  <span className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full bg-[var(--accent-primary)]" />
+                  <motion.span
+                    layoutId="active-sidebar-nav-pill"
+                    className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full bg-[var(--accent-primary)]"
+                    transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+                  />
                 )}
                 <Icon className={`w-4 h-4 ${
                   active ? 'text-[var(--accent-primary)]' : 'text-[var(--text-muted)]'
                 }`} />
                 <span className="truncate">{item.label}</span>
-              </button>
+              </motion.button>
             );
           })}
         </nav>
@@ -176,24 +186,26 @@ export const Sidebar: React.FC = () => {
         {/* Recent Notes History (Scrollable) */}
         <div className="pt-3 border-t border-[var(--border-color)]">
           <div className="flex items-center justify-between px-2 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
               {t('recentNotes')}
             </span>
-            <span className="text-xs font-mono text-[var(--text-muted)]">
+            <span className="text-[11px] font-mono font-medium px-1.5 py-0.5 rounded bg-[var(--bg-hover)] text-[var(--text-muted)]">
               {notes.length}
             </span>
           </div>
 
           <div className="space-y-1">
             {notes.map((note) => (
-              <button
+              <motion.button
                 key={note.id}
                 id={`recent-note-${note.id}`}
+                whileHover={{ x: 2 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={() => {
                   openNoteDetail(note);
                   setIsMobileSidebarOpen(false);
                 }}
-                className={`w-full text-left px-3 py-1.5 rounded-lg text-xs truncate flex items-center gap-2 transition-colors cursor-pointer group active:scale-[0.99] ${
+                className={`w-full text-left px-3 py-2 rounded-lg text-xs truncate flex items-center gap-2 transition-colors cursor-pointer group ${
                   currentScreen === 'note-detail' && note.id === notes[0]?.id
                     ? 'bg-[var(--bg-hover)] text-[var(--text-primary)] font-semibold'
                     : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]/70'
@@ -201,8 +213,8 @@ export const Sidebar: React.FC = () => {
                 title={note.title}
               >
                 <span className="w-1.5 h-1.5 rounded-full shrink-0 group-hover:scale-125 transition-transform bg-[var(--accent-primary)]" />
-                <span className="truncate">{note.title}</span>
-              </button>
+                <span className="truncate flex-1">{note.title}</span>
+              </motion.button>
             ))}
           </div>
         </div>
@@ -211,13 +223,15 @@ export const Sidebar: React.FC = () => {
       {/* Bottom section: Admin switch & User (Sticky) */}
       <div className="p-3 border-t shrink-0 flex flex-col gap-2 border-[var(--border-color)] bg-[var(--bg-sidebar)]">
         {/* Admin Portal Shortcut */}
-        <button
+        <motion.button
           id="btn-switch-admin"
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.98 }}
           onClick={() => {
             setCurrentScreen(currentScreen === 'admin-coupons' ? 'chat' : 'admin-coupons');
             setIsMobileSidebarOpen(false);
           }}
-          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium border transition-colors cursor-pointer active:scale-[0.99] ${
+          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium border transition-colors cursor-pointer ${
             currentScreen === 'admin-coupons'
               ? 'bg-[var(--accent-subtle)] border-[var(--accent-primary)]/40 text-[var(--accent-primary)] font-semibold'
               : 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] shadow-2xs'
@@ -227,80 +241,83 @@ export const Sidebar: React.FC = () => {
             <ShieldCheck className="w-4 h-4 text-[var(--status-success)]" />
             <span>{t('navAdminArea')}</span>
           </div>
-          <span className="text-xs px-1.5 py-0.5 rounded font-mono font-bold bg-[var(--status-success)]/20 text-[var(--status-success)]">
+          <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-bold bg-[var(--status-success)]/20 text-[var(--status-success)]">
             {currentScreen === 'admin-coupons' ? 'Active' : 'Portal'}
           </span>
-        </button>
+        </motion.button>
 
         {/* User Profile Card */}
-        <div 
+        <motion.div 
           id="user-profile-card"
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.98 }}
           onClick={() => {
             setCurrentScreen('settings');
             setIsMobileSidebarOpen(false);
           }}
-          className="flex items-center justify-between p-2 rounded-xl border transition-colors cursor-pointer group active:scale-[0.99] bg-[var(--bg-card)] border-[var(--border-color)] hover:border-[var(--accent-primary)]/50 shadow-2xs"
+          className="flex items-center justify-between p-2 rounded-xl border transition-colors cursor-pointer group bg-[var(--bg-card)] border-[var(--border-color)] hover:border-[var(--accent-primary)]/50 shadow-2xs"
         >
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="relative shrink-0">
               <img
-                src={user.avatar}
+                src={user.avatar || '/logo.png'}
                 alt={user.name}
                 className="w-8 h-8 rounded-full object-cover ring-1 ring-[var(--accent-primary)]/40"
               />
-              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ring-2 bg-[var(--status-success)] ring-[var(--bg-card)]" />
+              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[var(--bg-card)] bg-[var(--status-success)]" />
             </div>
-            <div className="min-w-0 text-left">
-              <p className="text-xs font-semibold truncate transition-colors text-[var(--text-primary)] group-hover:text-[var(--accent-primary)]">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold truncate text-[var(--text-primary)]">
                 {user.name}
               </p>
-              <span className={`inline-block text-xs font-bold px-1.5 py-0.2 rounded ${
-                user.plan === 'pro' 
-                  ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] border border-[var(--accent-primary)]/30' 
-                  : 'bg-[var(--bg-hover)] text-[var(--text-muted)]'
-              }`}>
-                {user.plan === 'pro' ? t('proPlan') : t('freePlan')}
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] uppercase font-bold px-1.5 py-0.2 rounded font-mono tracking-tight bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]">
+                  {user.plan}
+                </span>
+                <span className="text-[10px] truncate text-[var(--text-muted)]">
+                  {user.email}
+                </span>
+              </div>
             </div>
           </div>
-          <Settings className="w-4 h-4 transition-colors text-[var(--text-muted)] group-hover:text-[var(--text-primary)]" />
-        </div>
+          <ChevronRight className="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-[var(--accent-primary)] group-hover:translate-x-0.5 transition-all shrink-0" />
+        </motion.div>
       </div>
     </aside>
   );
 
   return (
     <>
-      {/* Desktop Sidebar (visible on lg+ / >= 1024px) */}
-      <div className="hidden lg:flex h-full shrink-0 z-20">
+      {/* Desktop Persistent Sidebar (>= 1024px) */}
+      <div className="hidden lg:block h-full shrink-0">
         {sidebarContent}
       </div>
 
-      {/* Mobile & Tablet Drawer (visible on < lg when opened) */}
+      {/* Mobile & Tablet Drawer Modal (< 1024px) */}
       <AnimatePresence>
         {isMobileSidebarOpen && (
-          <>
-            {/* Dark Backdrop Overlay */}
+          <div className="lg:hidden fixed inset-0 z-50 flex">
+            {/* Backdrop overlay with blur */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.25 }}
+              transition={{ duration: 0.2 }}
               onClick={() => setIsMobileSidebarOpen(false)}
-              className="fixed inset-0 bg-black/70 backdrop-blur-xs z-40 lg:hidden"
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs cursor-pointer"
             />
 
-            {/* Slide Drawer from left (~250ms) */}
+            {/* Slide-out Drawer */}
             <motion.div
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
-              className="fixed inset-y-0 left-0 z-50 lg:hidden shadow-2xl flex max-w-[85vw] sm:max-w-none"
+              transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
+              className="relative z-10 h-full shadow-2xl"
             >
               {sidebarContent}
             </motion.div>
-          </>
+          </div>
         )}
       </AnimatePresence>
     </>

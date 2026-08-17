@@ -188,13 +188,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try { return window.localStorage.getItem(key); } catch { return null; }
   };
 
-  // Default is Theme "Giấy" (paper) in Dark mode as requested
+  // Default is Theme "Monochrome" (mono) in Light mode for new accounts
   const [colorPalette, setColorPaletteState] = useState<ColorPalette>(() => {
-    return (getLocal('zero_ai_palette') as ColorPalette) || 'paper';
+    return (getLocal('zero_ai_palette') as ColorPalette) || 'mono';
   });
 
   const [theme, setThemeState] = useState<Theme>(() => {
-    return (getLocal('zero_ai_theme') as Theme) || 'dark';
+    return (getLocal('zero_ai_theme') as Theme) || 'light';
   });
   
   const [language, setLanguageState] = useState<Language>(() => {

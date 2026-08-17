@@ -24,9 +24,39 @@
     letter-spacing: 0.01em;
   }
   /* =========================================================
-     DEFAULT / THEME "GIẤY" (PAPER) - DARK (DEFAULT)
+     DEFAULT / THEME "MONOCHROME" (MONO) - LIGHT (DEFAULT)
      ========================================================= */
-  :root,
+  :root {
+    --bg-app: #ffffff;
+    --bg-card: #ffffff;
+    --bg-sidebar: #f8f8f8;
+    --bg-surface: #ffffff;
+    --bg-hover: #f0f0f0;
+    --bg-input: #ffffff;
+    --border-color: #e5e5e5;
+    --border-subtle: #eeeeee;
+    --text-primary: #000000;
+    --text-secondary: #444444;
+    --text-muted: #777777;
+    --accent-primary: #000000;
+    --accent-hover: #262626;
+    --accent-subtle: rgba(0, 0, 0, 0.08);
+    --accent-gradient: linear-gradient(135deg, #000000, #444444);
+    --accent-text: #ffffff;
+    --status-success: #16a34a;
+    --status-error: #dc2626;
+    --status-warning: #ca8a04;
+    --status-info: #2563eb;
+
+    --dracula-purple: #000000;
+    --dracula-pink: #444444;
+    --dracula-cyan: #000000;
+    --dracula-green: #16a34a;
+    --dracula-orange: #ca8a04;
+    --dracula-yellow: #ca8a04;
+    --dracula-red: #dc2626;
+  }
+
   :root[data-theme="paper"],
   .theme-paper {
     --bg-app: #171513;
