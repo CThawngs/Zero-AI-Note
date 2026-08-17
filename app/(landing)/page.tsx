@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 type Language = 'vi' | 'en';
 type ThemeMode = 'dark' | 'light';
@@ -108,11 +108,36 @@ const content = {
   }
 };
 
+// === Scroll Reveal Hook ===
+function useScrollReveal() {
+  const observe = useCallback((el: Element | null, delay: number = 0) => {
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setTimeout(() => {
+              (entry.target as HTMLElement).style.opacity = '1';
+              (entry.target as HTMLElement).style.transform = 'translateY(0) scale(1)';
+            }, delay);
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  return observe;
+}
+
 export default function LandingPage() {
   const [lang, setLang] = useState<Language>('vi');
   const [theme, setTheme] = useState<ThemeMode>('dark');
   const [mounted, setMounted] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const observe = useScrollReveal();
 
   useEffect(() => {
     const savedLang = localStorage.getItem('zero-note-lang') as Language || 'vi';
@@ -143,6 +168,12 @@ export default function LandingPage() {
   const surfaceClass = isDark ? 'bg-[#0f0f0f]' : 'bg-gray-50';
   const textMuted = isDark ? 'text-neutral-400' : 'text-gray-600';
   const hoverBg = isDark ? 'hover:bg-white/5' : 'hover:bg-gray-100';
+
+  const revealStyle: React.CSSProperties = {
+    opacity: 0,
+    transform: 'translateY(32px) scale(0.97)',
+    transition: 'opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1)',
+  };
 
   return (
     <div className={`min-h-screen font-sans antialiased selection:bg-white selection:text-black transition-colors duration-300 ${bgClass}`}>
@@ -353,7 +384,11 @@ export default function LandingPage() {
 
         {/* ===== WHY — Bento Grid ===== */}
         <section className="px-4 sm:px-6 py-12 sm:py-16 max-w-7xl mx-auto">
-          <h2 className={`text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-12 ${isDark ? 'text-white' : 'text-black'}`}>{t.why.title}</h2>
+          <h2
+            ref={(el) => observe(el, 0)}
+            style={revealStyle}
+            className={`text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-12 ${isDark ? 'text-white' : 'text-black'}`}
+          >{t.why.title}</h2>
 
           {/* Desktop bento grid (lg+) */}
           <div className="hidden lg:grid grid-cols-3 gap-4 grid-rows-[220px_220px_180px]">
@@ -368,18 +403,53 @@ export default function LandingPage() {
                 'col-start-3 col-end-4 row-start-3 row-end-4',
               ][i];
               const isLarge = i === 0;
+              const staggerDelay = [80, 160, 240, 220, 300, 380, 460][i];
 
               return (
                 <div
                   key={i}
-                  className={`${surfaceClass} border rounded-xl transition-all duration-300 hover:scale-[1.02] p-6 flex flex-col ${isDark ? `border-white/10 ${hoverBg}` : `border-gray-200 ${hoverBg}`} ${isLarge ? 'relative overflow-hidden' : ''} ${gridPos}`}
+                  ref={(el) => observe(el, staggerDelay)}
+                  style={revealStyle}
+                  className={`${surfaceClass} border rounded-xl transition-[transform,box-shadow,background] duration-300 hover:scale-[1.02] p-6 flex flex-col ${isDark ? `border-white/10 ${hoverBg}` : `border-gray-200 ${hoverBg}`} ${isLarge ? 'relative overflow-hidden' : ''} ${gridPos}`}
                 >
-                  {isLarge && <div className={`absolute -right-12 -top-12 w-64 h-64 rounded-full blur-3xl ${isDark ? 'bg-white/5' : 'bg-black/5'}`} />}
-                  <span className="material-symbols-outlined text-4xl mb-4">{item.icon}</span>
-                  <div className={isLarge ? 'mt-auto' : ''}>
-                    <h3 className={`text-xl font-semibold mb-1 ${isDark ? 'text-white' : 'text-black'}`}>{item.title}</h3>
-                    <p className={`text-sm leading-relaxed ${textMuted}`}>{item.desc}</p>
-                  </div>
+                  {isLarge && (
+                    <>
+                      {/* Decorative bg glow */}
+                      <div className={`absolute -right-12 -top-12 w-64 h-64 rounded-full blur-3xl ${isDark ? 'bg-white/5' : 'bg-black/5'}`} />
+                      {/* Icon at top */}
+                      <span className="material-symbols-outlined text-4xl mb-4 relative z-10">{item.icon}</span>
+                      {/* Visual waveform illustration to fill space */}
+                      <div className="flex-1 flex items-center justify-center py-4 relative z-10">
+                        <svg viewBox="0 0 200 64" fill="none" className={`w-full max-w-[160px] opacity-30 ${isDark ? 'text-white' : 'text-black'}`} aria-hidden="true">
+                          {[4,12,26,8,40,18,30,6,22,36,14,28,10,20,34].map((h, idx) => (
+                            <rect
+                              key={idx}
+                              x={idx * 13 + 2}
+                              y={(64 - h) / 2}
+                              width="8"
+                              height={h}
+                              rx="4"
+                              fill="currentColor"
+                            />
+                          ))}
+                        </svg>
+                      </div>
+                      {/* Text at bottom */}
+                      <div className="relative z-10">
+                        <h3 className={`text-xl font-semibold mb-1 ${isDark ? 'text-white' : 'text-black'}`}>{item.title}</h3>
+                        <p className={`text-sm leading-relaxed ${textMuted}`}>{item.desc}</p>
+                      </div>
+                    </>
+                  )}
+                  {!isLarge && (
+                    <>
+                      <span className="material-symbols-outlined text-4xl mb-4">{item.icon}</span>
+                      <div>
+                        <h3 className={`text-xl font-semibold mb-1 ${isDark ? 'text-white' : 'text-black'}`}>{item.title}</h3>
+                        <p className={`text-sm leading-relaxed ${textMuted}`}>{item.desc}</p>
+                      </div>
+                    </>
+                  )}
                 </div>
               );
             })}
@@ -390,6 +460,8 @@ export default function LandingPage() {
             {t.why.items.map((item, i) => (
               <div
                 key={i}
+                ref={(el) => observe(el, i * 80)}
+                style={revealStyle}
                 className={`${surfaceClass} border rounded-xl p-5 flex flex-col ${isDark ? 'border-white/10' : 'border-gray-200'} ${i === 0 ? 'col-span-2' : ''}`}
               >
                 <span className="material-symbols-outlined text-3xl mb-3">{item.icon}</span>
@@ -404,6 +476,8 @@ export default function LandingPage() {
             {t.why.items.map((item, i) => (
               <div
                 key={i}
+                ref={(el) => observe(el, i * 60)}
+                style={revealStyle}
                 className={`${surfaceClass} border rounded-xl p-5 flex flex-col ${isDark ? 'border-white/10' : 'border-gray-200'}`}
               >
                 <span className="material-symbols-outlined text-3xl mb-3">{item.icon}</span>
@@ -417,11 +491,20 @@ export default function LandingPage() {
         {/* ===== HOW ===== */}
         <section className={`border-y py-12 sm:py-16 transition-colors duration-300 ${isDark ? 'bg-[#0a0a0a] border-white/10' : 'bg-white border-gray-200'}`}>
           <div className="px-4 sm:px-6 max-w-7xl mx-auto text-center">
-            <h2 className={`text-2xl sm:text-3xl font-bold mb-8 sm:mb-12 ${isDark ? 'text-white' : 'text-black'}`}>{t.how.title}</h2>
+            <h2
+              ref={(el) => observe(el, 0)}
+              style={revealStyle}
+              className={`text-2xl sm:text-3xl font-bold mb-8 sm:mb-12 ${isDark ? 'text-white' : 'text-black'}`}
+            >{t.how.title}</h2>
             <div className="flex flex-col md:flex-row justify-center items-start gap-8 relative">
               <div className={`hidden md:block absolute top-12 left-[15%] right-[15%] h-px z-0 ${isDark ? 'bg-white/10' : 'bg-gray-200'}`} />
               {t.how.steps.map((step, i) => (
-                <div key={i} className={`flex-1 flex flex-col items-center relative z-10 ${isDark ? 'bg-[#0a0a0a]' : 'bg-white'}`}>
+                <div
+                  key={i}
+                  ref={(el) => observe(el, i * 150)}
+                  style={revealStyle}
+                  className={`flex-1 flex flex-col items-center relative z-10 ${isDark ? 'bg-[#0a0a0a]' : 'bg-white'}`}
+                >
                   <div className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full border flex items-center justify-center mb-4 sm:mb-6 transition-colors ${isDark ? 'border-white/10 bg-[#0f0f0f]' : 'border-gray-200 bg-gray-50'}`}>
                     <span className="material-symbols-outlined text-3xl sm:text-4xl">{step.icon}</span>
                   </div>
@@ -435,8 +518,17 @@ export default function LandingPage() {
 
         {/* ===== PRICING ===== */}
         <section className="px-4 sm:px-6 py-12 sm:py-16 max-w-5xl mx-auto text-center">
-          <h2 className={`text-2xl sm:text-3xl font-bold mb-4 ${isDark ? 'text-white' : 'text-black'}`}>{t.pricing.title}</h2>
-          <Link href="/docs" className={`text-sm font-medium hover:underline mb-8 sm:mb-12 inline-flex items-center gap-1 transition-colors ${isDark ? 'text-white' : 'text-black'}`}>
+          <h2
+            ref={(el) => observe(el, 0)}
+            style={revealStyle}
+            className={`text-2xl sm:text-3xl font-bold mb-4 ${isDark ? 'text-white' : 'text-black'}`}
+          >{t.pricing.title}</h2>
+          <Link
+            ref={(el) => observe(el, 80)}
+            style={revealStyle}
+            href="/docs"
+            className={`text-sm font-medium hover:underline mb-8 sm:mb-12 inline-flex items-center gap-1 transition-colors ${isDark ? 'text-white' : 'text-black'}`}
+          >
             {t.pricing.link}
             <span className="material-symbols-outlined text-sm">open_in_new</span>
           </Link>
@@ -446,7 +538,9 @@ export default function LandingPage() {
               return (
                 <div
                   key={i}
-                  className={`${surfaceClass} border rounded-xl transition-all duration-300 hover:scale-[1.02] flex flex-col p-5 sm:p-6 relative ${isDark ? (isUltra ? 'border-white/30' : 'border-white/10') : (isUltra ? 'border-black/30' : 'border-gray-200')} ${i === 2 ? 'sm:col-span-2 md:col-span-1' : ''}`}
+                  ref={(el) => observe(el, i * 120)}
+                  style={revealStyle}
+                  className={`${surfaceClass} border rounded-xl transition-[transform,box-shadow,background] duration-300 hover:scale-[1.02] hover:shadow-lg flex flex-col p-5 sm:p-6 relative ${isDark ? (isUltra ? 'border-white/30' : 'border-white/10') : (isUltra ? 'border-black/30' : 'border-gray-200')} ${i === 2 ? 'sm:col-span-2 md:col-span-1' : ''}`}
                 >
                   {isUltra && (
                     <div className={`absolute top-0 right-0 ${isDark ? 'bg-white text-black' : 'bg-black text-white'} text-xs font-medium py-1 px-3 rounded-bl-lg rounded-tr-xl`}>
