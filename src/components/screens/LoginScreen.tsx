@@ -397,11 +397,6 @@ export const LoginScreen: React.FC = () => {
             </svg>
             <span>{vi ? 'Đăng nhập với Google' : 'Sign in with Google'}</span>
           </button>
-
-          {/* Footer hint */}
-          <p className={`text-center text-[10px] sm:text-[11px] mt-3 ${muted}`}>
-            {vi ? 'Nhấn bên ngoài hoặc dấu ✕ để quay về trang chủ' : 'Click outside or ✕ to return home'}
-          </p>
         </div>
       </motion.div>
 
