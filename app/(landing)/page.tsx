@@ -11,22 +11,23 @@ const content = {
   vi: {
     nav: { docs: 'Tài liệu', login: 'Đăng nhập', cta: 'Bắt đầu miễn phí' },
     hero: {
-      badge: 'Nghiên cứu với AI',
-      heading: 'Ghi chú thông minh với AI — Ghi chú hiệu quả hơn bao giờ hết',
+      badge: 'AI-Powered',
+      badgeSub: 'Research',
+      heading: 'Ghi chú thông minh với AI — Take Note hiệu quả hơn bao giờ hết',
       sub: 'Ứng dụng Note thế hệ mới giúp bạn tối ưu hóa quy trình học tập và làm việc. Chuyển đổi hàng giờ nội dung thành kiến thức có cấu trúc với sự hỗ trợ của AI đa ngôn ngữ.',
       cta: 'Bắt đầu miễn phí',
       cta2: 'Xem tài liệu',
-      badge2: 'Phân tích AI',
-      badge3: 'Độ chính xác 99.9%'
+      badge2: 'AI Xử lý',
+      badge3: 'Với độ chính xác 99.9%'
     },
     why: {
       title: 'Vì sao khác biệt?',
       items: [
-        { icon: 'mic', title: 'Ghi chú đa phương thức', desc: 'App ghi chú hỗ trợ xử lý mượt mà video, audio và văn bản pha trộn nhiều ngôn ngữ. Mang lại trải nghiệm ghi chú liền mạch và toàn diện.' },
+        { icon: 'mic', title: 'Ghi chú đa phương thức', desc: 'App ghi chú hỗ trợ xử lý mượt mà video, audio và văn bản pha trộn nhiều ngôn ngữ. Mang lại trải nghiệm Take Note liền mạch và toàn diện.' },
         { icon: 'speed', title: 'Tốc độ vượt trội', desc: 'Xử lý bất đồng bộ, nhận thông báo ngay khi note sẵn sàng, không cần ngồi chờ.' },
-        { icon: 'auto_fix_high', title: 'Ghi chú linh hoạt', desc: 'Không chỉ Cornell hay Mindmap. Chỉ cần mô tả phương pháp bạn muốn, AI sẽ tự động định dạng và tối ưu hóa ghi chú theo đúng phong cách riêng của bạn.' },
-        { icon: 'lock', title: 'Hệ thống ghi chú an toàn', desc: 'Chỉ bạn truy cập được dữ liệu của mình qua hệ thống kiểm soát quyền truy cập (RLS) bảo mật.' },
-        { icon: 'sync', title: 'Đồng bộ hóa ghi chú', desc: 'Truy cập và ghi chú mọi lúc trên mọi thiết bị có trình duyệt web.' },
+        { icon: 'auto_fix_high', title: 'Take Note không giới hạn', desc: 'Không chỉ Cornell hay Mindmap. Chỉ cần mô tả phương pháp bạn muốn, AI sẽ tự động định dạng và tối ưu hóa ghi chú theo đúng phong cách riêng của bạn.' },
+        { icon: 'lock', title: 'Hệ thống Note an toàn', desc: 'Không chỉ Gemini, hay Mistral. Chỉ cần mô tả phương pháp bạn muốn, AI sẽ tự động định dạng và tối ưu hóa ghi chú theo đúng phong cách riêng của bạn.' },
+        { icon: 'sync', title: 'Đồng bộ hóa Ghi chú', desc: 'Truy cập và ghi chú mọi lúc trên mọi thiết bị có trình duyệt web.' },
         { icon: 'view_quilt', title: 'Xuất layout chuẩn', desc: 'Giữ nguyên định dạng và bảng biểu khi xuất.' },
         { icon: 'analytics', title: 'Phân tích chuyên sâu', desc: 'AI trích xuất insights và tạo liên kết logic.' }
       ]
@@ -34,9 +35,9 @@ const content = {
     how: {
       title: 'Cách hoạt động',
       steps: [
-        { icon: 'upload_file', title: '1. Tải lên tài liệu', desc: 'Kéo thả file video, audio, tài liệu hoặc dán link để bắt đầu ghi chú.' },
-        { icon: 'memory', title: '2. AI xử lý và ghi chú', desc: 'Hệ thống phân tích và tự động ghi chú theo format bạn yêu cầu.' },
-        { icon: 'task', title: '3. Nhận bản ghi chú hoàn chỉnh', desc: 'Tải xuống bản ghi chú hoàn chỉnh định dạng DOCX, PDF với cấu trúc rõ ràng.' }
+        { icon: 'upload_file', title: '1. Tải lên tài liệu ghi chú', desc: 'Kéo thả file video, audio, tài liệu hoặc dán link để bắt đầu ghi chú.' },
+        { icon: 'memory', title: '2. AI xử lý và Take Note', desc: 'Hệ thống phân tích và tự động ghi chú theo format bạn yêu cầu.' },
+        { icon: 'task', title: '3. Nhận bản Note hoàn chỉnh', desc: 'Tải xuống bản note hoàn chỉnh định dạng DOCX, PDF với cấu trúc rõ ràng.' }
       ]
     },
     pricing: {
@@ -44,8 +45,8 @@ const content = {
       link: 'Xem đầy đủ bảng giá',
       plans: [
         { name: 'Miễn phí', desc: 'Trải nghiệm cơ bản cho cá nhân.', price: '0đ', period: '/tháng', features: ['3 giờ xử lý / tháng', 'File tối đa 30 phút', 'Xuất PDF cơ bản'], cta: 'Tạo tài khoản' },
-        { name: 'Pro', desc: 'Dành cho nghiên cứu sinh & chuyên gia.', price: '99k', period: '/tháng', features: ['50 giờ xử lý / tháng', 'File tối đa 2 giờ/phiên', 'Mọi định dạng học thuật', 'Ưu tiên xử lý'], cta: 'Nâng cấp Pro' },
-        { name: 'Ultra', desc: 'Giải pháp tối ưu cho tổ chức.', price: '199k', period: '/tháng', features: ['200 giờ xử lý/tháng', 'File tối đa 4 giờ/phiên', 'Xuất DOCX cao cấp', 'Hỗ trợ ưu tiên qua email', 'Phân tích đa file'], cta: 'Nâng cấp Ultra', badge: 'Ultra' }
+        { name: 'Pro', desc: 'Dành cho nghiên cứu sinh & chuyên gia.', price: '99K', period: '/tháng', features: ['50 giờ xử lý / tháng', 'File tối đa 2 giờ/phiên', 'Mọi định dạng học thuật', 'Ưu tiên xử lý'], cta: 'Nâng cấp Pro' },
+        { name: 'Ultra', desc: 'Giải pháp tối ưu cho tổ chức.', price: '199K', period: '/tháng', features: ['Tất lý giờ xử lý/tháng', 'Tốc độ cao nhất', 'Xuất DOCX cao cấp', 'Hỗ trợ ưu tiên qua email', 'Phân tích đa file'], cta: 'Nâng cấp Ultra', badge: 'Ultra' }
       ]
     },
     cta: {
@@ -54,17 +55,18 @@ const content = {
       cta: 'Tạo tài khoản miễn phí'
     },
     footer: '© 2026 Zero AI Note. Mọi quyền được bảo lưu.',
-    links: ['Chính sách bảo mật', 'Điều khoản dịch vụ', 'Twitter', 'LinkedIn', 'Liên hệ']
+    links: ['Privacy Policy', 'Terms of Service', 'Twitter', 'LinkedIn', 'Contact']
   },
   en: {
     nav: { docs: 'Docs', login: 'Login', cta: 'Get started free' },
     hero: {
-      badge: 'AI-Powered Research',
+      badge: 'AI-Powered',
+      badgeSub: 'Research',
       heading: 'AI-powered note taking — Take Note more effectively than ever',
       sub: 'A next-generation Note app that optimizes your study and work workflows. Transform hours of content into structured knowledge with multilingual AI support.',
       cta: 'Get started free',
       cta2: 'View docs',
-      badge2: 'AI Analysis',
+      badge2: 'AI Processing',
       badge3: '99.9% Accuracy'
     },
     why: {
@@ -72,8 +74,8 @@ const content = {
       items: [
         { icon: 'mic', title: 'Multimodal Note Taking', desc: 'Seamlessly process video, audio, and mixed-language text. A comprehensive Take Note experience.' },
         { icon: 'speed', title: 'Speed & Async', desc: 'Async processing with instant notification when your note is ready — no waiting around.' },
-        { icon: 'auto_fix_high', title: 'Flexible Note Taking', desc: 'Not just Cornell or Mindmap. Describe your desired method, and AI auto-formats to your unique style.' },
-        { icon: 'lock', title: 'Secure Note System', desc: 'Only you can access your data via RLS (Row-Level Security) — your notes stay private.' },
+        { icon: 'auto_fix_high', title: 'Unlimited Note Taking', desc: 'Not just Cornell or Mindmap. Describe your desired method, and AI auto-formats to your unique style.' },
+        { icon: 'lock', title: 'Secure Note System', desc: 'Not just Gemini or Mistral. Describe your desired method, and AI auto-formats and optimizes notes to your unique style.' },
         { icon: 'sync', title: 'Sync Notes', desc: 'Access and take notes anywhere, on any device with a web browser.' },
         { icon: 'view_quilt', title: 'Layout Export', desc: 'Preserve formatting and tables on export.' },
         { icon: 'analytics', title: 'Deep Insights', desc: 'AI extracts insights and builds logical connections.' }
@@ -92,8 +94,8 @@ const content = {
       link: 'View full pricing',
       plans: [
         { name: 'Free', desc: 'Basic experience for individuals.', price: '0đ', period: '/month', features: ['3 hours processing / month', 'Max file 30 min', 'Basic PDF export'], cta: 'Create account' },
-        { name: 'Pro', desc: 'For researchers & professionals.', price: '99k', period: '/month', features: ['50 hours processing / month', 'Max file 2 hours/session', 'All academic formats', 'Priority processing'], cta: 'Upgrade to Pro' },
-        { name: 'Ultra', desc: 'Best for organizations.', price: '199k', period: '/month', features: ['200 hours processing/month', 'Max file 4 hours/session', 'Advanced DOCX export', 'Priority email support', 'Multi-file analysis'], cta: 'Upgrade to Ultra', badge: 'Ultra' }
+        { name: 'Pro', desc: 'For researchers & professionals.', price: '99K', period: '/month', features: ['50 hours processing / month', 'Max file 2 hours/session', 'All academic formats', 'Priority processing'], cta: 'Upgrade to Pro' },
+        { name: 'Ultra', desc: 'Best for organizations.', price: '199K', period: '/month', features: ['Unlimited processing/month', 'Highest speed', 'Advanced DOCX export', 'Priority email support', 'Multi-file analysis'], cta: 'Upgrade to Ultra', badge: 'Ultra' }
       ]
     },
     cta: {
@@ -142,6 +144,17 @@ export default function LandingPage() {
   const textMuted = isDark ? 'text-neutral-400' : 'text-gray-600';
   const hoverBg = isDark ? 'hover:bg-white/5' : 'hover:bg-gray-100';
 
+  // Why section grid positions (matching screenshot bento layout)
+  const whyGridPositions = [
+    'col-start-1 col-end-2 row-start-1 row-end-3',   // 0: Multimodal — tall left (2 rows)
+    'col-start-2 col-end-3 row-start-1 row-end-2',   // 1: Speed — top center
+    'col-start-3 col-end-4 row-start-1 row-end-2',   // 2: Unlimited — top right
+    'col-start-2 col-end-4 row-start-2 row-end-3',   // 3: Secure — wide middle right (2 cols)
+    'col-start-1 col-end-2 row-start-3 row-end-4',   // 4: Sync — bottom left
+    'col-start-2 col-end-3 row-start-3 row-end-4',   // 5: Export — bottom center
+    'col-start-3 col-end-4 row-start-3 row-end-4',   // 6: Analytics — bottom right
+  ];
+
   return (
     <div className={`min-h-screen font-sans antialiased selection:bg-white selection:text-black transition-colors duration-300 ${bgClass}`}>
       {/* TopAppBar */}
@@ -181,9 +194,12 @@ export default function LandingPage() {
         {/* Hero */}
         <section className="px-6 py-16 max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-12">
           <div className="flex-1 space-y-6">
-            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border ${isDark ? 'bg-white/5 border-white/10' : 'bg-gray-100 border-gray-200'}`}>
+            <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border ${isDark ? 'bg-white/5 border-white/10' : 'bg-gray-100 border-gray-200'}`}>
               <span className="material-symbols-outlined text-sm">auto_awesome</span>
-              <span className="text-sm font-medium">{t.hero.badge}</span>
+              <div className="text-sm font-medium leading-tight">
+                <div>{t.hero.badge}</div>
+                <div className={`text-xs ${textMuted}`}>{t.hero.badgeSub}</div>
+              </div>
             </div>
             <h1 className={`text-4xl md:text-5xl lg:text-6xl font-bold leading-tight ${isDark ? 'text-white' : 'text-black'}`}>
               {t.hero.heading}
@@ -215,7 +231,7 @@ export default function LandingPage() {
               <div className="flex items-center gap-3">
                 <span className="material-symbols-outlined">auto_fix_high</span>
                 <div>
-                  <div className={isDark ? 'text-white' : 'text-black'}>{t.hero.badge2}</div>
+                  <div className={`font-medium ${isDark ? 'text-white' : 'text-black'}`}>{t.hero.badge2}</div>
                   <div className={`text-xs ${textMuted}`}>{t.hero.badge3}</div>
                 </div>
               </div>
@@ -223,28 +239,40 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Why */}
+        {/* Why — Bento Grid */}
         <section className="px-6 py-16 max-w-7xl mx-auto">
           <h2 className={`text-3xl font-bold text-center mb-12 ${isDark ? 'text-white' : 'text-black'}`}>{t.why.title}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 auto-rows-[minmax(180px,auto)] lg:auto-rows-[220px]">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:grid-rows-[220px_220px_180px]">
             {t.why.items.map((item, i) => {
-              const isLarge = i === 0 || i === 2;
-              const colSpan = isLarge ? 'lg:col-span-2' : 'lg:col-span-1';
-              const rowSpan = i === 0 ? 'lg:row-span-2' : (i === 2 ? 'lg:row-span-2' : 'lg:row-span-1');
+              const isLargeLeft = i === 0;
+              const isWideMid = i === 3;
+
               return (
                 <div
                   key={i}
-                  className={`${surfaceClass} border rounded-xl transition-all duration-300 hover:scale-[1.02] hover:border-opacity-50 p-6 flex flex-col ${isDark ? `border-white/10 ${hoverBg}` : `border-gray-200 ${hoverBg}`} ${colSpan} ${rowSpan} ${i === 0 ? 'relative overflow-hidden' : ''}`}
+                  className={`${surfaceClass} border rounded-xl transition-all duration-300 hover:scale-[1.02] hover:border-opacity-50 p-6 flex flex-col ${isDark ? `border-white/10 ${hoverBg}` : `border-gray-200 ${hoverBg}`} ${isLargeLeft ? 'relative overflow-hidden' : ''} hidden md:flex ${whyGridPositions[i]}`}
+                  style={isLargeLeft ? { minHeight: '100%' } : undefined}
                 >
-                  {i === 0 && <div className={`absolute -right-12 -top-12 w-64 h-64 rounded-full blur-3xl transition-colors ${isDark ? 'bg-white/5' : 'bg-black/5'}`} />}
+                  {isLargeLeft && <div className={`absolute -right-12 -top-12 w-64 h-64 rounded-full blur-3xl transition-colors ${isDark ? 'bg-white/5' : 'bg-black/5'}`} />}
                   <span className="material-symbols-outlined text-4xl mb-4">{item.icon}</span>
-                  <div>
+                  <div className={isLargeLeft ? 'mt-auto' : ''}>
                     <h3 className={`text-xl font-semibold mb-1 ${isDark ? 'text-white' : 'text-black'}`}>{item.title}</h3>
                     <p className={`text-sm leading-relaxed ${textMuted}`}>{item.desc}</p>
                   </div>
                 </div>
               );
             })}
+            {/* Mobile fallback — simple stacked cards */}
+            {t.why.items.map((item, i) => (
+              <div
+                key={`mobile-${i}`}
+                className={`${surfaceClass} border rounded-xl p-6 flex flex-col md:hidden ${isDark ? `border-white/10` : `border-gray-200`}`}
+              >
+                <span className="material-symbols-outlined text-4xl mb-4">{item.icon}</span>
+                <h3 className={`text-xl font-semibold mb-1 ${isDark ? 'text-white' : 'text-black'}`}>{item.title}</h3>
+                <p className={`text-sm leading-relaxed ${textMuted}`}>{item.desc}</p>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -283,7 +311,7 @@ export default function LandingPage() {
                   className={`${surfaceClass} border rounded-xl transition-all duration-300 hover:scale-[1.02] flex flex-col p-6 relative ${isDark ? (isUltra ? 'border-white/30' : 'border-white/10') : (isUltra ? 'border-black/30' : 'border-gray-200')}`}
                 >
                   {isUltra && (
-                    <div className={`absolute top-0 right-0 ${isDark ? 'bg-white text-black' : 'bg-black text-white'} text-xs font-medium py-1 px-3 rounded-bl-lg`}>
+                    <div className={`absolute top-0 right-0 ${isDark ? 'bg-white text-black' : 'bg-black text-white'} text-xs font-medium py-1 px-3 rounded-bl-lg rounded-tr-xl`}>
                       {plan.badge}
                     </div>
                   )}
@@ -303,7 +331,7 @@ export default function LandingPage() {
                   </ul>
                   <Link
                     href="/app"
-                    className={`w-full py-3 rounded-lg font-medium text-center transition-all duration-200 ${isDark ? (isUltra ? 'bg-white hover:bg-neutral-200 text-black' : 'border border-white/20 hover:bg-white/5 text-white') : (isUltra ? 'bg-black hover:bg-gray-800 text-white' : 'border border-gray-300 hover:bg-gray-100 text-black')}`}
+                    className={`w-full py-3 rounded-lg font-medium text-center transition-all duration-200 block ${isDark ? (isUltra ? 'bg-white hover:bg-neutral-200 text-black' : 'border border-white/20 hover:bg-white/5 text-white') : (isUltra ? 'bg-black hover:bg-gray-800 text-white' : 'border border-gray-300 hover:bg-gray-100 text-black')}`}
                   >
                     {plan.cta}
                   </Link>
