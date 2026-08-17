@@ -360,7 +360,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [settingsActiveTab, setSettingsActiveTab] = useState<'account' | 'appearance' | 'ai-providers' | 'notifications'>('account');
 
   // AI & Chat States
-  const [selectedModel, setSelectedModel] = useState<string>('Claude 3.5 Sonnet');
+  const [selectedModel, setSelectedModel] = useState<string>('');
   const [selectedLanguage, setSelectedLanguage] = useState<string>('Tiếng Việt');
   const [selectedMethod, setSelectedMethod] = useState<NoteMethod>('auto');
   const [autoSelectedMethod, setAutoSelectedMethod] = useState<NoteMethod>('cornell');
