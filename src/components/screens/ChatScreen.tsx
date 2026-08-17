@@ -107,6 +107,24 @@ export const ChatScreen: React.FC = () => {
     setAttachedSources([]);
   };
 
+  const handleAttachSource = (source: { type: 'pdf' | 'youtube' | 'doc'; name: string }) => {
+    setAttachedSources((prev) => [...prev, source]);
+    addToast(
+      language === 'vi' ? 'Đã đính kèm' : 'Source Attached',
+      `"${source.name}" ${language === 'vi' ? 'đã sẵn sàng để trích xuất.' : 'ready for extraction.'}`
+    );
+  };
+
+  const handleUploaded = (fileKey: string, fileName: string) => {
+    setAttachedSources((prev) => [...prev, { type: 'doc', name: fileName }]);
+    setIsUploadAreaOpen(false);
+    addToast(
+      language === 'vi' ? 'Upload thành công' : 'Upload Successful',
+      `"${fileName}" ${language === 'vi' ? 'đã tải lên và sẵn sàng xử lý.' : 'uploaded and ready to process.'}`,
+      'success'
+    );
+  };
+
   const handlePromptClick = (p: typeof suggestedPrompts[0]) => {
     setSelectedMethod(p.method);
     sendChatMessage(p.prompt, attachedSources);
