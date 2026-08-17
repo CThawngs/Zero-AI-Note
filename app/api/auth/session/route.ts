@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSql } from '@/lib/db';
 import { verifySession } from '@/lib/auth/session';
 import { ok, fail } from '@/lib/auth/http';
+import { findUserById } from '@/lib/auth/users';
 
 export const runtime = 'nodejs';
 
@@ -20,19 +20,13 @@ export async function GET(request: NextRequest) {
     let needsPasswordSetup = false;
     let displayName = null;
     try {
-      const sql = getSql();
-      const rows = await sql`
-        select password_hash, display_name, plan, role
-        from profiles
-        where id = ${session.sub} or email = ${session.email}
-      `;
-      if (Array.isArray(rows) && rows.length > 0) {
-        const row = rows[0] as unknown as { password_hash: string | null; display_name: string | null; plan: string; role: string };
-        needsPasswordSetup = !row.password_hash;
-        displayName = row.display_name ?? null;
+      const user = await findUserById(session.sub);
+      if (user) {
+        needsPasswordSetup = !user.password_hash;
+        displayName = user.display_name;
       }
     } catch {
-      // If DB error, fallback safely
+      // Fallback
     }
 
     return ok({

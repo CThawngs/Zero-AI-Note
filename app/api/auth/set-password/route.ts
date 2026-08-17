@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSql } from '@/lib/db';
 import { verifySession } from '@/lib/auth/session';
 import bcrypt from 'bcryptjs';
 import { ok, fail } from '@/lib/auth/http';
+import { updateUserPassword } from '@/lib/auth/users';
 
 export const runtime = 'nodejs';
 
@@ -29,13 +29,7 @@ export async function POST(request: NextRequest) {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const sql = getSql();
-
-    await sql`
-      update profiles
-      set password_hash = ${passwordHash}
-      where id = ${session.sub} or email = ${session.email}
-    `;
+    await updateUserPassword(session.sub, passwordHash);
 
     return ok({
       success: true,
@@ -43,6 +37,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('set-password failed:', error);
-    return fail(error instanceof Error ? error.message : 'Internal server error', 500);
+    return fail('Internal server error', 500);
   }
 }
