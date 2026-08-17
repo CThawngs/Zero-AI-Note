@@ -11,11 +11,13 @@ export default function DocsPage() {
     <div className="min-h-screen bg-white dark:bg-slate-950">
       <nav className="border-b border-slate-200 dark:border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
-              Z
-            </div>
-            <span className="font-bold">Zero AI Note</span>
+          <Link href="/" className="flex items-center gap-2.5">
+            <img
+              src="/logo.png"
+              alt="Zero AI Note Logo"
+              className="w-8 h-8 rounded-full object-contain shadow-xs shrink-0"
+            />
+            <span className="font-bold text-lg">Zero AI Note</span>
           </Link>
           <Link href="/app" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors">
             Đăng nhập

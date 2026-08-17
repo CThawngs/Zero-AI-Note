@@ -89,9 +89,11 @@ export const Sidebar: React.FC = () => {
             }}
             className="flex items-center gap-2.5 cursor-pointer group"
           >
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center shadow-md shadow-[var(--accent-primary)]/20 group-hover:scale-105 transition-transform shrink-0 accent-gradient text-[var(--accent-text)]">
-              <Sparkles className="w-4 h-4" />
-            </div>
+            <img
+              src="/logo.png"
+              alt="Zero AI Note Logo"
+              className="w-8 h-8 rounded-full object-contain shadow-md group-hover:scale-105 transition-transform shrink-0"
+            />
             <div>
               <h1 className="text-sm font-bold tracking-tight flex items-center gap-1.5 text-[var(--text-primary)]">
                 {t('brandName')}

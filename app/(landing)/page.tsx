@@ -150,15 +150,12 @@ export default function LandingPage() {
       <header className={`fixed top-0 w-full z-50 backdrop-blur-xl border-b transition-colors duration-300 ${isDark ? 'bg-[#0a0a0a]/85 border-white/10' : 'bg-white/85 border-gray-200'}`}>
         <div className="relative flex justify-between items-center px-4 sm:px-6 py-3 sm:py-4 max-w-7xl mx-auto">
           {/* Left: Logo */}
-          <Link href="/" className={`font-bold text-lg sm:text-xl flex items-center gap-2 transition-opacity hover:opacity-90 ${isDark ? 'text-white' : 'text-black'}`}>
-            <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6 sm:w-7 sm:h-7" aria-hidden="true">
-              <path
-                d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"
-                className={isDark ? 'fill-white' : 'fill-black'}
-              />
-              <path d="M13 2v5h5" className={isDark ? 'stroke-[#0a0a0a]' : 'stroke-white'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M8 13h8M8 17h5" className={isDark ? 'stroke-[#0a0a0a]' : 'stroke-white'} strokeWidth="1.5" strokeLinecap="round" />
-            </svg>
+          <Link href="/" className={`font-bold text-lg sm:text-xl flex items-center gap-2.5 transition-opacity hover:opacity-90 ${isDark ? 'text-white' : 'text-black'}`}>
+            <img
+              src="/logo.png"
+              alt="Zero AI Note Logo"
+              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-contain shadow-xs shrink-0"
+            />
             <span>Zero AI Note</span>
           </Link>
 
@@ -498,13 +495,13 @@ export default function LandingPage() {
       <footer className={`w-full py-8 sm:py-12 border-t transition-colors duration-300 ${isDark ? 'bg-[#0a0a0a] border-white/10' : 'bg-white border-gray-200'}`}>
         <div className="flex flex-col md:flex-row justify-between items-center px-4 sm:px-6 max-w-7xl mx-auto gap-4">
           <div className="flex flex-col items-center md:items-start gap-2">
-            <div className={`font-bold text-lg sm:text-xl flex items-center gap-2 ${isDark ? 'text-white' : 'text-black'}`}>
-              <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6" aria-hidden="true">
-                <path d="M6 2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z" className={isDark ? 'fill-white' : 'fill-black'} />
-                <path d="M13 2v5h5" className={isDark ? 'stroke-[#0a0a0a]' : 'stroke-white'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M8 13h8M8 17h5" className={isDark ? 'stroke-[#0a0a0a]' : 'stroke-white'} strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-              Zero AI Note
+            <div className={`font-bold text-lg sm:text-xl flex items-center gap-2.5 ${isDark ? 'text-white' : 'text-black'}`}>
+              <img
+                src="/logo.png"
+                alt="Zero AI Note Logo"
+                className="w-7 h-7 rounded-full object-contain shadow-xs shrink-0"
+              />
+              <span>Zero AI Note</span>
             </div>
             <div className={`text-sm ${textMuted}`}>{t.footer}</div>
           </div>
