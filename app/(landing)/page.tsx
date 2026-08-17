@@ -112,6 +112,7 @@ export default function LandingPage() {
   const [lang, setLang] = useState<Language>('vi');
   const [theme, setTheme] = useState<ThemeMode>('dark');
   const [mounted, setMounted] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const savedLang = localStorage.getItem('zero-note-lang') as Language || 'vi';
@@ -140,60 +141,105 @@ export default function LandingPage() {
 
   const bgClass = isDark ? 'bg-[#0a0a0a] text-white' : 'bg-white text-black';
   const surfaceClass = isDark ? 'bg-[#0f0f0f]' : 'bg-gray-50';
-  const borderClass = isDark ? 'border-white/10' : 'border-gray-200';
   const textMuted = isDark ? 'text-neutral-400' : 'text-gray-600';
   const hoverBg = isDark ? 'hover:bg-white/5' : 'hover:bg-gray-100';
 
-  // Why section grid positions (matching screenshot bento layout)
-  const whyGridPositions = [
-    'col-start-1 col-end-2 row-start-1 row-end-3',   // 0: Multimodal — tall left (2 rows)
-    'col-start-2 col-end-3 row-start-1 row-end-2',   // 1: Speed — top center
-    'col-start-3 col-end-4 row-start-1 row-end-2',   // 2: Unlimited — top right
-    'col-start-2 col-end-4 row-start-2 row-end-3',   // 3: Secure — wide middle right (2 cols)
-    'col-start-1 col-end-2 row-start-3 row-end-4',   // 4: Sync — bottom left
-    'col-start-2 col-end-3 row-start-3 row-end-4',   // 5: Export — bottom center
-    'col-start-3 col-end-4 row-start-3 row-end-4',   // 6: Analytics — bottom right
-  ];
-
   return (
     <div className={`min-h-screen font-sans antialiased selection:bg-white selection:text-black transition-colors duration-300 ${bgClass}`}>
-      {/* TopAppBar */}
+      {/* ===== HEADER ===== */}
       <header className={`fixed top-0 w-full z-50 backdrop-blur-xl border-b transition-colors duration-300 ${isDark ? 'bg-[#0a0a0a]/80 border-white/10' : 'bg-white/80 border-gray-200'}`}>
-        <div className="flex justify-between items-center px-6 py-4 max-w-7xl mx-auto">
-          <div className={`font-bold text-xl flex items-center gap-2 ${isDark ? 'text-white' : 'text-black'}`}>
+        <div className="flex justify-between items-center px-4 sm:px-6 py-3 sm:py-4 max-w-7xl mx-auto">
+          {/* Logo */}
+          <div className={`font-bold text-lg sm:text-xl flex items-center gap-2 ${isDark ? 'text-white' : 'text-black'}`}>
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>description</span>
             Zero AI Note
           </div>
-          <div className="flex items-center gap-8">
-            <button
-              onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}
-              className={`text-sm font-medium px-3 py-1.5 rounded-lg transition-all duration-300 ${isDark ? 'text-neutral-400 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-black hover:bg-gray-200'}`}
-            >
-              {lang === 'vi' ? '🇻🇳 VI' : '🇬🇧 EN'}
-            </button>
-            <button
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className={`text-sm font-medium px-3 py-1.5 rounded-lg transition-all duration-300 ${isDark ? 'text-neutral-400 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-black hover:bg-gray-200'}`}
-            >
-              {isDark ? '☀️' : '🌙'}
-            </button>
-            <Link href="/docs" className={`text-sm font-medium transition-colors duration-200 ${isDark ? 'text-neutral-400 hover:text-white' : 'text-gray-600 hover:text-black'}`}>
+
+          {/* Desktop nav */}
+          <nav className="hidden md:flex items-center">
+            {/* Language & Theme toggles — compact group */}
+            <div className={`flex items-center gap-1 mr-6 rounded-lg border px-1 py-0.5 ${isDark ? 'border-white/10 bg-white/5' : 'border-gray-200 bg-gray-100'}`}>
+              <button
+                onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}
+                className={`text-xs font-semibold px-2.5 py-1.5 rounded-md transition-all duration-200 ${isDark ? 'text-neutral-300 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-black hover:bg-white'}`}
+              >
+                {lang === 'vi' ? 'VI' : 'EN'}
+              </button>
+              <div className={`w-px h-4 ${isDark ? 'bg-white/15' : 'bg-gray-300'}`} />
+              <button
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className={`p-1.5 rounded-md transition-all duration-200 ${isDark ? 'text-neutral-300 hover:text-white hover:bg-white/10' : 'text-gray-600 hover:text-black hover:bg-white'}`}
+              >
+                <span className="material-symbols-outlined text-base" style={{ fontSize: '18px' }}>
+                  {isDark ? 'light_mode' : 'dark_mode'}
+                </span>
+              </button>
+            </div>
+
+            {/* Separator */}
+            <div className={`w-px h-5 mr-6 ${isDark ? 'bg-white/10' : 'bg-gray-200'}`} />
+
+            {/* Nav links */}
+            <Link href="/docs" className={`text-sm font-medium transition-colors duration-200 mr-6 ${isDark ? 'text-neutral-400 hover:text-white' : 'text-gray-600 hover:text-black'}`}>
               {t.nav.docs}
             </Link>
-            <Link href="/app" className={`text-sm font-medium transition-colors duration-200 ${isDark ? 'text-neutral-400 hover:text-white' : 'text-gray-600 hover:text-black'}`}>
+            <Link href="/app" className={`text-sm font-medium transition-colors duration-200 mr-6 ${isDark ? 'text-neutral-400 hover:text-white' : 'text-gray-600 hover:text-black'}`}>
               {t.nav.login}
             </Link>
-            <Link href="/app" className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:scale-105 ${isDark ? 'bg-white hover:bg-neutral-200 text-black' : 'bg-black hover:bg-gray-800 text-white'}`}>
+
+            {/* CTA */}
+            <Link href="/app" className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-300 hover:scale-105 ${isDark ? 'bg-white hover:bg-neutral-200 text-black' : 'bg-black hover:bg-gray-800 text-white'}`}>
               {t.nav.cta}
             </Link>
-          </div>
+          </nav>
+
+          {/* Mobile hamburger */}
+          <button
+            className="md:hidden p-2 rounded-lg transition-colors"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            <span className="material-symbols-outlined text-2xl">
+              {mobileMenuOpen ? 'close' : 'menu'}
+            </span>
+          </button>
         </div>
+
+        {/* Mobile menu dropdown */}
+        {mobileMenuOpen && (
+          <div className={`md:hidden border-t px-4 py-4 space-y-3 ${isDark ? 'bg-[#0a0a0a] border-white/10' : 'bg-white border-gray-200'}`}>
+            <Link href="/docs" onClick={() => setMobileMenuOpen(false)} className={`block text-sm font-medium py-2 ${isDark ? 'text-neutral-300' : 'text-gray-700'}`}>
+              {t.nav.docs}
+            </Link>
+            <Link href="/app" onClick={() => setMobileMenuOpen(false)} className={`block text-sm font-medium py-2 ${isDark ? 'text-neutral-300' : 'text-gray-700'}`}>
+              {t.nav.login}
+            </Link>
+            <Link href="/app" onClick={() => setMobileMenuOpen(false)} className={`block w-full text-center py-2.5 rounded-lg text-sm font-medium ${isDark ? 'bg-white text-black' : 'bg-black text-white'}`}>
+              {t.nav.cta}
+            </Link>
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}
+                className={`text-xs font-semibold px-3 py-1.5 rounded-lg border ${isDark ? 'border-white/15 text-neutral-300' : 'border-gray-200 text-gray-600'}`}
+              >
+                {lang === 'vi' ? 'VI → EN' : 'EN → VI'}
+              </button>
+              <button
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className={`p-1.5 rounded-lg border ${isDark ? 'border-white/15 text-neutral-300' : 'border-gray-200 text-gray-600'}`}
+              >
+                <span className="material-symbols-outlined text-base" style={{ fontSize: '18px' }}>
+                  {isDark ? 'light_mode' : 'dark_mode'}
+                </span>
+              </button>
+            </div>
+          </div>
+        )}
       </header>
 
-      <main className="flex-grow pt-24">
-        {/* Hero */}
-        <section className="px-6 py-16 max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-12">
-          <div className="flex-1 space-y-6">
+      <main className="flex-grow pt-20 sm:pt-24">
+        {/* ===== HERO ===== */}
+        <section className="px-4 sm:px-6 py-12 sm:py-16 max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
+          <div className="flex-1 space-y-5 sm:space-y-6">
             <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border ${isDark ? 'bg-white/5 border-white/10' : 'bg-gray-100 border-gray-200'}`}>
               <span className="material-symbols-outlined text-sm">auto_awesome</span>
               <div className="text-sm font-medium leading-tight">
@@ -201,24 +247,24 @@ export default function LandingPage() {
                 <div className={`text-xs ${textMuted}`}>{t.hero.badgeSub}</div>
               </div>
             </div>
-            <h1 className={`text-4xl md:text-5xl lg:text-6xl font-bold leading-tight ${isDark ? 'text-white' : 'text-black'}`}>
+            <h1 className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight ${isDark ? 'text-white' : 'text-black'}`}>
               {t.hero.heading}
             </h1>
-            <p className={`text-lg leading-relaxed max-w-2xl ${textMuted}`}>
+            <p className={`text-base sm:text-lg leading-relaxed max-w-2xl ${textMuted}`}>
               {t.hero.sub}
             </p>
-            <div className="flex flex-wrap gap-4 pt-4">
-              <Link href="/app" className={`font-medium py-3 px-6 rounded-lg transition-all duration-300 hover:scale-105 flex items-center gap-2 ${isDark ? 'bg-white hover:bg-neutral-200 text-black' : 'bg-black hover:bg-gray-800 text-white'}`}>
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2 sm:pt-4">
+              <Link href="/app" className={`font-medium py-3 px-6 rounded-lg transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2 text-sm sm:text-base ${isDark ? 'bg-white hover:bg-neutral-200 text-black' : 'bg-black hover:bg-gray-800 text-white'}`}>
                 {t.hero.cta}
                 <span className="material-symbols-outlined text-sm">arrow_forward</span>
               </Link>
-              <Link href="/docs" className={`border font-medium py-3 px-6 rounded-lg transition-all duration-300 hover:scale-105 flex items-center gap-2 ${isDark ? 'border-white/20 hover:bg-white/5 text-white' : 'border-gray-300 hover:bg-gray-100 text-black'}`}>
+              <Link href="/docs" className={`border font-medium py-3 px-6 rounded-lg transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2 text-sm sm:text-base ${isDark ? 'border-white/20 hover:bg-white/5 text-white' : 'border-gray-300 hover:bg-gray-100 text-black'}`}>
                 <span className="material-symbols-outlined text-sm">menu_book</span>
                 {t.hero.cta2}
               </Link>
             </div>
           </div>
-          <div className="flex-1 w-full max-w-lg relative">
+          <div className="flex-1 w-full max-w-sm sm:max-w-md lg:max-w-lg relative">
             <div className={`absolute -inset-4 blur-3xl rounded-full opacity-50 ${isDark ? 'bg-white/5' : 'bg-black/5'}`} />
             <div className={`border rounded-xl overflow-hidden relative z-10 shadow-2xl ${isDark ? 'bg-[#0f0f0f] border-white/10' : 'bg-white border-gray-200'}`}>
               <img
@@ -227,11 +273,11 @@ export default function LandingPage() {
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuBo4FbFB7fOmPlv-QU-QIwcpZ6-qIxFmR2VjU964mMA5G0iJEa74T4h3IPTuWodbtMeYWHQ0mpe7ADzs02YOOr8QWIr_l8WfrfqqWk892DbRSubW1GKRH7D97uSkhUGXNMErp1VqUx8FQciET6rwtD_Csv6VRTPfcu1oKLEM5cwePi2wzW_QrRbFqpV0hW_EsF9wL3vLq5HCyagpSknHSL3Gy8ud6Nc6jRWhxXVsnTh12jsxCKKPiDd"
               />
             </div>
-            <div className={`absolute -bottom-6 -right-6 backdrop-blur-xl border p-4 rounded-xl z-20 hidden md:block shadow-xl ${isDark ? 'bg-white/10 border-white/20' : 'bg-black/5 border-gray-200'}`}>
-              <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined">auto_fix_high</span>
+            <div className={`absolute -bottom-4 -right-4 sm:-bottom-6 sm:-right-6 backdrop-blur-xl border p-3 sm:p-4 rounded-xl z-20 shadow-xl ${isDark ? 'bg-white/10 border-white/20' : 'bg-black/5 border-gray-200'}`}>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <span className="material-symbols-outlined text-xl sm:text-2xl">auto_fix_high</span>
                 <div>
-                  <div className={`font-medium ${isDark ? 'text-white' : 'text-black'}`}>{t.hero.badge2}</div>
+                  <div className={`font-medium text-sm sm:text-base ${isDark ? 'text-white' : 'text-black'}`}>{t.hero.badge2}</div>
                   <div className={`text-xs ${textMuted}`}>{t.hero.badge3}</div>
                 </div>
               </div>
@@ -239,55 +285,81 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Why — Bento Grid */}
-        <section className="px-6 py-16 max-w-7xl mx-auto">
-          <h2 className={`text-3xl font-bold text-center mb-12 ${isDark ? 'text-white' : 'text-black'}`}>{t.why.title}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:grid-rows-[220px_220px_180px]">
+        {/* ===== WHY — Bento Grid ===== */}
+        <section className="px-4 sm:px-6 py-12 sm:py-16 max-w-7xl mx-auto">
+          <h2 className={`text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-12 ${isDark ? 'text-white' : 'text-black'}`}>{t.why.title}</h2>
+
+          {/* Desktop bento grid (lg+) */}
+          <div className="hidden lg:grid grid-cols-3 gap-4 grid-rows-[220px_220px_180px]">
             {t.why.items.map((item, i) => {
-              const isLargeLeft = i === 0;
-              const isWideMid = i === 3;
+              const gridPos = [
+                'col-start-1 col-end-2 row-start-1 row-end-3',
+                'col-start-2 col-end-3 row-start-1 row-end-2',
+                'col-start-3 col-end-4 row-start-1 row-end-2',
+                'col-start-2 col-end-4 row-start-2 row-end-3',
+                'col-start-1 col-end-2 row-start-3 row-end-4',
+                'col-start-2 col-end-3 row-start-3 row-end-4',
+                'col-start-3 col-end-4 row-start-3 row-end-4',
+              ][i];
+              const isLarge = i === 0;
 
               return (
                 <div
                   key={i}
-                  className={`${surfaceClass} border rounded-xl transition-all duration-300 hover:scale-[1.02] hover:border-opacity-50 p-6 flex flex-col ${isDark ? `border-white/10 ${hoverBg}` : `border-gray-200 ${hoverBg}`} ${isLargeLeft ? 'relative overflow-hidden' : ''} hidden md:flex ${whyGridPositions[i]}`}
-                  style={isLargeLeft ? { minHeight: '100%' } : undefined}
+                  className={`${surfaceClass} border rounded-xl transition-all duration-300 hover:scale-[1.02] p-6 flex flex-col ${isDark ? `border-white/10 ${hoverBg}` : `border-gray-200 ${hoverBg}`} ${isLarge ? 'relative overflow-hidden' : ''} ${gridPos}`}
                 >
-                  {isLargeLeft && <div className={`absolute -right-12 -top-12 w-64 h-64 rounded-full blur-3xl transition-colors ${isDark ? 'bg-white/5' : 'bg-black/5'}`} />}
+                  {isLarge && <div className={`absolute -right-12 -top-12 w-64 h-64 rounded-full blur-3xl ${isDark ? 'bg-white/5' : 'bg-black/5'}`} />}
                   <span className="material-symbols-outlined text-4xl mb-4">{item.icon}</span>
-                  <div className={isLargeLeft ? 'mt-auto' : ''}>
+                  <div className={isLarge ? 'mt-auto' : ''}>
                     <h3 className={`text-xl font-semibold mb-1 ${isDark ? 'text-white' : 'text-black'}`}>{item.title}</h3>
                     <p className={`text-sm leading-relaxed ${textMuted}`}>{item.desc}</p>
                   </div>
                 </div>
               );
             })}
-            {/* Mobile fallback — simple stacked cards */}
+          </div>
+
+          {/* Tablet grid (md) — 2 columns */}
+          <div className="hidden md:grid lg:hidden grid-cols-2 gap-4">
             {t.why.items.map((item, i) => (
               <div
-                key={`mobile-${i}`}
-                className={`${surfaceClass} border rounded-xl p-6 flex flex-col md:hidden ${isDark ? `border-white/10` : `border-gray-200`}`}
+                key={i}
+                className={`${surfaceClass} border rounded-xl p-5 flex flex-col ${isDark ? 'border-white/10' : 'border-gray-200'} ${i === 0 ? 'col-span-2' : ''}`}
               >
-                <span className="material-symbols-outlined text-4xl mb-4">{item.icon}</span>
-                <h3 className={`text-xl font-semibold mb-1 ${isDark ? 'text-white' : 'text-black'}`}>{item.title}</h3>
+                <span className="material-symbols-outlined text-3xl mb-3">{item.icon}</span>
+                <h3 className={`text-lg font-semibold mb-1 ${isDark ? 'text-white' : 'text-black'}`}>{item.title}</h3>
+                <p className={`text-sm leading-relaxed ${textMuted}`}>{item.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Mobile — single column */}
+          <div className="grid md:hidden grid-cols-1 gap-3">
+            {t.why.items.map((item, i) => (
+              <div
+                key={i}
+                className={`${surfaceClass} border rounded-xl p-5 flex flex-col ${isDark ? 'border-white/10' : 'border-gray-200'}`}
+              >
+                <span className="material-symbols-outlined text-3xl mb-3">{item.icon}</span>
+                <h3 className={`text-lg font-semibold mb-1 ${isDark ? 'text-white' : 'text-black'}`}>{item.title}</h3>
                 <p className={`text-sm leading-relaxed ${textMuted}`}>{item.desc}</p>
               </div>
             ))}
           </div>
         </section>
 
-        {/* How */}
-        <section className={`border-y py-16 transition-colors duration-300 ${isDark ? 'bg-[#0a0a0a] border-white/10' : 'bg-white border-gray-200'}`}>
-          <div className="px-6 max-w-7xl mx-auto text-center">
-            <h2 className={`text-3xl font-bold mb-12 ${isDark ? 'text-white' : 'text-black'}`}>{t.how.title}</h2>
+        {/* ===== HOW ===== */}
+        <section className={`border-y py-12 sm:py-16 transition-colors duration-300 ${isDark ? 'bg-[#0a0a0a] border-white/10' : 'bg-white border-gray-200'}`}>
+          <div className="px-4 sm:px-6 max-w-7xl mx-auto text-center">
+            <h2 className={`text-2xl sm:text-3xl font-bold mb-8 sm:mb-12 ${isDark ? 'text-white' : 'text-black'}`}>{t.how.title}</h2>
             <div className="flex flex-col md:flex-row justify-center items-start gap-8 relative">
               <div className={`hidden md:block absolute top-12 left-[15%] right-[15%] h-px z-0 ${isDark ? 'bg-white/10' : 'bg-gray-200'}`} />
               {t.how.steps.map((step, i) => (
                 <div key={i} className={`flex-1 flex flex-col items-center relative z-10 ${isDark ? 'bg-[#0a0a0a]' : 'bg-white'}`}>
-                  <div className={`w-24 h-24 rounded-full border flex items-center justify-center mb-6 transition-colors ${isDark ? 'border-white/10 bg-[#0f0f0f]' : 'border-gray-200 bg-gray-50'}`}>
-                    <span className="material-symbols-outlined text-4xl">{step.icon}</span>
+                  <div className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full border flex items-center justify-center mb-4 sm:mb-6 transition-colors ${isDark ? 'border-white/10 bg-[#0f0f0f]' : 'border-gray-200 bg-gray-50'}`}>
+                    <span className="material-symbols-outlined text-3xl sm:text-4xl">{step.icon}</span>
                   </div>
-                  <h3 className={`text-xl font-semibold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>{step.title}</h3>
+                  <h3 className={`text-lg sm:text-xl font-semibold mb-2 ${isDark ? 'text-white' : 'text-black'}`}>{step.title}</h3>
                   <p className={`text-sm leading-relaxed ${textMuted} text-center max-w-xs`}>{step.desc}</p>
                 </div>
               ))}
@@ -295,20 +367,20 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Pricing */}
-        <section className="px-6 py-16 max-w-5xl mx-auto text-center">
-          <h2 className={`text-3xl font-bold mb-4 ${isDark ? 'text-white' : 'text-black'}`}>{t.pricing.title}</h2>
-          <Link href="/docs" className={`text-sm font-medium hover:underline mb-12 inline-flex items-center gap-1 transition-colors ${isDark ? 'text-white' : 'text-black'}`}>
+        {/* ===== PRICING ===== */}
+        <section className="px-4 sm:px-6 py-12 sm:py-16 max-w-5xl mx-auto text-center">
+          <h2 className={`text-2xl sm:text-3xl font-bold mb-4 ${isDark ? 'text-white' : 'text-black'}`}>{t.pricing.title}</h2>
+          <Link href="/docs" className={`text-sm font-medium hover:underline mb-8 sm:mb-12 inline-flex items-center gap-1 transition-colors ${isDark ? 'text-white' : 'text-black'}`}>
             {t.pricing.link}
             <span className="material-symbols-outlined text-sm">open_in_new</span>
           </Link>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left mt-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 text-left mt-6 sm:mt-8">
             {t.pricing.plans.map((plan, i) => {
               const isUltra = plan.badge === 'Ultra';
               return (
                 <div
                   key={i}
-                  className={`${surfaceClass} border rounded-xl transition-all duration-300 hover:scale-[1.02] flex flex-col p-6 relative ${isDark ? (isUltra ? 'border-white/30' : 'border-white/10') : (isUltra ? 'border-black/30' : 'border-gray-200')}`}
+                  className={`${surfaceClass} border rounded-xl transition-all duration-300 hover:scale-[1.02] flex flex-col p-5 sm:p-6 relative ${isDark ? (isUltra ? 'border-white/30' : 'border-white/10') : (isUltra ? 'border-black/30' : 'border-gray-200')} ${i === 2 ? 'sm:col-span-2 md:col-span-1' : ''}`}
                 >
                   {isUltra && (
                     <div className={`absolute top-0 right-0 ${isDark ? 'bg-white text-black' : 'bg-black text-white'} text-xs font-medium py-1 px-3 rounded-bl-lg rounded-tr-xl`}>
@@ -341,29 +413,29 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* CTA */}
-        <section className={`px-6 py-20 text-center relative border-t transition-colors duration-300 ${isDark ? 'border-white/10 bg-[#0f0f0f]' : 'border-gray-200 bg-gray-50'}`}>
+        {/* ===== CTA ===== */}
+        <section className={`px-4 sm:px-6 py-16 sm:py-20 text-center relative border-t transition-colors duration-300 ${isDark ? 'border-white/10 bg-[#0f0f0f]' : 'border-gray-200 bg-gray-50'}`}>
           <div className="relative z-10 max-w-2xl mx-auto">
-            <h2 className={`text-4xl md:text-5xl font-bold mb-6 ${isDark ? 'text-white' : 'text-black'}`}>{t.cta.title}</h2>
-            <p className={`text-lg ${textMuted} mb-8`}>{t.cta.sub}</p>
-            <Link href="/app" className={`inline-block font-medium py-4 px-8 rounded-lg transition-all duration-300 hover:scale-105 text-lg ${isDark ? 'bg-white hover:bg-neutral-200 text-black' : 'bg-black hover:bg-gray-800 text-white'}`}>
+            <h2 className={`text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 ${isDark ? 'text-white' : 'text-black'}`}>{t.cta.title}</h2>
+            <p className={`text-base sm:text-lg ${textMuted} mb-6 sm:mb-8`}>{t.cta.sub}</p>
+            <Link href="/app" className={`inline-block font-medium py-3 sm:py-4 px-6 sm:px-8 rounded-lg transition-all duration-300 hover:scale-105 text-base sm:text-lg ${isDark ? 'bg-white hover:bg-neutral-200 text-black' : 'bg-black hover:bg-gray-800 text-white'}`}>
               {t.cta.cta}
             </Link>
           </div>
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className={`w-full py-12 border-t transition-colors duration-300 ${isDark ? 'bg-[#0a0a0a] border-white/10' : 'bg-white border-gray-200'}`}>
-        <div className="flex flex-col md:flex-row justify-between items-center px-6 max-w-7xl mx-auto gap-4">
+      {/* ===== FOOTER ===== */}
+      <footer className={`w-full py-8 sm:py-12 border-t transition-colors duration-300 ${isDark ? 'bg-[#0a0a0a] border-white/10' : 'bg-white border-gray-200'}`}>
+        <div className="flex flex-col md:flex-row justify-between items-center px-4 sm:px-6 max-w-7xl mx-auto gap-4">
           <div className="flex flex-col items-center md:items-start gap-2">
-            <div className={`font-bold text-xl flex items-center gap-2 ${isDark ? 'text-white' : 'text-black'}`}>
+            <div className={`font-bold text-lg sm:text-xl flex items-center gap-2 ${isDark ? 'text-white' : 'text-black'}`}>
               <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>description</span>
               Zero AI Note
             </div>
             <div className={`text-sm ${textMuted}`}>{t.footer}</div>
           </div>
-          <div className="flex flex-wrap justify-center gap-6">
+          <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
             {t.links.map((link, i) => (
               <Link key={i} href="#" className={`text-sm transition-colors duration-200 ${isDark ? 'text-neutral-400 hover:text-white' : 'text-gray-600 hover:text-black'}`}>
                 {link}
