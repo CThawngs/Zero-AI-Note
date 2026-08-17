@@ -360,29 +360,29 @@ export const Header: React.FC = () => {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 6, scale: 0.98 }}
                   transition={{ duration: 0.15 }}
-                  className={`absolute right-0 mt-1.5 w-80 sm:w-96 rounded-2xl shadow-2xl p-4 z-40 border ${
+                  className={`absolute right-0 mt-1.5 w-80 sm:w-96 max-h-[min(520px,calc(100vh-75px))] flex flex-col rounded-2xl shadow-2xl p-4 z-40 border ${
                     isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-primary)]' : 'bg-white border-[var(--border-color)] text-gray-800'
                   }`}
                 >
-                  <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)] mb-3">
-                    <span className="text-sm font-bold tracking-tight">
-                      {language === 'vi' ? 'Thông báo' : 'Notifications'}
-                    </span>
+                  <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)] mb-2 shrink-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold tracking-tight">
+                        {language === 'vi' ? 'Thông báo' : 'Notifications'}
+                      </span>
+                      <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-[var(--accent-subtle)] text-[var(--accent-primary)] border border-[var(--accent-primary)]/20">
+                        {notifications.length}
+                      </span>
+                    </div>
                     <button 
-                      onClick={() => {
-                        setIsNotificationsOpen(false);
-                        setShowAllNotifications(false);
-                      }}
-                      className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:underline"
+                      onClick={() => setIsNotificationsOpen(false)}
+                      className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:underline cursor-pointer p-1"
                     >
                       {language === 'vi' ? 'Đóng' : 'Close'}
                     </button>
                   </div>
 
-                  <div className={`space-y-3 custom-scrollbar overflow-y-auto pr-1 ${
-                    showAllNotifications ? 'max-h-[350px]' : ''
-                  }`}>
-                    {(showAllNotifications ? notifications : notifications.slice(0, 5)).map((notif) => {
+                  <div className="flex-1 overflow-y-auto custom-scrollbar pr-1.5 space-y-2 min-h-0">
+                    {notifications.map((notif) => {
                       // Color flag map
                       let flagBg = 'bg-blue-500';
                       if (notif.flag === 'red') flagBg = 'bg-[var(--status-error)]';
@@ -390,26 +390,24 @@ export const Header: React.FC = () => {
                       else if (notif.flag === 'green') flagBg = 'bg-[var(--status-success)]';
 
                       return (
-                        <div key={notif.id} className="flex gap-2.5 p-2 rounded-xl transition-colors hover:bg-[var(--bg-hover)]">
+                        <div 
+                          key={notif.id} 
+                          className={`flex gap-2.5 p-2.5 rounded-xl border transition-all hover:border-[var(--accent-primary)]/40 ${
+                            isDark 
+                              ? 'bg-[var(--bg-app)]/60 border-[var(--border-color)] hover:bg-[var(--bg-hover)]' 
+                              : 'bg-gray-50/80 border-gray-200/80 hover:bg-gray-100/80 shadow-2xs'
+                          }`}
+                        >
                           <span className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${flagBg}`} />
-                          <div className="space-y-0.5">
-                            <h4 className="text-xs font-bold leading-snug">{notif.title}</h4>
+                          <div className="space-y-0.5 flex-1 min-w-0">
+                            <h4 className="text-xs font-bold leading-snug truncate">{notif.title}</h4>
                             <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{notif.content}</p>
-                            <span className="text-[10px] text-[var(--text-muted)] font-mono block">{notif.time}</span>
+                            <span className="text-[10px] text-[var(--text-muted)] font-mono block pt-0.5">{notif.time}</span>
                           </div>
                         </div>
                       );
                     })}
                   </div>
-
-                  {!showAllNotifications && notifications.length > 5 && (
-                    <button
-                      onClick={() => setShowAllNotifications(true)}
-                      className="w-full text-center py-2 mt-2 text-xs font-semibold text-[var(--accent-primary)] border border-dashed border-[var(--border-color)] rounded-xl hover:bg-[var(--bg-hover)] cursor-pointer"
-                    >
-                      {language === 'vi' ? 'Xem thêm' : 'View More'}
-                    </button>
-                  )}
                 </motion.div>
               </>
             )}
