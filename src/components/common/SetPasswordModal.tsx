@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Lock, Eye, EyeOff, ShieldCheck, CheckCircle2, AlertCircle, ArrowRight, X } from 'lucide-react';
+import { Lock, Eye, EyeOff, ShieldCheck, CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
 import { useApp } from '@/src/context/AppContext';
 
 export const SetPasswordModal: React.FC = () => {
@@ -17,7 +17,7 @@ export const SetPasswordModal: React.FC = () => {
   const isDark = theme === 'dark';
   const vi = language === 'vi';
 
-  // Only show if user is logged in and specifically flagged as brand-new account needing initial setup
+  // Only show if user is a brand-new Google user who MUST set their initial password
   const isOpen = Boolean(user.id && user.needsPasswordSetup);
 
   if (!isOpen) return null;
@@ -40,10 +40,6 @@ export const SetPasswordModal: React.FC = () => {
     return Object.keys(errs).length === 0;
   };
 
-  const handleDismiss = () => {
-    setUser((prev) => ({ ...prev, needsPasswordSetup: false }));
-  };
-
   const handleSetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
@@ -63,7 +59,7 @@ export const SetPasswordModal: React.FC = () => {
       setIsSuccess(true);
       addToast(
         vi ? 'Thiết lập mật khẩu thành công' : 'Password set successfully',
-        vi ? 'Bạn có thể dùng mật khẩu này để đăng nhập trực tiếp bất cứ lúc nào.' : 'You can now use this password to sign in directly anytime.',
+        vi ? 'Tài khoản của bạn đã được kích hoạt hoàn toàn.' : 'Your account has been fully activated.',
         'success'
       );
     } catch (err) {
@@ -86,25 +82,15 @@ export const SetPasswordModal: React.FC = () => {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md select-none">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md select-none">
         <motion.div
           initial={{ opacity: 0, scale: 0.92, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          className={`relative w-full max-w-[420px] border rounded-2xl shadow-2xl overflow-hidden p-5 sm:p-6 ${cardBg}`}
+          className={`relative w-full max-w-[430px] border rounded-2xl shadow-2xl overflow-hidden p-5 sm:p-6 ${cardBg}`}
         >
-          {/* Close / Skip button in top right */}
-          <button
-            type="button"
-            onClick={handleDismiss}
-            className="absolute top-4 right-4 p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-            aria-label="Close"
-          >
-            <X className="w-4 h-4" />
-          </button>
-
           {/* Header Icon */}
-          <div className="flex items-center gap-3 mb-4 pr-6">
+          <div className="flex items-center gap-3 mb-4">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
               isSuccess
                 ? isDark ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'
@@ -116,7 +102,7 @@ export const SetPasswordModal: React.FC = () => {
               <h2 className="text-base sm:text-lg font-bold leading-tight">
                 {isSuccess
                   ? (vi ? 'Thiết lập mật khẩu thành công!' : 'Password Set Successfully!')
-                  : (vi ? 'Tạo mật khẩu cho tài khoản' : 'Set Account Password')}
+                  : (vi ? 'Thiết lập mật khẩu bắt buộc' : 'Required Password Setup')}
               </h2>
               <p className={`text-[11px] sm:text-xs mt-0.5 ${textMuted}`}>
                 {user.email}
@@ -130,8 +116,8 @@ export const SetPasswordModal: React.FC = () => {
                 isDark ? 'bg-white/5 border-white/8 text-neutral-300' : 'bg-gray-50 border-gray-100 text-gray-700'
               }`}>
                 {vi
-                  ? 'Bạn vừa tạo tài khoản qua Google. Bạn có thể tạo thêm mật khẩu dự phòng (tùy chọn) để đăng nhập bằng form tay bất cứ lúc nào.'
-                  : 'You created an account via Google. You can optionally set a backup password to sign in via email & password.'}
+                  ? 'Chào mừng bạn đến với Zero AI Note! Vì đây là tài khoản mới tạo qua Google, bạn bắt buộc cần thiết lập mật khẩu bảo mật (tối thiểu 8 ký tự) để hoàn tất kích hoạt tài khoản.'
+                  : 'Welcome to Zero AI Note! As a new Google registration, you must set a secure password (min 8 chars) to complete your account setup.'}
               </p>
 
               {errors.general && (
@@ -147,7 +133,7 @@ export const SetPasswordModal: React.FC = () => {
                 {/* New Password */}
                 <div>
                   <label className="block text-xs font-semibold mb-1">
-                    {vi ? 'Mật khẩu mới' : 'New Password'}
+                    {vi ? 'Mật khẩu mới' : 'New Password'} <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
@@ -182,7 +168,7 @@ export const SetPasswordModal: React.FC = () => {
                 {/* Confirm Password */}
                 <div>
                   <label className="block text-xs font-semibold mb-1">
-                    {vi ? 'Xác nhận mật khẩu' : 'Confirm Password'}
+                    {vi ? 'Xác nhận lại mật khẩu' : 'Confirm Password'} <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
@@ -207,8 +193,8 @@ export const SetPasswordModal: React.FC = () => {
                   )}
                 </div>
 
-                {/* Action Buttons */}
-                <div className="space-y-2 pt-2">
+                {/* Submit Button */}
+                <div className="pt-2">
                   <button
                     type="submit"
                     disabled={isLoading}
@@ -220,20 +206,10 @@ export const SetPasswordModal: React.FC = () => {
                       <div className="w-4 h-4 border-[2px] border-current border-t-transparent rounded-full animate-spin" />
                     ) : (
                       <>
-                        <span>{vi ? 'Lưu mật khẩu & Tiếp tục' : 'Save Password & Continue'}</span>
+                        <span>{vi ? 'Lưu mật khẩu & Bắt đầu sử dụng' : 'Save Password & Start'}</span>
                         <ArrowRight className="w-4 h-4" />
                       </>
                     )}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleDismiss}
-                    className={`w-full py-2.5 px-4 rounded-xl font-medium text-xs flex items-center justify-center transition-all cursor-pointer ${
-                      isDark ? 'text-neutral-400 hover:text-white hover:bg-white/5' : 'text-gray-500 hover:text-black hover:bg-gray-100'
-                    }`}
-                  >
-                    <span>{vi ? 'Bỏ qua (Để sau)' : 'Skip for now'}</span>
                   </button>
                 </div>
               </form>
@@ -243,8 +219,8 @@ export const SetPasswordModal: React.FC = () => {
             <div className="space-y-4 pt-1">
               <p className={`text-xs leading-relaxed ${textMuted}`}>
                 {vi
-                  ? 'Mật khẩu của bạn đã được cập nhật an toàn vào hệ thống. Giờ đây bạn có thể bắt đầu sử dụng Zero AI Note hoặc đăng nhập bằng cả Google lẫn Email/Mật khẩu.'
-                  : 'Your password has been securely saved. You can now use Zero AI Note and sign in via either Google or Email/Password.'}
+                  ? 'Mật khẩu của bạn đã được lưu an toàn. Tài khoản của bạn đã được kích hoạt đầy đủ để sử dụng hệ thống.'
+                  : 'Your password has been securely saved. Your account is now fully active.'}
               </p>
 
               <button
