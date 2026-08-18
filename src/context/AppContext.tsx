@@ -504,14 +504,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // Map Neon DB source row → UI SourceFileItem
     const mapSourceRow = (row: any): SourceFileItem => {
+      const bytes = Number(row.size_bytes) || 0;
+      let formattedSize = '0 KB';
+      if (bytes >= 1024 * 1024 * 1024) {
+        formattedSize = `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+      } else if (bytes >= 1024 * 1024) {
+        formattedSize = `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+      } else if (bytes >= 1024) {
+        formattedSize = `${(bytes / 1024).toFixed(0)} KB`;
+      } else if (bytes > 0) {
+        formattedSize = `${bytes} B`;
+      }
       return {
         id: row.id,
         name: row.file_url ?? 'Tệp không tên',
         type: (row.type as SourceFileItem['type']) ?? 'doc',
-        size: row.size_bytes ? `${(row.size_bytes / 1024 / 1024).toFixed(1)} MB` : '—',
+        size: formattedSize,
+        sizeBytes: bytes,
+        uploadedAt: row.created_at || '',
         uploadDate: row.created_at ? new Date(row.created_at).toLocaleDateString('vi-VN') : '',
-        status: 'processed',
-        statusText: 'Đã xử lý'
+        status: (row.status as any) || 'processed',
+        statusText: row.status === 'auto-delete' ? 'Tự động xóa' : 'Đã xử lý'
       };
     };
 
@@ -735,10 +748,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const addSourceFile = async (name: string, size: string, type: 'pdf' | 'video' | 'audio' | 'image' | 'doc') => {
       try {
+        let sizeBytes = 0;
+        const match = size.match(/([\d.]+)\s*(GB|MB|KB|B)?/i);
+        if (match) {
+          const val = parseFloat(match[1]);
+          const unit = (match[2] || '').toUpperCase();
+          if (unit === 'GB') sizeBytes = Math.round(val * 1024 * 1024 * 1024);
+          else if (unit === 'MB') sizeBytes = Math.round(val * 1024 * 1024);
+          else if (unit === 'KB') sizeBytes = Math.round(val * 1024);
+          else sizeBytes = Math.round(val);
+        } else {
+          sizeBytes = parseInt(size) || 0;
+        }
+
         await createSource({
           type,
           file_name: name,
-          size_bytes: parseInt(size) || 0
+          size_bytes: sizeBytes
         });
       
         const updatedFiles = await getSources();

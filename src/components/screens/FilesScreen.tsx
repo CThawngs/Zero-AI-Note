@@ -21,7 +21,7 @@ import { useApp } from '../../context/AppContext';
 import { AttachSourceModal } from '../modals/AttachSourceModal';
 
 export const FilesScreen: React.FC = () => {
-  const { files, deleteSourceFile, openNoteDetail, notes, addToast, theme, language, t } = useApp();
+  const { files, user, upgradeToPro, deleteSourceFile, openNoteDetail, notes, addToast, theme, language, t } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [sortOption, setSortOption] = useState<'recent' | 'oldest' | 'name' | 'size'>('recent');
@@ -29,6 +29,50 @@ export const FilesScreen: React.FC = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   const isDark = theme === 'dark';
+
+  // Accurate Real-time Cloud Storage calculations
+  const totalBytesUsed = files.reduce((acc, file) => {
+    if (typeof file.sizeBytes === 'number' && file.sizeBytes > 0) return acc + file.sizeBytes;
+    const match = file.size?.match(/([\d.]+)\s*(GB|MB|KB|B)/i);
+    if (match) {
+      const val = parseFloat(match[1]);
+      const unit = match[2].toUpperCase();
+      if (unit === 'GB') return acc + val * 1024 * 1024 * 1024;
+      if (unit === 'MB') return acc + val * 1024 * 1024;
+      if (unit === 'KB') return acc + val * 1024;
+      return acc + val;
+    }
+    return acc;
+  }, 0);
+
+  // Storage Quota by Plan: Free (1 GB), Pro (10 GB), Ultra (50 GB)
+  const quotaBytes = user.plan === 'ultra'
+    ? 50 * 1024 * 1024 * 1024
+    : user.plan === 'pro'
+    ? 10 * 1024 * 1024 * 1024
+    : 1 * 1024 * 1024 * 1024;
+
+  const usedPercentage = Math.min(100, Math.max(0, (totalBytesUsed / quotaBytes) * 100));
+
+  const formatStorage = (bytes: number) => {
+    if (bytes >= 1024 * 1024 * 1024) {
+      return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+    }
+    if (bytes >= 1024 * 1024) {
+      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
+    if (bytes >= 1024) {
+      return `${(bytes / 1024).toFixed(0)} KB`;
+    }
+    if (bytes > 0) {
+      return `${bytes} B`;
+    }
+    return '0 MB';
+  };
+
+  const formatQuota = (bytes: number) => {
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+  };
 
   let filteredFiles = files.filter(f => {
     if (typeFilter !== 'all' && f.type !== typeFilter) return false;
@@ -124,19 +168,31 @@ export const FilesScreen: React.FC = () => {
               <HardDrive className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs font-bold text-[var(--text-primary)]">{t('cloudStorageUsage')}</p>
-              <p className="text-xs text-[var(--text-secondary)]">
-                {language === 'vi' ? 'Đã dùng 1.2 GB trên tổng số 5.0 GB (24%)' : 'Used 1.2 GB of 5.0 GB available (24%)'}
+              <div className="flex items-center gap-2">
+                <p className="text-xs font-bold text-[var(--text-primary)]">{t('cloudStorageUsage')}</p>
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-[var(--accent-subtle)] text-[var(--accent-primary)] border border-[var(--accent-primary)]/20">
+                  {user.plan === 'ultra' ? 'Gói Ultra (50 GB)' : user.plan === 'pro' ? 'Gói Pro (10 GB)' : 'Gói Miễn phí (1 GB)'}
+                </span>
+              </div>
+              <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                {language === 'vi' 
+                  ? `Đã dùng ${formatStorage(totalBytesUsed)} trên tổng số ${formatQuota(quotaBytes)} (${usedPercentage < 0.1 && totalBytesUsed > 0 ? '< 0.1' : usedPercentage.toFixed(1)}%) • ${files.length} tệp` 
+                  : `Used ${formatStorage(totalBytesUsed)} of ${formatQuota(quotaBytes)} (${usedPercentage < 0.1 && totalBytesUsed > 0 ? '< 0.1' : usedPercentage.toFixed(1)}%) • ${files.length} files`}
               </p>
             </div>
           </div>
-          <div className="w-full sm:w-64 space-y-1">
-            <div className="w-full h-2 rounded-full overflow-hidden bg-[var(--bg-hover)]">
-              <div className="h-full bg-[var(--accent-primary)] w-[24%]" />
+
+          <div className="w-full sm:w-64 space-y-1.5">
+            <div className="w-full h-2.5 rounded-full overflow-hidden bg-[var(--bg-hover)]">
+              <div 
+                className="h-full bg-[var(--accent-primary)] transition-all duration-500 rounded-full" 
+                style={{ width: `${totalBytesUsed > 0 ? Math.max(2, usedPercentage) : 0}%` }}
+              />
             </div>
-            <div className="flex justify-between text-xs text-[var(--text-muted)]">
+            <div className="flex justify-between text-[11px] font-mono text-[var(--text-muted)]">
               <span>0 GB</span>
-              <span>5.0 GB</span>
+              <span className="font-semibold text-[var(--text-secondary)]">{usedPercentage.toFixed(1)}%</span>
+              <span>{formatQuota(quotaBytes)}</span>
             </div>
           </div>
         </div>
