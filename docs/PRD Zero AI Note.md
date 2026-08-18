@@ -50,15 +50,14 @@ Sinh viên/giáo viên xử lý bài giảng dài, người đi họp cần ghi 
 
 | Thành phần | Lựa chọn | Lý do |
 |---|---|---|
-| Frontend + API routes | Next.js trên **Vercel** | Đã quen thuộc (ZeroInvoice đang chạy Vercel), free tier đủ dùng giai đoạn đầu |
-| Database (lưu trữ chính) | **Neon** (Postgres serverless) | Đổi từ Supabase vì free tier Supabase giới hạn 2 project hoạt động cùng lúc — dự án thứ 3 của Zero, chưa có doanh thu để nâng cấp trả phí. Neon free tier cho tới 100 project, không giới hạn kiểu này. **Neon là nơi lưu trữ CHÍNH** (text/base64/binary trong DB) |
-| Backup storage (Presigned URL upload) | **Cloudflare R2** (S3-compatible) | Lưu trữ file media (Video/Audio/PDF/Docx/ppt...) khi tải lên, dùng Presigned URL — đa vùng, ổn định production, free tier 10GB. Do cùng chuẩn S3 nên chuyển đổi sau này nhẹ nhàng |
+| Frontend + API routes | Next.js trên **Vercel** | Đã quen thuộc (ZeroInvoice đang chạy Vercel), free tier đủ dùng giai đoạn đầu. Lưu ý giới hạn Vercel: **Request Payload tối đa 4.5MB**, **Serverless function timeout 10s–60s** — mọi upload file lớn và xử lý nặng KHÔNG được đi qua request đồng bộ này (xem mục 4.1 Presigned URL) |
+| Database (lưu trữ chính) | **Neon** (Postgres serverless) | Đổi từ Supabase vì free tier Supabase giới hạn 2 project hoạt động cùng lúc. Neon free tier cho tới 100 project. **Neon là nơi lưu trữ CHÍNH** cho Text, Metadata, JSON, Profile, Notes (dữ liệu cấu trúc) |
+| Media file storage (Presigned URL upload) | **Cloudflare R2** (S3-compatible) | Lưu trữ file media (Video/Audio/PDF/Docx/ppt...) khi tải lên qua **Presigned URL** — trình duyệt đẩy thẳng lên R2, không đi qua server Next.js (tránh giới hạn 4.5MB Vercel). Đa vùng, production ổn định, free tier 10GB |
 | ORM | **Drizzle ORM** (duy nhất) | Không lẫn Prisma/raw Supabase; driver Neon serverless (`@neondatabase/serverless`) |
 | Auth | **JWT tự phát hành** (`jose` + `bcryptjs`), session cookie HttpOnly | Đã thay thế Neon Auth trong quá trình triển khai — 1 cơ chế ký token duy nhất (`lib/auth/session.ts`), fail-closed khi thiếu `ZERO_JWT_SECRET`. Hỗ trợ email/password + Google OAuth (Google Identity Services popup) |
-| Job nền (xử lý file dài) | **Inngest hoặc Trigger.dev** | Chuyên cho chuỗi job AI dài nhiều bước, tách biệt hoàn toàn khỏi nơi hosting app chính |
-| Ngôn ngữ | JS/TypeScript, **không dùng Rust** | Antigravity/Hermes định hướng Next.js; phần việc chính là điều phối I/O (gọi API AI) chứ không phải tính toán CPU nặng |
-| AI xử lý | Cloud API only — **Gemini API key dùng chung của hệ thống** (mặc định) + tính năng **"Tự kết nối AI / Nhà cung cấp AI"** (dùng API Key riêng qua chuẩn OpenAI-compatible) | Đã bỏ hướng on-device/local để ưu tiên tốc độ triển khai. Cả 3 gói dùng chung 1 Gemini key; khi key quá tải/nghẽn quota → user chờ reset hoặc chuyển sang Tự kết nối AI |
-| Billing | **ZeroInvoice** (zeroinvoice-silk.vercel.app, sản phẩm khác của Zero) | Webhook + fail-closed |
+| Job nền (xử lý file dài) | **Inngest hoặc Trigger.dev** | Chuyên cho chuỗi job AI dài nhiều bước, tách biệt hoàn toàn khỏi nơi hosting app chính. **Giới hạn song song**: key Gemini dùng chung chạy tối đa **1–2 job AI đồng thời**, các job còn lại xếp hàng chờ (Pending queue) để tránh vượt quota (15 RPM / 1M TPM) |
+| AI xử lý | Cloud API only — **Gemini API key dùng chung của hệ thống** (mặc định) + tính năng **"Tự kết nối AI / Nhà cung cấp AI"** (dùng API Key riêng qua chuẩn OpenAI-compatible) | Đã bỏ hướng on-device/local. Cả 3 gói dùng chung 1 Gemini key; khi key quá tải/nghẽn quota (`429 Resource Exhausted`) → job xếp hàng chờ hoặc user chuyển sang Tự kết nối AI. **Chống lộ key**: biến môi trường là `GEMINI_API_KEY` (KHÔNG có tiền tố `NEXT_PUBLIC_`), 100% cuộc gọi AI chạy qua API Route server-side hoặc worker — client không bao giờ gọi Google AI trực tiếp |
+| Billing | **Zero Tracking** (zeroinvoice-silk.vercel.app, tên mới của ZeroInvoice) | Tạo bill qua `POST /api/bills` (amount locked), render QR client-side `qrcode.react`, kiểm tra trạng thái qua polling + webhook `bill.paid`. API key đọc từ env (`ZERO_TRACKING_API_KEY`/`ZEROINVOICE_API_KEY`), không lộ client-side |
 | Nguồn UI ban đầu | Export từ Google AI Studio (React + TypeScript + Tailwind, đã component hoá) | Xem chi tiết luồng & vai trò ở mục 7.1 — chỉ lấy phần giao diện, không suy ra kiến trúc backend từ code này |
 
 **Đã cân nhắc và loại bỏ**:
@@ -79,11 +78,17 @@ User gửi file/link/text + (tùy chọn) chỉ định phương pháp ghi chú
     ngược lại STT qua chunk + map-reduce cho file dài)
   → Giai đoạn 2: Cấu trúc theo phương pháp đã chọn (dùng transcript làm
     nguồn, không xử lý lại audio/video thô — tăng độ chính xác, cho phép audit)
-  → Giai đoạn 3: Sinh content_structured (JSON chuẩn) — nguồn duy nhất để
+  → Giai đoạn 3: Sinh content_structured (Block-based JSON chuẩn) — nguồn duy nhất để
     render Preview (HTML) và mọi định dạng tải (MD/DOCX/PDF/HTML)
-  → Thông báo user khi xong (email/in-app), stream kết quả theo từng
-    chunk nếu có thể
+  → Trình duyệt Polling trạng thái mỗi 2–3 giây tới `/api/notes/status/:jobId`
+    (KHÔNG stream token qua SSE/WebSocket — đã chọn polling để gọn, không cần thêm
+    service trung gian như Pusher/Ably; không phụ thuộc Supabase Realtime)
+  → Frontend hiển thị Stepper 3 bước: [1] Trích Transcript → [2] Phân tích cấu trúc
+    → [3] Hoàn thiện Note. 100% → load toàn bộ content_structured vào Artifact Panel
+  → Thông báo user khi xong (email/in-app)
 ```
+
+**Giải thích streaming**: PRD trước ghi "stream kết quả theo từng chunk nếu có thể" — điều này mâu thuẫn với job nền trên Neon thuần (không có Supabase Realtime/Pusher/Ably). Đã **đơn giản hóa thành Polling** 2–3s + Stepper, đủ tốt cho vibe coding và UX, tránh dựng hạ tầng SSE/WebSocket phức tạp.
 
 **Nguyên tắc bắt buộc**: Preview và file tải về đều sinh ra từ cùng 1 `content_structured`, không parse ngược từ HTML — tránh các định dạng lệch nhau. DOCX/PDF không tự render trong trình duyệt, chỉ sinh file thật tại thời điểm tải.
 
@@ -130,9 +135,16 @@ Dùng cho **Hermes `browser_exec`** để điều khiển Chrome thật (đọc 
 - Nhận link website (reader-mode) và YouTube (ưu tiên transcript có sẵn, fallback tải+STT tái dùng pipeline chính)
 - Tự động phân loại & gộp nhiều file rời rạc thành 1 bộ note liền mạch (có xác nhận lại từ user, AI không tự quyết định gộp mà không hỏi)
 
+**Ràng buộc hạ tầng Vercel Serverless — bắt buộc tuân thủ**:
+- **Giới hạn Request Payload 4.5MB**: File lớn >4.5MB **KHÔNG** gửi qua form/sheet thông thường tới API Route Next.js — Vercel sẽ sập.
+- **Upload qua Presigned URL**: Trình duyệt client gọi API Route `/api/upload/presign` (chỉ cần tên file + loại + size) → nhận URL Presigned từ R2 → **đẩy thẳng file lên Cloudflare R2** (không qua server Next.js). Server chỉ lưu `file_url` (R2 key) trong table `sources`.
+- **Bóc tách Audio client-side (cho file Video tải lên trực tiếp)**: Trình duyệt dùng **Web Audio API / FFmpeg.wasm** để tách luồng âm thanh ngay tại máy user trước khi đẩy lên R2 — file audio kết quả (~30–50MB thay vì video 2–10GB) tiết kiệm băng thông + token Gemini. Nếu trình duyệt không hỗ trợ → fallback tải full video lên R2 + log cảnh báo để Hệ thống xử lý tách bên worker (nhưng nên khuyến khích client-side trước).
+- **Link YouTube**: Backend chỉ tải audio stream (format m4a/opus ~20MB) hoặc ưu tiên cào phụ đề có sẵn (Captions) — **không tải video 4K full**.
+
 ### 4.2 Điều khiển output
 - Chọn phương pháp ghi chú qua ngôn ngữ tự nhiên trong prompt: Cornell, Outline, Mindmap dạng text, Q&A, Flashcard, tóm tắt điều hành, tóm tắt nhanh, hoặc custom template
 - **Chế độ "Auto" (mặc định)**: khi user không chỉ định phương pháp cụ thể (không chọn pill, không nhắc trong prompt), AI tự phân tích nội dung nguồn và chọn phương pháp phù hợp nhất (ví dụ: bài giảng có cấu trúc rõ → Cornell; tài liệu nghiên cứu dài → tóm tắt điều hành) — **không cần dừng lại hỏi user** trong phần lớn trường hợp, hiển thị rõ "AI đã chọn: [phương pháp]" trong bước xử lý để user biết lý do. Chỉ hỏi lại trong chat khi nội dung thật sự mơ hồ (kể cả AI cũng không đủ tin cậy để tự quyết) — đây là fallback hiếm gặp, không phải hành vi mặc định.
+  - **Chống lách gói (Tier Bypass) — bắt buộc**: System Prompt của bộ điều hướng (Router Prompt) phải quy định: *"Chế độ Auto chỉ được phép tự động chọn trong phạm vi các template mà gói tài khoản hiện tại của user sở hữu. User Free chỉ Auto trong 3 template Free (Cornell/Outline/Tóm tắt tổng quan); User Pro Auto trong 9 template Free+Pro; User Ultra Auto trong toàn bộ 17 template."* Nếu nội dung phù hợp template trả phí mà user chưa sở hữu → Auto chọn template Free gần nhất + gợi ý nâng cấp, **không tự ý mở khoá trả phí**.
 - Pill chọn nhanh trong composer: "Auto" là pill DUY NHẤT được pre-select mặc định; các pill phương pháp cụ thể (Cornell/Outline/Q&A/Flashcard/Tóm tắt nhanh) không pre-select — user chọn thủ công bất kỳ lúc nào sẽ ghi đè Auto
 - Custom template: user mô tả phong cách mong muốn bằng prompt tự nhiên, đặt tên, lưu lại tái sử dụng (bảng `custom_note_templates`) — có giới hạn theo gói (xem mục 5)
 - Tùy chỉnh độ sâu (nhanh/chi tiết/học thuật) qua 1 câu trong prompt
@@ -166,6 +178,16 @@ Dùng cho **Hermes `browser_exec`** để điều khiển Chrome thật (đọc 
 
 **Đặc tả hộp thoại xuất file (Ultra)**:
 - Giao diện xuất hiện khi bấm nút tải: 4 ô Checkbox độc lập (`[ ] PDF`, `[ ] DOCX`, `[ ] Markdown`, `[ ] Interactive HTML`), không bắt buộc tick hết
+
+**Chuẩn hóa hạ tầng xuất file — Block-based `content_structured` (chống Scope Creep)**:
+- Để tránh 17 template × 3 định dạng = 51 bộ chuyển đổi, mọi template phải trả về `content_structured` theo **Block-based JSON chuẩn** (tương tự Notion Block): chỉ gồm các khối cơ bản `heading`, `paragraph`, `cue_box`, `table`, `card_grid`, `callout`, `quote`, `mindmap`.
+- **Export Engine DUY NHẤT** đọc mảng Block này để render ra DOCX/PDF/HTML — không viết hàm render riêng cho từng template. Template chỉ định: thứ tự + loại + nội dung Block; engine lo phần hiển thị.
+- Bảo đảm 1 `content_structured` dùng chung cho Preview + mọi định dạng tải (đã ghi ở 3.2).
+
+**Cơ chế sinh Interactive Single-file HTML (gói Ultra) — chống AI sinh lỗi code**:
+- Backend chuẩn bị sẵn **HTML Template tĩnh mẫu** chứa CSS (Tailwind nhúng inline) + thư viện vẽ biểu đồ nhẹ không phụ thuộc CDN (SVG/Canvas thuần hoặc chart nhúng inline), hoạt động offline 100%.
+- Khi xuất, **chỉ inject dữ liệu** `content_structured` dưới dạng `<script>window.__NOTE_DATA__ = {...}</script>` vào file mẫu — KHÔNG để AI tự do viết JavaScript/Canvas từ đầu (dễ sinh lỗi syntax/vỡ layout).
+- File đầu ra nhẹ, an toàn offline, không cần mạng để xem.
 - Ví dụ: tick 2 ô PDF + DOCX → bấm **Tải xuống** → tải song song 2 file, hoặc chọn **Đóng gói ZIP** → 1 file `.zip` chứa cả 2
 - Bố cục DOCX/PDF đúng chuẩn phương pháp (ví dụ Cornell: bảng 2 cột cue/notes + hàng tóm tắt) — không thể làm trong markdown chat thường
 - Preview áp dụng cho mọi định dạng render được (không chỉ MD/HTML), hỗ trợ bảng biểu/biểu đồ trực tiếp trong nội dung khi dữ liệu nguồn phù hợp
@@ -273,6 +295,9 @@ Dùng cho **Hermes `browser_exec`** để điều khiển Chrome thật (đọc 
 -- Hồ sơ user
 create table profiles (
   id uuid primary key,
+  email text unique not null,          -- login bằng mật khẩu hoặc Google
+  password_hash text,                  -- login bằng mật khẩu (bcryptjs)
+  google_id text unique,               -- login bằng Google OAuth (GIS popup), NULL nếu đăng ký bằng email/password
   display_name text,
   role text default 'user' check (role in ('user','admin')),
   plan text default 'free' check (plan in ('free','pro','ultra')),
@@ -314,6 +339,21 @@ create table custom_note_templates (
   user_id uuid references profiles(id),
   name text not null,
   description_prompt text not null,
+  created_at timestamptz default now()
+);
+
+-- Hóa đơn / đăng ký gói trả phí (Zero Tracking VietQR — lưu vết giao dịch tiền thật)
+create table subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id) not null,
+  bill_id text unique not null,               -- ID đơn hàng từ Zero Tracking
+  plan text not null check (plan in ('pro','ultra')),
+  amount numeric not null,                    -- Số tiền thực trả (99000 / 199000)
+  status text default 'pending' check (status in ('pending','paid','expired','canceled')),
+  qr_data text,                               -- Chuỗi EMVCo payload (render client-side)
+  coupon_code text,
+  paid_at timestamptz,
+  renews_at timestamptz,                      -- Ngày hết hạn gói (now() + 30 days)
   created_at timestamptz default now()
 );
 
@@ -497,7 +537,15 @@ Tiêu chí chấm điểm không đòi hỏi billing thật/"Tự kết nối AI
 - ✅ **Auth**: email/password + Google OAuth (GIS popup)
 - Storage:
   - **Neon** — NetworkDB chính để lưu trữ Text, Metadata, JSON, Profile, Notes (cấu trúc dữ liệu).
-  - **Cloudflare R2** — Upload file media (Video/Audio/PDF/Docx/ppt) qua Presigned URL, không backup fallback. |
+  - **Cloudflare R2** — Upload file media (Video/Audio/PDF/Docx/ppt) qua Presigned URL, không backup fallback.
+- ✅ **Upload file lớn**: Presigned URL (client đẩy thẳng lên R2, tránh giới hạn 4.5MB Vercel); bóc tách audio client-side (Web Audio API/FFmpeg.wasm); YouTube chỉ lấy audio stream/captions
+- ✅ **Job nền + Polling**: không stream token qua SSE/WebSocket — trình duyệt Polling `/api/notes/status/:jobId` mỗi 2–3s + Stepper 3 bước
+- ✅ **Giới hạn AI song song**: key Gemini dùng chung chạy tối đa 1–2 job AI đồng thời (Inngest queue), user Tự kết nối AI dùng luồng riêng chạy ngay
+- ✅ **Chống lộ Gemini key**: env `GEMINI_API_KEY` (KHÔNG `NEXT_PUBLIC_`), 100% gọi AI qua server-side route/worker, client không gọi Google AI trực tiếp
+- ✅ **Auto Template gating**: chế độ Auto chỉ chọn template trong phạm vi gói user sở hữu (Free→3, Pro→9, Ultra→17)
+- ✅ **Block-based `content_structured`**: 17 template trả về Block JSON chuẩn (heading/paragraph/cue_box/table/card_grid/callout...), Export Engine DUY NHẤT render DOCX/PDF/HTML — tránh 17×3=51 converter
+- ✅ **Interactive HTML Ultra**: dùng HTML Template tĩnh mẫu + inject `window.__NOTE_DATA__`, KHÔNG để AI tự viết JS từ đầu
+- ✅ **Subscription schema**: bảng `subscriptions` (bill_id, plan, amount, status, qr_data, coupon_code, paid_at, renews_at) — xem mục 6
 
 **Còn cần xác nhận**:
 - Notebook chia sẻ: chỉ xem hay đồng biên tập
@@ -543,7 +591,15 @@ Bước 4 — Tuân thủ nghiêm các nguyên tắc kỹ thuật đã chốt tr
 - Giới hạn note/custom template kiểm tra server-side trước khi insert
   (Free <20/<5, Pro <50/<25, Ultra ∞/∞)
 - Không dùng Google Cloud Run, không dùng Rust cho phần lõi
-- Neon database là lưu trữ CHÍNH cho Text, Metadata, JSON, Profile, Notes; Cloudflare R2 là nơi lưu file media (Video/Audio/PDF/Docx/ppt...) thông qua Presigned URL. |
+- Neon database là lưu trữ CHÍNH cho Text, Metadata, JSON, Profile, Notes; Cloudflare R2 là nơi lưu file media (Video/Audio/PDF/Docx/ppt...) thông qua Presigned URL.
+- ✅ **Upload file lớn**: Presigned URL (client đẩy thẳng R2, tránh 4.5MB Vercel); bóc tách audio client-side (Web Audio API/FFmpeg.wasm); YouTube chỉ audio stream/captions
+- ✅ **Job nền + Polling**: KHÔNG stream SSE/WebSocket — Polling `/api/notes/status/:jobId` 2–3s + Stepper 3 bước
+- ✅ **Gemini key concurrency**: key dùng chung max 1–2 job AI song song (Inngest queue), user Tự kết nối AI chạy luồng riêng
+- ✅ **Chống lộ Gemini key**: env `GEMINI_API_KEY` (KHÔNG `NEXT_PUBLIC_`), 100% gọi AI qua server route/worker
+- ✅ **Auto Template gating**: Auto chỉ chọn template trong phạm vi gói user (Free→3, Pro→9, Ultra→17)
+- ✅ **Block-based content_structured**: Block JSON chuẩn (heading/paragraph/cue_box/table/card_grid/callout...), Export Engine DUY NHẤT render DOCX/PDF/HTML
+- ✅ **Interactive HTML Ultra**: HTML Template tĩnh mẫu + inject `window.__NOTE_DATA__`, KHÔNG AI tự viết JS
+- ✅ **Subscription schema**: bảng `subscriptions` (bill_id, plan, amount, status, qr_data, coupon_code, paid_at, renews_at)
 
 Bắt đầu từ việc audit + đóng gói code AI Studio (Bước 2), sau đó mới
 sang Tuần 1-2: nối schema Neon (mục 6) + JWT auth thật vào nền UI đã có.
@@ -555,6 +611,7 @@ sang Tuần 1-2: nối schema Neon (mục 6) + JWT auth thật vào nền UI đ�
 
 | Ngày | Nội dung |
 |---|---|
+| 2026-08-18 | **Bịt 5 điểm nghẽn kỹ thuật + 5 điểm cấn ngầm (Edge Cases & Architectural Traps) trước khi code**: (1) Presigned URL upload + bóc tách audio client-side (Web Audio API/FFmpeg.wasm) + YouTube chỉ audio/captions — tránh giới hạn 4.5MB Vercel; (2) giới hạn AI job song song 1–2 trên key dùng chung (Inngest queue) tránh `429 Resource Exhausted`; (3) bổ sung auth fields (email/password_hash/google_id) vào `profiles` + thêm bảng `subscriptions` (bill_id, plan, amount, status, qr_data, paid_at, renews_at); (4) Block-based `content_structured` chuẩn (heading/paragraph/cue_box/table/card_grid/callout) + Export Engine DUY NHẤT — tránh 17×3=51 converter; (5) Interactive Single-file HTML dùng template tĩnh mẫu + inject `window.__NOTE_DATA__` — không AI tự viết JS. Kèm: Auto Template gating theo gói (chống tier bypass), Polling 2–3s thay vì stream SSE/WebSocket, chống lộ Gemini key (`GEMINI_API_KEY` không `NEXT_PUBLIC_`), luồng thanh toán VietQR production chi tiết (create-bill → render QR qrcode.react → countdown 30 phút → polling 3s + webhook HMAC idempotent). |
 | 2026-08-18 | **Đồng bộ Zero Tracking mới** (ZeroInvoice đổi tên): QR thanh toán render client-side bằng `qrcode.react` (EMVCo VietQR payload từ `qr_data`, amount/addInfo locked, bỏ `img.vietqr.io`); sửa `checkZeroInvoiceBillStatus` parse nested `data.bill`; webhook hỗ trợ event `bill.paid` + `data` payload; bỏ hardcode Zero Tracking API key (đọc từ env, fail-closed), webhook fail-open khi chưa set secret. Thêm mục 3.4 hướng dẫn Chrome Remote Debugging cho Hermes `browser_exec`. |
 | 2026-08-18 | **Chuẩn hóa bảng giá 3 gói Free/Pro/Ultra; phân cấp Preview (Raw/Markdown/Static HTML/Interactive HTML); phân cấp Xuất file kèm Checkbox Multi-Export cho Ultra; mở rộng hệ thống 17 templates học thuật; bỏ tính năng TTS và Auto-Sync để tối ưu hóa vibe coding; đổi tên BYOK thành Tự kết nối AI.** |
 | 2026-08-18 | **Hợp nhất 2 file PRD** (`PRD-Zero-AI-Note.md` + `PRD_Zero_AI_Note.md`) thành 1 file duy nhất. Cập nhật theo hiện trạng triển khai: Neon database chính + Cloudflare R2 backup, JWT auth thay Neon Auth, 3 gói giá chốt con số cụ thể (3h/50h/200h, file 30'/2h/4h — sau đó được thay bằng "không giới hạn thời lượng"), đơn vị tiền tệ theo ngôn ngữ (đ/$) |
