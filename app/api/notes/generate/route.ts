@@ -47,8 +47,10 @@ export async function POST(request: NextRequest) {
 
     // Check user note storage limit if logged in
     let userId: string | null = null;
+    let userPlan: 'free' | 'pro' | 'ultra' = 'free';
     if (session) {
       userId = session.sub;
+      userPlan = (session.plan || 'free') as 'free' | 'pro' | 'ultra';
       try {
         const limitCheck = await checkNoteLimit(session.sub);
         if (!limitCheck.allowed) {
@@ -62,6 +64,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Chống lách gói (Tier Bypass) — PRD 4.2: chế độ Auto chỉ được phép
+    // tự chọn trong phạm vi template thuộc gói user sở hữu.
+    // Free → 3 template cơ bản; Pro → 9; Ultra → 17 (toàn bộ).
+    // Dispatcher nhận userPlan + method='auto' và tự route về Free-only pool.
+    // (Không đổi method ở đây vì NoteMethod không có variant 'auto-free'.)
+
     // Call Universal Dispatcher (System Gemini Pool or BYOK Provider)
     const generated = await dispatchStructuredNote({
       inputText,
@@ -71,6 +79,7 @@ export async function POST(request: NextRequest) {
       providerId,
       endpointUrl,
       apiKey,
+      userPlan,
     });
 
     const noteId = uuidv4();

@@ -9,6 +9,7 @@ export interface AIModelRequest {
   providerId?: string;
   endpointUrl?: string;
   apiKey?: string;
+  userPlan?: 'free' | 'pro' | 'ultra';
 }
 
 const methodGuidance: Record<NoteMethod, string> = {
@@ -40,14 +41,22 @@ const methodGuidance: Record<NoteMethod, string> = {
  * Routes requests through System Gemini 2.0 Flash or BYOK Providers (OpenAI, Claude, Groq, OpenRouter, NVIDIA, Custom)
  */
 export async function dispatchStructuredNote(params: AIModelRequest): Promise<StructuredNoteOutput> {
-  const { providerId, endpointUrl, apiKey, model, inputText, method = 'auto', language = 'vi' } = params;
+  const { providerId, endpointUrl, apiKey, model, inputText, method = 'auto', language = 'vi', userPlan } = params;
+
+  // Chống lách gói (Tier Bypass) — PRD 4.2:
+  // 'auto' cho user Free được route về pool 3 template Free (cornell/outline/summary).
+  // Pro/Ultra giữ 'auto' đầy đủ. User không đăng nhập xem như Free.
+  const resolvedMethod: NoteMethod =
+    method === 'auto' && (userPlan || 'free') === 'free'
+      ? freeTemplates[Math.floor(Math.random() * freeTemplates.length)]
+      : method;
 
   // 1. If no custom endpoint provided, use built-in Google Gemini Free Tier Pool
   if (!endpointUrl || providerId === 'google-system' || providerId === 'system') {
     try {
       return await generateGeminiNote({
         inputText,
-        method,
+        method: resolvedMethod,
         language,
         model: model || 'gemini-2.5-flash',
       });
@@ -66,7 +75,7 @@ export async function dispatchStructuredNote(params: AIModelRequest): Promise<St
   if (endpointUrl.includes('googleapis.com') || providerId === 'google') {
     return await generateGeminiNote({
       inputText,
-      method,
+      method: resolvedMethod,
       language,
       model: model || 'gemini-2.5-flash',
     });
@@ -74,12 +83,15 @@ export async function dispatchStructuredNote(params: AIModelRequest): Promise<St
 
   // 3. BYOK Anthropic Claude
   if (endpointUrl.includes('anthropic.com') || providerId === 'anthropic') {
-    return await generateWithAnthropic(params);
+    return await generateWithAnthropic({ ...params, method: resolvedMethod });
   }
 
   // 4. BYOK OpenAI / Groq / OpenRouter / NVIDIA / Custom OpenAI-Compatible
-  return await generateWithOpenAICompatible(params);
+  return await generateWithOpenAICompatible({ ...params, method: resolvedMethod });
 }
+
+// Pool 3 template Free (PRD 4.2): khi user Free dùng Auto, chỉ cho random trong đây.
+const freeTemplates: NoteMethod[] = ['cornell', 'outline', 'summary'];
 
 async function generateWithOpenAICompatible(params: AIModelRequest): Promise<StructuredNoteOutput> {
   const { endpointUrl, apiKey, model = 'gpt-4o-mini', inputText, method = 'auto', language = 'vi' } = params;
