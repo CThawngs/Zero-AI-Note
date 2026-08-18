@@ -89,6 +89,22 @@ export async function deleteNotePermanently(noteId: string): Promise<void> {
   }
 }
 
+export async function deleteAllArchivedNotes(): Promise<void> {
+  const res = await fetch('/api/notes?all=1', { method: 'DELETE' });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to empty trash');
+  }
+}
+
+export async function purgeExpiredNotes(): Promise<void> {
+  const res = await fetch('/api/notes?purgeExpired=1', { method: 'DELETE' });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to purge expired notes');
+  }
+}
+
 // ============================================================
 // Sources
 // ============================================================

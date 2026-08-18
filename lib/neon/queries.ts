@@ -20,12 +20,31 @@ export interface NoteRow {
   created_at: string;
 }
 
+export async function purgeExpiredArchivedNotes(userId?: string): Promise<void> {
+  try {
+    const sql = getSql();
+    if (userId) {
+      await sql`delete from notes where user_id = ${userId} and deleted_at is not null and deleted_at < now() - interval '30 days'`;
+    } else {
+      await sql`delete from notes where deleted_at is not null and deleted_at < now() - interval '30 days'`;
+    }
+  } catch (e) {
+    console.error('purgeExpiredArchivedNotes error:', e);
+  }
+}
+
+export async function deleteAllArchivedNotes(userId: string): Promise<void> {
+  const sql = getSql();
+  await sql`delete from notes where user_id = ${userId} and deleted_at is not null`;
+}
+
 export async function getNotes(userId: string): Promise<NoteRow[]> {
   noStore();
   const sql = getSql();
+  await purgeExpiredArchivedNotes(userId).catch(() => {});
   const rows = await sql`
     select * from notes
-    where user_id = ${userId}
+    where user_id = ${userId} and deleted_at is null
     order by created_at desc
   `;
   return rows as unknown as NoteRow[];
@@ -34,10 +53,11 @@ export async function getNotes(userId: string): Promise<NoteRow[]> {
 export async function getArchivedNotes(userId: string): Promise<NoteRow[]> {
   noStore();
   const sql = getSql();
+  await purgeExpiredArchivedNotes(userId).catch(() => {});
   const rows = await sql`
     select * from notes
-    where user_id = ${userId}
-    order by created_at desc
+    where user_id = ${userId} and deleted_at is not null
+    order by deleted_at desc
   `;
   return rows as unknown as NoteRow[];
 }

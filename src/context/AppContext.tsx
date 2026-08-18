@@ -25,6 +25,8 @@ import {
   archiveNote as archiveNoteQuery,
   restoreNote as restoreNoteQuery,
   deleteNotePermanently as deleteNotePermanentlyQuery,
+  deleteAllArchivedNotes as deleteAllArchivedNotesQuery,
+  purgeExpiredNotes as purgeExpiredNotesQuery,
   getSources,
   createSource,
   deleteSource as deleteSourceQuery,
@@ -100,6 +102,7 @@ interface AppContextType {
   archiveNote: (noteId: string) => void;
   restoreNote: (noteId: string) => void;
   deleteNotePermanently: (noteId: string) => void;
+  emptyTrash: () => Promise<void>;
   renameNote: (noteId: string, newTitle: string) => void;
   
   // Library View States
@@ -472,6 +475,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Map Neon DB note row → UI NoteItem
     const mapNoteRow = (row: any): NoteItem => {
       const structured = row.content_structured ?? {};
+      const deletedAt = row.deleted_at ? new Date(row.deleted_at).getTime() : null;
+      let archiveDaysLeft = 30;
+      if (deletedAt) {
+        const daysPassed = (Date.now() - deletedAt) / (1000 * 60 * 60 * 24);
+        archiveDaysLeft = Math.max(0, Math.ceil(30 - daysPassed));
+      }
       return {
         id: row.id,
         title: row.title ?? 'Chưa có tiêu đề',
@@ -483,6 +492,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         sources: [],
         keywords: [],
         coreQuestions: [],
+        archiveDaysLeft,
         content: {
           overview: structured.overview ?? '',
           sections: structured.sections ?? [],
@@ -645,6 +655,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (err) {
       addToast(
         language === 'vi' ? 'Lỗi xoá ghi chú' : 'Delete failed',
+        err instanceof Error ? err.message : 'Unknown error',
+        'error'
+      );
+    }
+  };
+
+  const emptyTrash = async () => {
+    try {
+      await deleteAllArchivedNotesQuery();
+      setArchivedNotes([]);
+      addToast(
+        language === 'vi' ? 'Đã làm sạch thùng rác' : 'Trash Emptied', 
+        language === 'vi' ? 'Toàn bộ ghi chú trong mục lưu trữ đã được xóa vĩnh viễn.' : 'All archived notes have been permanently deleted.',
+        'info'
+      );
+    } catch (err) {
+      addToast(
+        language === 'vi' ? 'Lỗi dọn thùng rác' : 'Empty trash failed',
         err instanceof Error ? err.message : 'Unknown error',
         'error'
       );
@@ -1171,6 +1199,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       archiveNote,
       restoreNote,
       deleteNotePermanently,
+      emptyTrash,
       renameNote,
       libraryFilter,
       setLibraryFilter,

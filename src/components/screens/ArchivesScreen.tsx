@@ -17,12 +17,13 @@ import { NoteItem } from '../../types';
 import { Modal } from '../common/Modal';
 
 export const ArchivesScreen: React.FC = () => {
-  const { archivedNotes, restoreNote, deleteNotePermanently, theme, language, t } = useApp();
+  const { archivedNotes, restoreNote, deleteNotePermanently, emptyTrash, theme, language, t } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOption, setFilterOption] = useState<'all' | 'urgent' | 'safe'>('all');
   const [sortOption, setSortOption] = useState<'recent' | 'oldest' | 'name' | 'expiring'>('recent');
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
   const [confirmDeleteNote, setConfirmDeleteNote] = useState<NoteItem | null>(null);
+  const [isConfirmEmptyTrashOpen, setIsConfirmEmptyTrashOpen] = useState(false);
 
   const isDark = theme === 'dark';
 
@@ -75,10 +76,20 @@ export const ArchivesScreen: React.FC = () => {
             </h2>
             <p className="text-xs mt-0.5 text-[var(--text-secondary)]">
               {language === 'vi' 
-                ? 'Danh sách ghi chú tạm thời bị loại bỏ hoặc hoàn thành' 
-                : 'Archived notes and trash bin pending deletion'}
+                ? 'Danh sách ghi chú tạm thời lưu trữ — Tự động xóa vĩnh viễn sau 30 ngày để tối ưu dữ liệu' 
+                : 'Archived notes pending deletion — Auto-purged after 30 days to free up database storage'}
             </p>
           </div>
+
+          <button
+            id="btn-empty-trash-header"
+            disabled={archivedNotes.length === 0}
+            onClick={() => setIsConfirmEmptyTrashOpen(true)}
+            className="self-start sm:self-auto flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border border-red-500/30 text-red-500 hover:bg-red-500/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer active:scale-95"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>{language === 'vi' ? 'Dọn sạch thùng rác' : 'Empty Trash'} ({archivedNotes.length})</span>
+          </button>
         </div>
 
         {/* Search, Filter & Sort Controls */}
@@ -286,7 +297,7 @@ export const ArchivesScreen: React.FC = () => {
         )}
       </div>
 
-      {/* Confirmation Modal */}
+      {/* Confirmation Modal - Single Note Delete */}
       {confirmDeleteNote && (
         <Modal
           isOpen={true}
@@ -301,13 +312,13 @@ export const ArchivesScreen: React.FC = () => {
               <ShieldAlert className="w-5 h-5 shrink-0 text-[var(--status-error)]" />
               <span>
                 {language === 'vi'
-                  ? 'Hành động này không thể hoàn tác. Ghi chú sẽ bị gỡ bỏ hoàn toàn khỏi hệ thống lưu trữ đám mây.'
-                  : 'This cannot be undone. All extracted insights and raw notes will be permanently erased.'}
+                  ? 'Hành động này không thể hoàn tác. Ghi chú sẽ bị gỡ bỏ vĩnh viễn khỏi database.'
+                  : 'This cannot be undone. Note will be permanently removed from database.'}
               </span>
             </div>
 
             <p className={`text-xs ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
-              {language === 'vi' ? 'Bạn có chắc chắn muốn xoá ghi chú ' : 'Are you sure you want to delete '}
+              {language === 'vi' ? 'Bạn có chắc chắn muốn xoá vĩnh viễn ghi chú ' : 'Are you sure you want to permanently delete '}
               <strong className="text-[var(--text-primary)]">"{confirmDeleteNote.title}"</strong>?
             </p>
 
@@ -330,6 +341,57 @@ export const ArchivesScreen: React.FC = () => {
                 className="px-4 py-2 rounded-xl bg-[var(--status-error)] hover:bg-[var(--status-error)] text-white text-xs font-semibold cursor-pointer shadow-md shadow-[var(--status-error)]/20 active:scale-95"
               >
                 {t('deletePermanently')}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Confirmation Modal - Empty Trash (All Notes) */}
+      {isConfirmEmptyTrashOpen && (
+        <Modal
+          isOpen={true}
+          onClose={() => setIsConfirmEmptyTrashOpen(false)}
+          title={language === 'vi' ? 'Xác nhận dọn sạch thùng rác' : 'Confirm Empty Trash'}
+          maxWidth="max-w-md"
+        >
+          <div className="space-y-4">
+            <div className={`flex items-center gap-3 p-3 rounded-xl border text-xs ${
+              isDark ? 'bg-[var(--status-error)]/30 border-[var(--status-error)]/40 text-[var(--status-error)]' : 'bg-[var(--status-error)] border-[var(--status-error)] text-[var(--status-error)]'
+            }`}>
+              <ShieldAlert className="w-5 h-5 shrink-0 text-[var(--status-error)]" />
+              <span>
+                {language === 'vi'
+                  ? `Toàn bộ ${archivedNotes.length} ghi chú trong mục lưu trữ sẽ bị xóa vĩnh viễn khỏi database để giải phóng dung lượng và không thể khôi phục lại.`
+                  : `All ${archivedNotes.length} archived notes will be permanently erased from the database to save storage.`}
+              </span>
+            </div>
+
+            <p className={`text-xs ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
+              {language === 'vi' 
+                ? 'Bạn có chắc chắn muốn dọn sạch toàn bộ thùng rác ngay bây giờ?' 
+                : 'Are you sure you want to permanently empty all notes in the trash bin right now?'}
+            </p>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsConfirmEmptyTrashOpen(false)}
+                className={`px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer active:scale-95 ${
+                  isDark ? 'bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:bg-[var(--border-color)]'
+                }`}
+              >
+                {t('cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  await emptyTrash();
+                  setIsConfirmEmptyTrashOpen(false);
+                }}
+                className="px-4 py-2 rounded-xl bg-[var(--status-error)] hover:bg-[var(--status-error)] text-white text-xs font-semibold cursor-pointer shadow-md shadow-[var(--status-error)]/20 active:scale-95"
+              >
+                {language === 'vi' ? 'Dọn sạch tất cả' : 'Empty All'}
               </button>
             </div>
           </div>

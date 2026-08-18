@@ -8,6 +8,8 @@ import {
   archiveNote,
   restoreNote,
   deleteNotePermanently,
+  deleteAllArchivedNotes,
+  purgeExpiredArchivedNotes,
 } from '@/lib/neon/queries';
 
 export const runtime = 'nodejs';
@@ -93,13 +95,27 @@ export async function PATCH(request: NextRequest) {
 }
 
 /**
- * DELETE /api/notes?id=...&permanent=1 — xoá vĩnh viễn (mặc định archive).
+ * DELETE /api/notes:
+ * - ?all=1: xoá vĩnh viễn tất cả notes trong thùng rác
+ * - ?purgeExpired=1: tự động dọn dẹp các notes quá hạn 30 ngày
+ * - ?id=...&permanent=1: xoá vĩnh viễn 1 note cụ thể
+ * - ?id=...: chuyển note vào lưu trữ (archive / thùng rác)
  */
 export async function DELETE(request: NextRequest) {
   try {
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (request.nextUrl.searchParams.get('all') === '1') {
+      await deleteAllArchivedNotes(session.sub);
+      return NextResponse.json({ success: true, message: 'All archived notes deleted permanently' });
+    }
+
+    if (request.nextUrl.searchParams.get('purgeExpired') === '1') {
+      await purgeExpiredArchivedNotes(session.sub);
+      return NextResponse.json({ success: true, message: 'Expired notes purged' });
     }
 
     const id = request.nextUrl.searchParams.get('id');
