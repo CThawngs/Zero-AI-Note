@@ -1,6 +1,25 @@
-# PRD — Zero AI Note
+# PRD Zero AI Note
 
-> Website ghi chú AI dạng chat (kiểu Gemini/ChatGPT), nhận file dài đa định dạng (video/audio/PDF/slide/ảnh/text/link), xuất note theo phương pháp học thuật cụ thể (Cornell, Outline, Q&A...) đồng thời dưới nhiều định dạng (Markdown/DOCX/PDF/HTML) ngay trong cuộc trò chuyện. Dự án dài hạn, không deadline cố định.
+> **Phiên bản hợp nhất** (gộp từ `PRD-Zero-AI-Note.md` + `PRD_Zero_AI_Note.md`, cập nhật theo hiện trạng triển khai 2026-08-18).
+>
+> Website ghi chú AI dạng chat (kiểu Gemini/ChatGPT), nhận file dài đa định dạng (video/audio/PDF/slide/ảnh/text/link), xuất note theo phương pháp học thuật cụ thể (Cornell, Outline, Q&A...) đồng thời dưới nhiều định dạng (Markdown/DOCX/PDF/HTML) ngay trong cuộc trò chuyện. **Vừa là sản phẩm thương mại dài hạn (không deadline), vừa là đồ án môn học có deadline thật — xem mục 8 để biết bối cảnh và ưu tiên tương ứng.**
+
+---
+
+## Mục lục
+
+1. [Định vị sản phẩm](#1-định-vị-sản-phẩm)
+2. [Đối tượng người dùng](#2-đối-tượng-người-dùng)
+3. [Kiến trúc kỹ thuật](#3-kiến-trúc-kỹ-thuật)
+4. [Đặc tả tính năng](#4-đặc-tả-tính-năng)
+5. [Mô hình kinh doanh](#5-mô-hình-kinh-doanh)
+6. [Database Schema](#6-database-schema)
+7. [UI/UX](#7-uiux)
+8. [Bối cảnh Đồ án Chuyên ngành](#8-bối-cảnh-đồ-án-chuyên-ngành)
+9. [Roadmap](#9-roadmap)
+10. [Cần chốt trước khi build](#10-cần-chốt-trước-khi-build)
+11. [Kickoff prompt cho Hermes Agent](#11-kickoff-prompt-cho-hermes-agent)
+12. [Lịch sử thay đổi](#12-lịch-sử-thay-đổi)
 
 ---
 
@@ -17,6 +36,8 @@
 
 **Không phải trọng tâm**: mind map/biểu đồ trực quan — NotebookLM đã có, đây chỉ là tính năng bắt kịp (parity), không phải lợi thế cạnh tranh.
 
+---
+
 ## 2. Đối tượng người dùng
 
 Sinh viên/giáo viên xử lý bài giảng dài, người đi họp cần ghi chú chuẩn để nộp/lưu trữ, nhà nghiên cứu tổng hợp nhiều nguồn tài liệu — ưu tiên thị trường Việt Nam nhưng hỗ trợ đa ngôn ngữ đầu ra.
@@ -30,14 +51,23 @@ Sinh viên/giáo viên xử lý bài giảng dài, người đi họp cần ghi 
 | Thành phần | Lựa chọn | Lý do |
 |---|---|---|
 | Frontend + API routes | Next.js trên **Vercel** | Đã quen thuộc (ZeroInvoice đang chạy Vercel), free tier đủ dùng giai đoạn đầu |
-| Database/Auth/Storage | **Supabase** | Tái sử dụng kinh nghiệm từ ZeroLLM |
+| Database (lưu trữ chính) | **Neon** (Postgres serverless) | Đổi từ Supabase vì free tier Supabase giới hạn 2 project hoạt động cùng lúc — dự án thứ 3 của Zero, chưa có doanh thu để nâng cấp trả phí. Neon free tier cho tới 100 project, không giới hạn kiểu này. **Neon là nơi lưu trữ CHÍNH** (text/base64/binary trong DB) |
+| Backup storage (khi Neon đầy) | **Cloudflare R2** (S3-compatible) | Chỉ dùng làm file storage sao lưu khi Neon database đầy — đa vùng, ổn định production, free tier 10GB. Do cùng chuẩn S3 nên chuyển đổi sau này nhẹ nhàng |
+| ORM | **Drizzle ORM** (duy nhất) | Không lẫn Prisma/raw Supabase; driver Neon serverless (`@neondatabase/serverless`) |
+| Auth | **JWT tự phát hành** (`jose` + `bcryptjs`), session cookie HttpOnly | Đã thay thế Neon Auth trong quá trình triển khai — 1 cơ chế ký token duy nhất (`lib/auth/session.ts`), fail-closed khi thiếu `ZERO_JWT_SECRET`. Hỗ trợ email/password + Google OAuth (Google Identity Services popup) |
 | Job nền (xử lý file dài) | **Inngest hoặc Trigger.dev** | Chuyên cho chuỗi job AI dài nhiều bước, tách biệt hoàn toàn khỏi nơi hosting app chính |
 | Ngôn ngữ | JS/TypeScript, **không dùng Rust** | Antigravity/Hermes định hướng Next.js; phần việc chính là điều phối I/O (gọi API AI) chứ không phải tính toán CPU nặng |
 | AI xử lý | Cloud API only (Gemini/OpenRouter/Claude/OpenAI qua key của Zero hoặc BYOK) | Đã bỏ hướng on-device/local để ưu tiên tốc độ triển khai |
 | Billing | **ZeroInvoice** (zeroinvoice-silk.vercel.app, sản phẩm khác của Zero) | Webhook + fail-closed |
 | Nguồn UI ban đầu | Export từ Google AI Studio (React + TypeScript + Tailwind, đã component hoá) | Xem chi tiết luồng & vai trò ở mục 7.1 — chỉ lấy phần giao diện, không suy ra kiến trúc backend từ code này |
 
-**Đã cân nhắc và loại bỏ**: Google Cloud Run (tính phí theo giây CPU không hợp workload xử lý file dài liên tục), Render (Background Worker không miễn phí, từ $7/tháng), Netlify (không có lợi thế riêng so với Vercel).
+**Đã cân nhắc và loại bỏ**:
+- **Supabase** (cả Auth + Storage): free tier giới hạn 2 project hoạt động cùng lúc — vượt giới hạn ở thời điểm triển khai
+- **Neon Auth**: đã cân nhắc (ra mắt 2026, nâng cấp lớn 8/2026, miễn phí tới 60.000 MAU) nhưng quyết định dùng JWT tự phát hành cho gọn vendor
+- **Neon Object Storage**: từng cân nhắc (mới ra mắt 8/2026, Beta, S3-compatible) nhưng ràng buộc chỉ vùng `us-east-2`, chỉ bật cho project MỚI → chọn R2 làm backup
+- **Google Cloud Run** (tính phí theo giây CPU không hợp workload xử lý file dài liên tục)
+- **Render** (Background Worker không miễn phí, từ $7/tháng)
+- **Netlify** (không có lợi thế riêng so với Vercel)
 
 ### 3.2 Luồng xử lý chính
 
@@ -59,12 +89,13 @@ User gửi file/link/text + (tùy chọn) chỉ định phương pháp ghi chú
 
 ### 3.3 Bảo mật & vận hành
 
-- Row-Level Security (RLS) trên mọi bảng chứa dữ liệu cá nhân
+- Row-Level Security (RLS) trên mọi bảng chứa dữ liệu cá nhân (Neon dùng cú pháp `auth_uid()` qua `current_setting('request.jwt.claims')`, không dùng `auth.uid()` của Supabase)
 - API key BYOK mã hoá khi lưu, không log ra console, không lộ client-side
 - Chặn SSRF: validate Endpoint URL tùy ý (BYOK custom endpoint) ở server-side, từ chối địa chỉ nội bộ/private IP trước khi Test/gọi thật
 - Billing qua ZeroInvoice: fail-closed (khác tracking — fail-open), webhook có xác minh chữ ký, xử lý idempotent tránh cộng dồn subscription
-- Phân quyền admin qua trường `role` trong DB, kiểm tra server-side ở mọi route — không chỉ ẩn UI
+- Phân quyền admin qua trường `role` trong DB, kiểm tra server-side ở mọi route — không chỉ ẩn UI. Admin email cấu hình 1 nơi `ADMIN_EMAIL` trong `.env.local`
 - Tự động xoá file gốc sau N ngày (giữ lại note), giảm chi phí lưu trữ + rủi ro riêng tư
+- **JWT fail-closed**: thiếu `ZERO_JWT_SECRET` → crash runtime, không fallback yếu
 
 ---
 
@@ -106,7 +137,7 @@ User gửi file/link/text + (tùy chọn) chỉ định phương pháp ghi chú
 - Notebook chia sẻ/cộng tác (mức độ chỉ-xem hay đồng-biên-tập — cần chốt trước khi build)
 
 ### 4.5 UX xử lý file dài
-- Xử lý bất đồng bộ qua job nền + thông báo khi xong (email/in-app)
+- Xử lý bất đồng bộ qua job nền + thông báo khi xong (email/in-app) — **không hứa hẹn thời gian xử lý cụ thể ("vài phút")**, mô tả đúng bất đồng bộ: job nền, thanh tiến trình, thông báo khi xong, không ngồi chờ
 - Thanh tiến trình theo giai đoạn thật (Trích transcript → Cấu trúc → Tạo file), không phải spinner vô nghĩa
 - Streaming kết quả theo từng chunk khi có thể
 
@@ -140,8 +171,11 @@ User gửi file/link/text + (tùy chọn) chỉ định phương pháp ghi chú
 
 | Gói | Giá | Tính năng |
 |---|---|---|
-| Free | 0đ | Ghi chú cơ bản (Cornell/Outline/tóm tắt), giới hạn thời lượng xử lý/tháng, thư viện không giới hạn |
-| Paid | Cần chốt giá | Toàn bộ Free + Mind map/biểu đồ, TTS, BYOK, giới hạn file dài hơn, ưu tiên tốc độ |
+| Free | 0đ | Ghi chú cơ bản (Cornell/Outline/tóm tắt), **3 giờ xử lý/tháng**, file ≤30 phút, thư viện không giới hạn |
+| **Pro** | **99.000đ/tháng** (~$4) | Toàn bộ Free + **50 giờ xử lý/tháng**, file ≤2 giờ, **chưa mở** Mind map/biểu đồ, TTS, BYOK (2 nhóm tính năng tốn compute nhất) |
+| **Ultra** | **199.000đ/tháng** (~$8) | Toàn bộ Pro + **200 giờ xử lý/tháng**, file ≤4 giờ, Mind map/biểu đồ trực quan, đọc note bằng giọng nói (TTS), kết nối API key riêng (BYOK), ưu tiên tốc độ xử lý, **hỗ trợ ưu tiên qua email** |
+
+> **Ghi chú pricing**: con số cụ thể (3h/50h/200h, file 30'/2h/4h) là quyết định đã chốt 2026-08-18 — không dùng từ "không giới hạn" trên landing. Đơn vị tiền tệ hiển thị theo ngôn ngữ: tiếng Việt dùng `đ`, English dùng `$` (quy đổi ~25.500đ/$1).
 
 **Coupon**: trang quản lý riêng, CRUD đầy đủ, giới hạn số lần dùng + ngày hết hạn + áp dụng cho gói nào.
 
@@ -151,7 +185,9 @@ User gửi file/link/text + (tùy chọn) chỉ định phương pháp ghi chú
 
 ---
 
-## 6. Database Schema (Supabase, bản nháp — Hermes tinh chỉnh khi build)
+## 6. Database Schema
+
+> **Bản nháp schema khái niệm** (từ PRD gốc, viết theo Supabase). Khi build thực tế, schema được tinh chỉnh theo Neon + Drizzle ORM — xem `docs/schema-neon.sql` và `docs/schema.sql` là bản thực thi hiện tại.
 
 ```sql
 -- Hồ sơ user, mở rộng từ auth.users
@@ -278,6 +314,8 @@ create policy "admin manages coupons" on coupons for all using (
 );
 ```
 
+> **Lưu ý RLS trên Neon**: không dùng `auth.uid()` của Supabase — dùng `auth_uid()` qua `current_setting('request.jwt.claims')` (xem `docs/schema-neon.sql`).
+
 ---
 
 ## 7. UI/UX
@@ -289,7 +327,7 @@ Google Stitch (Ideate + nhiều vòng Direct Edit) → export sang Google AI Stu
 **Quyết định cuối cùng (đã điều chỉnh so với dự định ban đầu)**: code này **KHÔNG còn là throwaway thuần tuý** — sẽ đẩy lên GitHub, Hermes/Antigravity **clone repo về làm nền tảng UI/UX thật**. Ranh giới rõ ràng:
 - **Lấy**: toàn bộ phần hiển thị — component, layout, theme system, animation, responsive
 - **Không lấy**: bất kỳ suy luận nào về kiến trúc backend/database từ cách code AI Studio tổ chức dữ liệu mock — schema, luồng xử lý, bảo mật vẫn tuân thủ nghiêm ngặt theo mục 3, 4, 5, 6 của PRD này, viết mới hoàn toàn
-- Việc còn lại của Hermes: đóng gói code React đã có vào cấu trúc Next.js thật (`app/` router, tách API routes), nối vào Supabase/Inngest/AI pipeline thật, thay toàn bộ dữ liệu mock bằng dữ liệu thật
+- Việc còn lại của Hermes: đóng gói code React đã có vào cấu trúc Next.js thật (`app/` router, tách API routes), nối vào Neon/Inngest/AI pipeline thật, thay toàn bộ dữ liệu mock bằng dữ liệu thật
 
 ### 7.2 Danh sách 11 màn hình
 
@@ -299,7 +337,7 @@ Dark mode mặc định (theme "Giấy"), brand "Zero AI Note" + tagline "AI-Pow
 2. **Thư viện** — grid/list toggle, tự phân loại file gộp, tab "Của tôi/Được chia sẻ"
 3. **Cài đặt — Tài khoản & Billing**
 4. **Cài đặt — Provider AI (BYOK)** — đầy đủ: form Custom Endpoint, dropdown model tự động đồng bộ đúng provider đã thêm, toggle Import/Sync free models, nút Test Connection + Check Model riêng biệt
-5. **Pricing** — 2 cột Free/Paid, ô coupon, FAQ
+5. **Pricing** — 3 cột Free/Pro/Ultra, ô coupon, FAQ
 6. **Admin — Quản lý Coupon**
 7. **Đăng nhập/Đăng ký** — email/password + Google OAuth
 8. **Chi tiết 1 note đã lưu** — 2 cột (nội dung + chat hỏi thêm)
@@ -325,35 +363,73 @@ Dark mode mặc định (theme "Giấy"), brand "Zero AI Note" + tagline "AI-Pow
 
 ---
 
-## 8. Roadmap (nhịp độ gợi ý — dự án dài hạn, không deadline cứng)
+## 8. Bối cảnh Đồ án Chuyên ngành (song song với mục tiêu thương mại)
 
-| Giai đoạn | Nội dung |
-|---|---|
-| Tuần 1-2 | Scaffold Next.js + Supabase Auth/schema, khung chat UI cơ bản, upload 1 file + paste text, dựng hàng đợi job nền |
-| Tuần 3-4 | MVP lõi: 1 file → transcribe → note theo Cornell + tóm tắt nhanh, Artifact Panel cơ bản |
-| Tuần 5-7 | Multi-file multi-định dạng, kiến trúc chunk file dài, các template còn lại, xuất đa định dạng, chọn ngôn ngữ đầu ra |
-| Tuần 8-9 | UX giữ chân: xử lý bất đồng bộ + thông báo, chat tiếp theo nguồn, regenerate từng phần, thư viện, share link, nguồn URL/YouTube |
-| Tuần 10-11 | Kinh doanh hoá: phân quyền role, gate Free/Paid, tích hợp ZeroInvoice billing thật, coupon, BYOK |
-| Tuần 12+ | Mind map, TTS, action item, đồng bộ Notion/Calendar, spaced repetition |
+Zero AI Note đồng thời là đồ án môn "Đồ án Chuyên ngành" (1 tín chỉ, ngành Lập trình máy tính, ĐH) — có **deadline thật**, khác hẳn khung "không gấp" đã dùng để thiết kế roadmap thương mại ở mục 9. Đây là ưu tiên thời gian riêng, dùng chung 1 codebase với sản phẩm thương mại.
 
-## 9. Cần chốt trước khi build (không blocking, nên quyết sớm)
+### 8.1 Mốc thời gian bắt buộc
+- Tuần 1 môn học = 17/08/2026 (đã bắt đầu)
+- **Báo cáo đồ án lần 1** (điểm hệ số 1, gồm cả điểm quá trình): Tuần 10 = **19–25/10/2026**
+- **Demo + bảo vệ chính thức** (điểm hệ số 2): Tuần 15 = **23/11/2026**
+- Tiêu chí chấm điểm: Phân tích & thiết kế hệ thống (20%), Lập trình & chất lượng sản phẩm (40%), Tài liệu & báo cáo (20%), Thuyết trình bảo vệ (20%)
 
-- Con số cụ thể: giới hạn giờ xử lý/phiên, giá gói Paid/tháng, số ngày giữ file gốc trước khi xoá
-- Provider AI mặc định cho user không dùng BYOK — đề xuất tận dụng 9Router/OmniRoute đã có từ ZeroLLM
-- Auth: chỉ email/password hay có thêm Google OAuth (thiết kế Stitch đã làm cả 2, chỉ cần xác nhận)
-- Notebook chia sẻ: chỉ xem hay đồng biên tập
+### 8.2 Yêu cầu khai báo AI — ảnh hưởng trực tiếp tới cách chuẩn bị bảo vệ
+- Dùng AI thoải mái, dùng nhiều không bị trừ điểm — miễn khai báo rõ công cụ + công đoạn, hiểu và giải thích được, chịu trách nhiệm về chất lượng mã nguồn
+- Phiếu Đăng Ký Đề Tài có mục riêng (mục IX) khai báo công cụ AI (có sẵn checkbox "Claude") + công đoạn dùng AI + cam kết hiểu/kiểm chứng
+- **Rủi ro cụ thể cần chuẩn bị trước**: buổi bảo vệ, giảng viên hỏi trực tiếp theo từng dòng code cụ thể (ví dụ "dòng 89 AI làm không? dòng 150?"), không chỉ hỏi kiến trúc chung chung. Cần tự đọc lại code + `DECISIONS.md`/`ARCHITECTURE.md` trước bảo vệ, sẵn sàng giải thích tại chỗ — không chỉ dựa vào có sẵn tài liệu.
+
+### 8.3 Phân loại đề tài — đã xác nhận phù hợp
+Phiếu đăng ký chính thức có checkbox "Web Application" và "AI Application" — Zero AI Note tick được cả 2, không cần điều chỉnh phạm vi để phù hợp ngành.
+
+### 8.4 Cần xác nhận với giảng viên (chưa tự quyết được)
+Slide ghi "1–2 sinh viên/nhóm" là quy định chính thức, nhưng lời giảng viên trong buổi học lại nói "thông thường 3, 1–2 là trường hợp đặc biệt" — cần Zero tự xác nhận việc làm 1 mình có được chấp nhận không trước khi nộp Phiếu Đăng Ký.
+
+### 8.5 Phạm vi rút gọn riêng cho deadline đồ án (khác roadmap thương mại đầy đủ ở mục 9)
+Tiêu chí chấm điểm không đòi hỏi billing thật/BYOK hoàn chỉnh — 1 bản demo chạy tốt với luồng ghi chú lõi, auth thật, CRUD đầy đủ, UI/UX hoàn thiện là đủ đáp ứng.
+
+- **Tới Tuần 10 (báo cáo lần 1)**: ưu tiên xong tương đương roadmap mục 9 tới hết "Tuần 5-7" (multi-file, multi-định dạng, đủ template, xuất đa định dạng) — thể hiện rõ nhất tiêu chí "Lập trình & chất lượng sản phẩm" (40% điểm, trọng số cao nhất)
+- **Tới Tuần 15 (bảo vệ)**: hoàn thiện thêm UX giữ chân người dùng (mục 9, Tuần 8-9) + tối thiểu 1 luồng thanh toán chạy được thật (không nhất thiết đầy đủ mọi tính năng Ultra) để thể hiện chiều sâu kỹ thuật khi phản biện
+- **Có thể lược bớt nếu thiếu thời gian**: Mind map/TTS/action item/spaced repetition (mục 9, Tuần 12+) — không nằm trong tiêu chí chấm điểm chính thức, ưu tiên thấp nhất
+- Bộ sản phẩm nộp (theo đúng yêu cầu môn học): báo cáo đồ án (theo mẫu của khoa — Zero cần xin mẫu riêng, chưa có trong tài liệu đã đọc), source code có chú thích, tài liệu hướng dẫn sử dụng/cài đặt, slide thuyết trình 10-15 phút (cấu trúc: Vấn đề→Mục tiêu→Giải pháp→Phân tích→Thiết kế→Công nghệ→Demo→Kết quả→Hạn chế→Hướng phát triển), video demo sản phẩm
 
 ---
 
-## 10. Kickoff prompt cho Hermes Agent
+## 9. Roadmap (nhịp độ gợi ý — dài hạn cho mục tiêu thương mại, xem mục 8 để biết mốc rút gọn cho đồ án)
+
+| Giai đoạn | Nội dung |
+|---|---|
+| Tuần 1-2 | Scaffold Next.js + Neon schema, khung chat UI cơ bản, upload 1 file + paste text, dựng hàng đợi job nền |
+| Tuần 3-4 | MVP lõi: 1 file → transcribe → note theo Cornell + tóm tắt nhanh, Artifact Panel cơ bản |
+| Tuần 5-7 | Multi-file multi-định dạng, kiến trúc chunk file dài, các template còn lại, xuất đa định dạng, chọn ngôn ngữ đầu ra |
+| Tuần 8-9 | UX giữ chân: xử lý bất đồng bộ + thông báo, chat tiếp theo nguồn, regenerate từng phần, thư viện, share link, nguồn URL/YouTube |
+| Tuần 10-11 | Kinh doanh hoá: phân quyền role, gate Free/Pro/Ultra, tích hợp ZeroInvoice billing thật, coupon, BYOK |
+| Tuần 12+ | Mind map, TTS, action item, đồng bộ Notion/Calendar, spaced repetition |
+
+---
+
+## 10. Cần chốt trước khi build (không blocking, nên quyết sớm)
+
+- ~~Con số cụ thể: giới hạn giờ xử lý/phiên, số ngày giữ file gốc trước khi xoá~~ → **Đã chốt**: 3h/50h/200h mỗi tháng; file 30'/2h/4h; giữ file gốc N ngày (đang cấu hình)
+- Provider AI mặc định cho user không dùng BYOK — đề xuất tận dụng 9Router/OmniRoute đã có từ ZeroLLM
+- Auth: chỉ email/password hay có thêm Google OAuth (thiết kế Stitch đã làm cả 2, chỉ cần xác nhận) → **Đã làm cả 2** (email/password + Google OAuth qua GIS popup)
+- Notebook chia sẻ: chỉ xem hay đồng biên tập
+- Số lượng thành viên nhóm đồ án — xác nhận với giảng viên (xem mục 8.4)
+- Mẫu báo cáo đồ án theo khoa (xin từ giảng viên trước Tuần 10)
+
+---
+
+## 11. Kickoff prompt cho Hermes Agent
 
 ```
-Bắt đầu xây dựng Zero AI Note theo đúng PRD_Zero_AI_Note.md đính kèm.
+Bắt đầu xây dựng Zero AI Note theo đúng PRD Zero AI Note.md đính kèm.
+LƯU Ý: dự án này vừa là sản phẩm thương mại vừa là đồ án môn học có
+deadline thật (mục 8) — ưu tiên đúng phạm vi rút gọn ở mục 8.5 trước,
+không chạy theo roadmap dài hạn mục 9 nếu deadline đồ án gần kề.
 
 Bước 1 — Xác nhận trước khi code:
-- Đọc kỹ mục 9 (Cần chốt trước khi build), hỏi lại Zero từng điểm nếu
-  chưa có câu trả lời cụ thể — đặc biệt là giới hạn giờ xử lý/phiên và
-  giá gói Paid, vì ảnh hưởng trực tiếp tới thiết kế schema và luồng billing.
+- Đọc kỹ mục 10 (Cần chốt trước khi build), hỏi lại Zero từng điểm nếu
+  chưa có câu trả lời cụ thể — đặc biệt là giới hạn giờ xử lý/phiên,
+  vì ảnh hưởng trực tiếp tới thiết kế schema và luồng billing.
 
 Bước 2 — Clone repo GitHub (Zero sẽ cung cấp link) chứa code UI đã xuất
 từ Google AI Studio. Đọc kỹ mục 7.1 và 7.4 trước khi động vào code:
@@ -364,8 +440,9 @@ từ Google AI Studio. Đọc kỹ mục 7.1 và 7.4 trước khi động vào c
   API routes) — KHÔNG suy luận kiến trúc backend/database từ cách code
   AI Studio tổ chức dữ liệu mock, chỉ lấy phần hiển thị
 
-Bước 3 — Khởi tạo backend theo đúng thứ tự roadmap (mục 8), không nhảy
-cóc sang giai đoạn sau khi giai đoạn trước chưa chạy được thật.
+Bước 3 — Khởi tạo backend theo đúng thứ tự roadmap (mục 9), ưu tiên
+theo mốc đồ án ở mục 8.5, không nhảy cóc sang giai đoạn sau khi giai
+đoạn trước chưa chạy được thật.
 
 Bước 4 — Tuân thủ nghiêm các nguyên tắc kỹ thuật đã chốt trong mục 3:
 - content_structured là nguồn DUY NHẤT để sinh Preview và mọi định dạng
@@ -375,7 +452,18 @@ Bước 4 — Tuân thủ nghiêm các nguyên tắc kỹ thuật đã chốt tr
 - Import/Sync free models: dùng bảng cache dùng chung theo provider
   (`provider_free_models_cache`), không polling riêng theo từng user
 - Không dùng Google Cloud Run, không dùng Rust cho phần lõi
+- Neon database là lưu trữ CHÍNH; Cloudflare R2 chỉ là backup khi Neon đầy
 
 Bắt đầu từ việc audit + đóng gói code AI Studio (Bước 2), sau đó mới
-sang Tuần 1-2: nối Supabase schema (mục 6) + Auth thật vào nền UI đã có.
+sang Tuần 1-2: nối schema Neon (mục 6) + JWT auth thật vào nền UI đã có.
 ```
+
+---
+
+## 12. Lịch sử thay đổi
+
+| Ngày | Nội dung |
+|---|---|
+| 2026-08-18 | **Hợp nhất 2 file PRD** (`PRD-Zero-AI-Note.md` + `PRD_Zero_AI_Note.md`) thành 1 file duy nhất. Cập nhật theo hiện trạng triển khai: Neon database chính + Cloudflare R2 backup, JWT auth thay Neon Auth, 3 gói giá chốt con số cụ thể (3h/50h/200h, file 30'/2h/4h), đơn vị tiền tệ theo ngôn ngữ (đ/$) |
+| 2026-08-17 | Bổ sung bối cảnh Đồ án Chuyên ngành (deadline Tuần 10 & 15), quyết định storage Neon chính + R2 backup |
+| 2026-08-16 | Chuyển từ Supabase sang Neon, bổ sung BYOK chi tiết (Import/Sync free models, Test Connection/Check Model) |
