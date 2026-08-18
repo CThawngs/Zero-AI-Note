@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { OAuth2Client, TokenPayload } from 'google-auth-library';
 import { signSession, getSessionCookie } from '@/lib/auth/session';
 import { ok, fail } from '@/lib/auth/http';
-import { findUserByEmail, createUser } from '@/lib/auth/users';
+import { findUserByEmail, createUser, UserRecord } from '@/lib/auth/users';
 
 export const runtime = 'nodejs';
 
@@ -29,13 +29,9 @@ function decodeJwtPayload(token: string): Record<string, unknown> | null {
 
 /**
  * Verify Google ID Token using google-auth-library.
- * Validates cryptographically against Google JWKS certs.
  */
-async function verifyGoogleToken(credential: string, clientId: string): Promise<TokenPayload | null> {
-  if (!clientId) {
-    console.error('[Google Auth] NEXT_PUBLIC_GOOGLE_CLIENT_ID is not configured');
-    return null;
-  }
+async function verifyGoogleIdToken(credential: string, clientId: string): Promise<TokenPayload | null> {
+  if (!clientId) return null;
 
   try {
     const client = new OAuth2Client(clientId);
@@ -45,21 +41,42 @@ async function verifyGoogleToken(credential: string, clientId: string): Promise<
     });
     return ticket.getPayload() ?? null;
   } catch (error) {
-    console.error('[Google Auth] Verification error with primary audience:', error);
+    console.error('[Google Auth] ID Token verification error:', error);
     
-    // Fallback: check if the token is well-formed Google token and audience matches
+    // Fallback decode if audience matches
     try {
       const decoded = decodeJwtPayload(credential);
       if (decoded && (decoded.iss === 'https://accounts.google.com' || decoded.iss === 'accounts.google.com')) {
-        console.warn('[Google Auth] Decoded token issuer is valid Google, but verifyIdToken failed. Audience:', decoded.aud);
-        // If audience matches client id, allow structured payload
         if (decoded.aud === clientId && decoded.email && decoded.email_verified) {
           return decoded as unknown as TokenPayload;
         }
       }
-    } catch (fallbackErr) {
-      console.error('[Google Auth] Fallback decode failed:', fallbackErr);
+    } catch {}
+    return null;
+  }
+}
+
+/**
+ * Fetch Google User Info using OAuth2 access_token
+ */
+async function verifyGoogleAccessToken(accessToken: string): Promise<{ email: string; name: string } | null> {
+  try {
+    const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.email && data.email_verified) {
+      return {
+        email: data.email,
+        name: data.name || data.email.split('@')[0],
+      };
     }
+    return null;
+  } catch (err) {
+    console.error('[Google Auth] Access token userinfo fetch failed:', err);
     return null;
   }
 }
@@ -68,36 +85,42 @@ export async function POST(request: NextRequest) {
   try {
     const clientId = getGoogleClientId();
     if (!clientId) {
-      return fail('Google OAuth chưa được cấu hình Client ID trên hệ thống (NEXT_PUBLIC_GOOGLE_CLIENT_ID).', 503);
+      return fail('Google OAuth chưa được cấu hình Client ID trên hệ thống.', 503);
     }
 
     const body = await request.json().catch(() => ({}));
-    const credential = body.credential;
+    let email: string | null = null;
+    let displayName: string | null = null;
 
-    if (!credential) {
-      return fail('Thiếu Google credential token. Vui lòng thử lại.', 400);
+    if (body.accessToken) {
+      // Flow 1: Verified via OAuth2 Access Token (Google Token Client Popup — 0% redirect_uri mismatch risk)
+      const userinfo = await verifyGoogleAccessToken(body.accessToken);
+      if (!userinfo) {
+        return fail('Google access token không hợp lệ hoặc đã hết hạn.', 401);
+      }
+      email = userinfo.email.toLowerCase().trim();
+      displayName = userinfo.name;
+    } else if (body.credential) {
+      // Flow 2: Verified via Google ID Token JWT
+      const payload = await verifyGoogleIdToken(body.credential, clientId);
+      if (!payload || !payload.email) {
+        return fail('Google token không hợp lệ hoặc đã hết hạn.', 401);
+      }
+      email = payload.email.toLowerCase().trim();
+      displayName = payload.name ?? email.split('@')[0];
+    } else {
+      return fail('Thiếu thông tin xác thực từ Google. Vui lòng thử lại.', 400);
     }
 
-    // Cryptographically verify the Google ID token
-    const payload = await verifyGoogleToken(credential, clientId);
-    if (!payload || !payload.email) {
-      return fail('Google token không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.', 401);
-    }
-
-    const email = payload.email.toLowerCase().trim();
-    const displayName = payload.name ?? email.split('@')[0];
-
-    // 1. Check if user already exists in DB (Account Merging)
+    // 1. Account Merging: Check if user already exists
     let user = await findUserByEmail(email);
     let needsPasswordSetup = false;
 
     if (user) {
-      // ── MERGE EXISTING ACCOUNT ──
-      // User exists from manual registration or previous login.
+      // Merge into existing account
       needsPasswordSetup = !user.password_hash;
     } else {
-      // ── CREATE NEW USER VIA GOOGLE ──
-      // New Google user has no password yet.
+      // Create new user in Neon Postgres
       user = await createUser({
         email,
         displayName,
@@ -131,7 +154,7 @@ export async function POST(request: NextRequest) {
     response.headers.set('Set-Cookie', getSessionCookie(token));
     return response;
   } catch (error) {
-    console.error('[Google Auth] Unhandled server error:', error);
-    return fail('Lỗi máy chủ khi xác thực Google. Vui lòng thử lại sau.', 500);
+    console.error('[Google Auth] Server error:', error);
+    return fail('Lỗi máy chủ khi xác thực Google.', 500);
   }
 }

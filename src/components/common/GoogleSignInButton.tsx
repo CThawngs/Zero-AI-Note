@@ -23,15 +23,80 @@ interface GoogleSignInButtonProps {
 export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
   isDark = true,
   className = '',
+  onSuccess,
+  onError,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
 
-  const googleClientId = (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '').trim();
+  const googleClientId = (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '').trim().replace(/^["']|["']$/g, '');
 
   const handleGoogleLogin = () => {
     setIsLoading(true);
-    // Standard OAuth 2.0 redirect flow — completely immune to popup blockers,
-    // Cross-Origin-Opener-Policy issues, and adblocker iframe filters.
+
+    const win = typeof window !== 'undefined' ? (window as unknown as {
+      google?: {
+        accounts?: {
+          oauth2?: {
+            initTokenClient: (config: {
+              client_id: string;
+              scope: string;
+              callback: (res: { access_token?: string; error?: string }) => void;
+              error_callback?: (err: unknown) => void;
+            }) => { requestAccessToken: () => void };
+          };
+        };
+      };
+    }) : null;
+
+    // Use Google Identity Services Token Client popup (Immune to redirect_uri_mismatch!)
+    if (win?.google?.accounts?.oauth2 && googleClientId) {
+      try {
+        const tokenClient = win.google.accounts.oauth2.initTokenClient({
+          client_id: googleClientId,
+          scope: 'email profile openid',
+          callback: async (tokenResponse) => {
+            if (tokenResponse.access_token) {
+              try {
+                const res = await fetch('/api/auth/google', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ accessToken: tokenResponse.access_token }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Xác thực Google thất bại');
+                
+                if (onSuccess) {
+                  onSuccess(data.user);
+                } else {
+                  window.location.href = '/app';
+                }
+              } catch (err) {
+                setIsLoading(false);
+                if (onError) onError(err instanceof Error ? err : new Error(String(err)));
+              }
+            } else {
+              setIsLoading(false);
+              if (tokenResponse.error && onError) {
+                onError(new Error(tokenResponse.error));
+              }
+            }
+          },
+          error_callback: (err) => {
+            setIsLoading(false);
+            console.error('[Google OAuth] Token client error:', err);
+            // Fallback to standard redirect if popup blocked
+            window.location.href = '/api/auth/google/login';
+          },
+        });
+
+        tokenClient.requestAccessToken();
+        return;
+      } catch (e) {
+        console.warn('[Google OAuth] TokenClient init failed, falling back to redirect:', e);
+      }
+    }
+
+    // Fallback: Standard OAuth 2.0 redirect
     window.location.href = '/api/auth/google/login';
   };
 
@@ -80,7 +145,7 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
           />
         </svg>
         <span>
-          {isLoading ? 'Đang chuyển hướng Google...' : 'Tiếp tục với Google'}
+          {isLoading ? 'Đang kết nối Google...' : 'Tiếp tục với Google'}
         </span>
       </button>
     </div>
