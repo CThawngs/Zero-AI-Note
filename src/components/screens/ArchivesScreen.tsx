@@ -114,7 +114,7 @@ export const ArchivesScreen: React.FC = () => {
             )}
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-0.5 custom-scrollbar">
+          <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-1.5">
               {[
                 { id: 'all', label: t('all') },

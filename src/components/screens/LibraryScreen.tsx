@@ -224,7 +224,7 @@ export const LibraryScreen: React.FC = () => {
           </div>
 
           {/* Filter, Sort & View Toggle */}
-          <div className="flex items-center justify-between sm:justify-end gap-2 overflow-x-auto pb-0.5 sm:pb-0">
+          <div className="flex items-center justify-end gap-2 shrink-0">
             {/* Filter Dropdown */}
             <div className="relative">
               <button

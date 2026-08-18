@@ -27,8 +27,6 @@ export const TemplatesScreen: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [sortOption, setSortOption] = useState<'default' | 'az' | 'za'>('default');
-  const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
 
   const isDark = theme === 'dark';
 
@@ -47,10 +45,6 @@ export const TemplatesScreen: React.FC = () => {
   let filteredTemplates = templates.filter(tmpl => {
     if (categoryFilter === 'builtin' && tmpl.isCustom) return false;
     if (categoryFilter === 'custom' && !tmpl.isCustom) return false;
-    if (categoryFilter === 'cornell' && tmpl.iconType !== 'cornell') return false;
-    if (categoryFilter === 'outline' && tmpl.iconType !== 'outline') return false;
-    if (categoryFilter === 'qa' && tmpl.iconType !== 'qa') return false;
-    if (categoryFilter === 'flashcard' && tmpl.iconType !== 'flashcard') return false;
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
@@ -61,12 +55,6 @@ export const TemplatesScreen: React.FC = () => {
       );
     }
     return true;
-  });
-
-  filteredTemplates = [...filteredTemplates].sort((a, b) => {
-    if (sortOption === 'az') return a.title.localeCompare(b.title);
-    if (sortOption === 'za') return b.title.localeCompare(a.title);
-    return 0;
   });
 
   const builtInTemplates = filteredTemplates.filter(t => !t.isCustom);
@@ -120,16 +108,12 @@ export const TemplatesScreen: React.FC = () => {
             )}
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-0.5 custom-scrollbar">
+          <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-1.5">
               {[
                 { id: 'all', label: t('all') },
                 { id: 'builtin', label: language === 'vi' ? 'Có sẵn' : 'Built-in' },
-                { id: 'custom', label: language === 'vi' ? 'Tùy chỉnh' : 'Custom' },
-                { id: 'cornell', label: 'Cornell' },
-                { id: 'outline', label: 'Outline' },
-                { id: 'qa', label: 'Q&A' },
-                { id: 'flashcard', label: 'Flashcard' }
+                { id: 'custom', label: language === 'vi' ? 'Tùy chỉnh' : 'Custom' }
               ].map((f) => (
                 <button
                   key={f.id}
@@ -144,59 +128,6 @@ export const TemplatesScreen: React.FC = () => {
                   {f.label}
                 </button>
               ))}
-            </div>
-
-            {/* Sort Dropdown */}
-            <div className="relative">
-              <button
-                id="tmpl-sort-btn"
-                onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-colors cursor-pointer whitespace-nowrap active:scale-95 bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-2xs"
-              >
-                <ArrowUpDown className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
-                <span>
-                  {sortOption === 'default' 
-                    ? (language === 'vi' ? 'Mặc định' : 'Default') 
-                    : sortOption === 'az' 
-                    ? (language === 'vi' ? 'Tên A → Z' : 'Name A → Z') 
-                    : (language === 'vi' ? 'Tên Z → A' : 'Name Z → A')}
-                </span>
-              </button>
-              <AnimatePresence>
-                {isSortDropdownOpen && (
-                  <>
-                    <div className="fixed inset-0 z-20" onClick={() => setIsSortDropdownOpen(false)} />
-                    <motion.div 
-                      initial={{ opacity: 0, scale: 0.96, y: 4 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.96, y: 4 }}
-                      className="absolute right-0 mt-1.5 w-36 rounded-xl shadow-2xl p-1.5 z-30 space-y-1 text-xs border bg-[var(--bg-card)] border-[var(--border-color)]"
-                    >
-                      {[
-                        { id: 'default', label: language === 'vi' ? 'Mặc định' : 'Default' },
-                        { id: 'az', label: language === 'vi' ? 'Tên A → Z' : 'Name A → Z' },
-                        { id: 'za', label: language === 'vi' ? 'Tên Z → A' : 'Name Z → A' }
-                      ].map(s => (
-                        <button
-                          key={s.id}
-                          id={`sort-tmpl-${s.id}`}
-                          onClick={() => {
-                            setSortOption(s.id as any);
-                            setIsSortDropdownOpen(false);
-                          }}
-                          className={`w-full text-left px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                            sortOption === s.id 
-                              ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-semibold' 
-                              : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
-                          }`}
-                        >
-                          {s.label}
-                        </button>
-                      ))}
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
             </div>
           </div>
         </div>
