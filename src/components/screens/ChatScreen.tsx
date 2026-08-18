@@ -177,9 +177,6 @@ export const ChatScreen: React.FC = () => {
                 transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                 className="py-6 sm:py-10 text-center space-y-6"
               >
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] mb-1 border border-[var(--accent-primary)]/20 shadow-sm">
-                  <Sparkles className="w-6 h-6" />
-                </div>
                 <div>
                   <h2 className="text-lg sm:text-xl font-bold tracking-tight text-[var(--text-primary)]">
                     {language === 'vi' ? 'Chào mừng bạn đến với Zero AI Note' : 'Welcome to Zero AI Note'}

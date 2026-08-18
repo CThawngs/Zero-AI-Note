@@ -12,7 +12,7 @@ import type { CouponItem } from '@/src/types';
 // Notes
 // ============================================================
 
-export async function getNotes(): Promise<any[]> {
+export async function getNotes(_userId?: string): Promise<any[]> {
   const res = await fetch('/api/notes', { cache: 'no-store' });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
@@ -22,7 +22,7 @@ export async function getNotes(): Promise<any[]> {
   return data.notes ?? [];
 }
 
-export async function getArchivedNotes(): Promise<any[]> {
+export async function getArchivedNotes(_userId?: string): Promise<any[]> {
   const res = await fetch('/api/notes?archived=1', { cache: 'no-store' });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
@@ -93,7 +93,7 @@ export async function deleteNotePermanently(noteId: string): Promise<void> {
 // Sources
 // ============================================================
 
-export async function getSources(): Promise<any[]> {
+export async function getSources(_userId?: string): Promise<any[]> {
   const res = await fetch('/api/sources', { cache: 'no-store' });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
@@ -190,7 +190,7 @@ export async function deleteCoupon(couponId: string): Promise<void> {
 // Profile
 // ============================================================
 
-export async function getUserProfile(): Promise<any | null> {
+export async function getUserProfile(_userId?: string): Promise<any | null> {
   const res = await fetch('/api/profile', { cache: 'no-store' });
   if (res.status === 404) return null;
   if (!res.ok) {

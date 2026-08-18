@@ -34,7 +34,7 @@ import {
   deleteCoupon as deleteCouponQuery,
   getUserProfile,
   applyCouponToUser
-} from '@/lib/neon/queries';
+} from '../lib/apiClient';
 import { initialTemplates } from '../data/mockData';
 import { translations, Language, Theme } from '../i18n/translations';
 import { THEME_OPTIONS } from '../utils/themeTokens';
@@ -512,15 +512,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const loadData = async () => {
         try {
           // Load notes
-          const userNotes = await getNotes(user.id);
+          const userNotes = await getNotes();
           setNotes(userNotes.map(mapNoteRow));
         
           // Load archived notes
-          const userArchivedNotes = await getArchivedNotes(user.id);
+          const userArchivedNotes = await getArchivedNotes();
           setArchivedNotes(userArchivedNotes.map(mapNoteRow));
         
           // Load files
-          const userFiles = await getSources(user.id);
+          const userFiles = await getSources();
           setFiles(userFiles.map(mapSourceRow));
         
           // Load coupons (admin only)
@@ -530,7 +530,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }
         
           // Load user profile
-          const profile = await getUserProfile(user.id);
+          const profile = await getUserProfile();
           if (profile) {
             setUser(prev => ({
               ...prev,
@@ -654,7 +654,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const renameNote = async (noteId: string, newTitle: string) => {
     try {
       await updateNote(noteId, { title: newTitle });
-      const updatedNotes = await getNotes(user.id);
+      const updatedNotes = await getNotes();
       setNotes(updatedNotes.map(mapNoteRow));
       
       if (activeNote && activeNote.id === noteId) {
@@ -714,7 +714,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           size_bytes: parseInt(size) || 0
         });
       
-        const updatedFiles = await getSources(user.id);
+        const updatedFiles = await getSources();
         setFiles(updatedFiles.map(mapSourceRow));
       
         addToast(
@@ -733,7 +733,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const deleteSourceFile = async (fileId: string) => {
     try {
       await deleteSourceQuery(fileId);
-      const updatedFiles = await getSources(user.id);
+      const updatedFiles = await getSources();
       setFiles(updatedFiles.map(mapSourceRow));
       
       addToast(
