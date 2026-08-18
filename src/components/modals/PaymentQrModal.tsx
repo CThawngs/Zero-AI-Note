@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, CheckCircle, ExternalLink, QrCode, Copy, Check, Loader2, Sparkles, ShieldCheck } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { Modal } from '../common/Modal';
 import { useApp } from '../../context/AppContext';
 import confetti from 'canvas-confetti';
@@ -34,10 +35,29 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({ isOpen, onClose,
 
   const isDark = theme === 'dark';
 
-  // Generate VietQR direct image URL
-  const qrUrl = billData?.qr_data
-    ? `https://img.vietqr.io/image/${billData.qr_data.acqId}-${billData.qr_data.accountNo}-compact2.png?amount=${billData.qr_data.amount}&addInfo=${encodeURIComponent(billData.qr_data.addInfo)}&accountName=${encodeURIComponent(billData.qr_data.accountName || 'ZERO NOTE')}`
-    : '';
+  // Dựng chuỗi VietQR chuẩn từ qr_data (Zero Tracking: amount + addInfo LOCKED,
+  // render client-side bằng qrcode.react — không phụ thuộc img.vietqr.io)
+  const pad2 = (n: number): string => String(n).padStart(2, '0');
+
+  const buildVietQrString = (): string => {
+    if (!billData?.qr_data) return '';
+    const { acqId, accountNo, amount, addInfo } = billData.qr_data;
+    // Merchant Account Information (EMVCo tag 26) — VietQR: 00 + len + acqId, 01 + len + accountNo
+    const tnv = '00' + pad2(acqId.length) + acqId + '01' + pad2(accountNo.length) + accountNo;
+    const payload =
+      '000201' +
+      '26' + pad2(tnv.length) + tnv +
+      '5802VN' +
+      '54' + pad2(String(amount).length) + String(amount) +
+      '62' + '05' + pad2(addInfo.length) + addInfo +
+      '6304';
+    return payload;
+  };
+
+  // QR value ưu tiên: qrString từ qr_data (EMVCo VietQR chuẩn)
+  const qrValue = billData?.qr_data ? buildVietQrString() : '';
+  // Fallback (nếu có payment_url): QR redirect tới trang thanh toán
+  const qrFallbackUrl = billData?.payment_url || '';
 
   // Poll payment status every 3.5 seconds
   useEffect(() => {
@@ -133,12 +153,14 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({ isOpen, onClose,
           <>
             {/* QR Code container */}
             <div className="p-4 rounded-2xl border flex flex-col items-center justify-center bg-[var(--bg-app)] border-[var(--border-color)]">
-              {qrUrl ? (
+              {qrValue ? (
                 <div className="bg-white p-3 rounded-xl shadow-md">
-                  <img
-                    src={qrUrl}
-                    alt="VietQR Payment"
-                    className="w-48 h-48 sm:w-56 sm:h-56 object-contain rounded-lg"
+                  <QRCodeSVG
+                    value={qrValue}
+                    size={216}
+                    level="M"
+                    fgColor="#000000"
+                    bgColor="#FFFFFF"
                   />
                 </div>
               ) : (

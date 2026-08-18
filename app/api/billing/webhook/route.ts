@@ -59,15 +59,28 @@ export async function POST(request: NextRequest) {
     // 2) Xử lý
     console.log('[ZeroInvoice Webhook Received]:', body);
 
-    const billId = body.bill_id || body.id || body.data?.bill_id;
-    const status = body.status || body.event || body.data?.status;
-    const amount = body.amount || body.data?.amount;
+    // Zero Tracking gửi: { event: "bill.paid", data: { bill_id, amount, paid_at } }
+    // (docs 2026-08-18). Hỗ trợ cả dạng cũ: { bill_id, status, amount } cho tương thích.
+    const event = body.event || body.type || '';
+    const payload = body.data && typeof body.data === 'object' ? body.data : body;
+
+    const billId = payload.bill_id || payload.id || body.bill_id || body.id;
+    const status = payload.status || body.status || event;
+    const amount = payload.amount || body.amount;
 
     if (!billId) {
       return NextResponse.json({ error: 'Missing bill_id' }, { status: 400 });
     }
 
-    const isPaid = status === 'paid' || status === 'resolved' || status === 'payment.completed' || status === 'bill.paid';
+    // Trạng thái paid: event "bill.paid" hoặc status paid/resolved/...
+    const isPaid =
+      event === 'bill.paid' ||
+      event === 'payment.completed' ||
+      status === 'paid' ||
+      status === 'resolved' ||
+      status === 'payment.completed' ||
+      status === 'bill.paid' ||
+      status === 'success';
 
     if (isPaid) {
       const sql = getSql();

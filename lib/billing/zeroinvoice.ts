@@ -72,11 +72,31 @@ export async function checkZeroInvoiceBillStatus(billId: string): Promise<{
     throw new Error(`ZeroInvoice get bill failed (${res.status})`);
   }
 
-  const json = await res.json();
-  const bill = json.data || json.bill || json;
+  const json = (await res.json()) as {
+    data?: {
+      bill?: {
+        bill_id: string;
+        status: string;
+        amount: number;
+        paid_at?: string;
+      };
+      bill_id?: string;
+      status?: string;
+      amount?: number;
+    };
+    bill?: { bill_id: string; status: string; amount: number };
+    bill_id?: string;
+    status?: string;
+    amount?: number;
+  };
+
+  // Zero Tracking trả GET /api/bills/:id với cấu trúc { data: { bill: {...} } }
+  // (đã xác minh thực tế 2026-08-18). Hỗ trợ cả dạng cũ data.bill_id cho tương thích.
+  const bill = json.data?.bill || json.data || json.bill || json;
+
   return {
-    bill_id: bill.bill_id || bill.id || billId,
-    status: bill.status || 'pending',
+    bill_id: bill.bill_id || billId,
+    status: (bill.status || 'pending') as 'pending' | 'paid' | 'expired' | 'failed' | 'resolved',
     amount: bill.amount || 0,
   };
 }
