@@ -25,7 +25,28 @@ export type ColorPalette =
   | 'gray';
 export type ThemeMode = 'dark' | 'light';
 
-export type NoteMethod = 'auto' | 'cornell' | 'outline' | 'qa' | 'flashcard' | 'quick-summary' | 'executive-summary' | 'custom';
+export type NoteMethod = 
+  | 'auto' 
+  | 'cornell' 
+  | 'outline' 
+  | 'summary' 
+  | 'meeting' 
+  | 'lecture' 
+  | 'analysis' 
+  | 'qa' 
+  | 'charting' 
+  | 'boxing' 
+  | 'allinone' 
+  | 'mindmap' 
+  | 'flashcard' 
+  | 'deep-research' 
+  | 'feynman' 
+  | 'first-principles' 
+  | 'syntopical' 
+  | '5w1h-action' 
+  | 'custom'
+  | 'quick-summary'
+  | 'executive-summary';
 
 export interface UserProfile {
   id: string;
@@ -88,7 +109,8 @@ export interface TemplateItem {
   id: string;
   title: string;
   description: string;
-  iconType: 'cornell' | 'outline' | 'qa' | 'flashcard' | 'zap' | 'executive' | 'math' | 'custom';
+  iconType: string;
+  planTier?: 'free' | 'pro' | 'ultra';
   isCustom?: boolean;
   sampleLayout: {
     columns: string[];

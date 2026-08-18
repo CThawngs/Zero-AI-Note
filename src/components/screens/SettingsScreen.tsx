@@ -191,8 +191,8 @@ export const SettingsScreen: React.FC = () => {
           </h2>
           <p className={`text-xs mt-0.5 ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
             {language === 'vi' 
-              ? 'Quản trị tài khoản, gói cước, khóa AI Provider và cấu hình thông báo' 
-              : 'Manage profile, subscription plan, AI Providers (BYOK), and system alerts'}
+              ? 'Quản trị tài khoản, gói cước, Tự kết nối AI và cấu hình thông báo' 
+              : 'Manage profile, subscription plan, AI Providers, and system alerts'}
           </p>
         </div>
 
@@ -602,7 +602,7 @@ export const SettingsScreen: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h3 className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-[var(--text-primary)]' : 'text-[var(--text-primary)]'}`}>
-                  {language === 'vi' ? 'Danh Sách AI Providers (BYOK)' : 'AI Providers & BYOK Keys'}
+                  {language === 'vi' ? 'Danh Sách AI Providers (Tự Kết Nối AI)' : 'AI Providers & Connected Keys'}
                 </h3>
                 <p className={`text-xs mt-0.5 ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
                   {language === 'vi' ? 'Cấu hình các nhà cung cấp mô hình trí tuệ nhân tạo hoặc Local LLM server' : 'Configure third-party LLMs or connect local inference engines'}

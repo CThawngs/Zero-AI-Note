@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSql } from '@/lib/db';
 import { verifySession } from '@/lib/auth/session';
 import { ok, fail } from '@/lib/auth/http';
+import { checkNoteLimit } from '@/lib/neon/queries';
 
 export const runtime = 'nodejs';
 
@@ -20,26 +21,15 @@ export async function POST(request: NextRequest) {
       return fail('Missing file key', 400);
     }
 
-    const sql = getSql();
-    const userRows = await sql`
-      select processing_minutes_used, processing_minutes_limit, plan
-      from profiles where id = ${session.sub}
-    `;
-    const firstUser = Array.isArray(userRows) ? userRows[0] : userRows;
-    const user = firstUser as
-      | { processing_minutes_used: number; processing_minutes_limit: number; plan: string }
-      | undefined;
-
-    if (!user) {
-      return fail('User not found', 404);
-    }
-
-    if (user.processing_minutes_used >= user.processing_minutes_limit) {
+    const limitCheck = await checkNoteLimit(session.sub);
+    if (!limitCheck.allowed) {
       return fail(
-        `Monthly processing limit reached (${user.processing_minutes_limit} minutes). Upgrade plan for more.`,
+        limitCheck.message || `Đã đạt giới hạn tối đa ${limitCheck.limit} ghi chú. Vui lòng nâng cấp gói Pro hoặc Ultra.`,
         403
       );
     }
+
+    const sql = getSql();
 
     const jobId = crypto.randomUUID();
     await sql`

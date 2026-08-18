@@ -3,6 +3,7 @@ import { getSql } from '@/lib/db';
 import { verifySession } from '@/lib/auth/session';
 import { ok, fail } from '@/lib/auth/http';
 import { dispatchStructuredNote } from '@/lib/ai/dispatcher';
+import { checkNoteLimit } from '@/lib/neon/queries';
 import { NoteMethod, NoteItem } from '@/src/types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -44,31 +45,20 @@ export async function POST(request: NextRequest) {
       inputText += '\n\nTài liệu đính kèm:\n' + sources.map(s => `- [${s.type.toUpperCase()}] ${s.name}`).join('\n');
     }
 
-    // Check user quota if logged in
+    // Check user note storage limit if logged in
     let userId: string | null = null;
     if (session) {
       userId = session.sub;
       try {
-        const sql = getSql();
-        const userRows = await sql`
-          select processing_minutes_used, processing_minutes_limit, plan
-          from profiles where id = ${session.sub}
-        `;
-        if (Array.isArray(userRows) && userRows.length > 0) {
-          const user = userRows[0] as {
-            processing_minutes_used: number;
-            processing_minutes_limit: number;
-            plan: string;
-          };
-          if (user.processing_minutes_used >= user.processing_minutes_limit) {
-            return fail(
-              `Bạn đã dùng hết hạn mức xử lý tháng (${user.processing_minutes_limit} phút). Vui lòng nâng cấp gói Pro hoặc Ultra.`,
-              403
-            );
-          }
+        const limitCheck = await checkNoteLimit(session.sub);
+        if (!limitCheck.allowed) {
+          return fail(
+            limitCheck.message || `Bạn đã đạt giới hạn tối đa ${limitCheck.limit} ghi chú. Vui lòng nâng cấp gói Pro hoặc Ultra.`,
+            403
+          );
         }
       } catch (err) {
-        console.warn('Could not verify processing limit from DB:', err);
+        console.warn('Could not verify note limit from DB:', err);
       }
     }
 

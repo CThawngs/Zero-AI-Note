@@ -62,6 +62,39 @@ export async function getArchivedNotes(userId: string): Promise<NoteRow[]> {
   return rows as unknown as NoteRow[];
 }
 
+export async function checkNoteLimit(userId: string): Promise<{ allowed: boolean; current: number; limit: number; plan: string; message?: string }> {
+  try {
+    const sql = getSql();
+    const profileRows = await sql`select plan from profiles where id = ${userId}`;
+    const plan = ((profileRows[0]?.plan as string) || 'free').toLowerCase();
+    
+    const countRows = await sql`select count(*)::int as cnt from notes where user_id = ${userId} and deleted_at is null`;
+    const current = Number(countRows[0]?.cnt) || 0;
+    
+    if (plan === 'ultra' || plan === 'admin') {
+      return { allowed: true, current, limit: Infinity, plan };
+    }
+    
+    const limit = plan === 'pro' ? 50 : 20;
+    if (current >= limit) {
+      const planName = plan === 'pro' ? 'Pro' : 'Miễn phí';
+      const nextPlan = plan === 'pro' ? 'Ultra' : 'Pro';
+      return {
+        allowed: false,
+        current,
+        limit,
+        plan,
+        message: `Bạn đã đạt giới hạn tối đa ${limit} ghi chú của gói ${planName}. Vui lòng nâng cấp lên gói ${nextPlan} để tiếp tục tạo thêm ghi chú.`
+      };
+    }
+    
+    return { allowed: true, current, limit, plan };
+  } catch (e) {
+    console.warn('checkNoteLimit fallback allow:', e);
+    return { allowed: true, current: 0, limit: 20, plan: 'free' };
+  }
+}
+
 export async function createNote(input: {
   user_id: string;
   title: string;
@@ -70,6 +103,10 @@ export async function createNote(input: {
   content_structured: object;
   confidence_flags: object;
 }): Promise<NoteRow> {
+  const limitCheck = await checkNoteLimit(input.user_id);
+  if (!limitCheck.allowed) {
+    throw new Error(limitCheck.message || `Đã vượt quá giới hạn ${limitCheck.limit} ghi chú của gói ${limitCheck.plan}.`);
+  }
   const sql = getSql();
   const rows = await sql`
     insert into notes (user_id, title, method, output_language, content_structured, confidence_flags)
@@ -100,6 +137,85 @@ export async function restoreNote(noteId: string): Promise<void> {
 export async function deleteNotePermanently(noteId: string): Promise<void> {
   const sql = getSql();
   await sql`delete from notes where id = ${noteId}`;
+}
+
+// ============================================================
+// CUSTOM TEMPLATES CRUD & LIMITS (5 / 25 / ∞)
+// ============================================================
+
+export interface CustomTemplateRow {
+  id: string;
+  user_id: string;
+  name: string;
+  description_prompt: string;
+  created_at: string;
+}
+
+export async function checkCustomTemplateLimit(userId: string): Promise<{ allowed: boolean; current: number; limit: number; plan: string; message?: string }> {
+  try {
+    const sql = getSql();
+    const profileRows = await sql`select plan from profiles where id = ${userId}`;
+    const plan = ((profileRows[0]?.plan as string) || 'free').toLowerCase();
+    
+    const countRows = await sql`select count(*)::int as cnt from custom_note_templates where user_id = ${userId}`;
+    const current = Number(countRows[0]?.cnt) || 0;
+    
+    if (plan === 'ultra' || plan === 'admin') {
+      return { allowed: true, current, limit: Infinity, plan };
+    }
+    
+    const limit = plan === 'pro' ? 25 : 5;
+    if (current >= limit) {
+      const planName = plan === 'pro' ? 'Pro' : 'Miễn phí';
+      const nextPlan = plan === 'pro' ? 'Ultra' : 'Pro';
+      return {
+        allowed: false,
+        current,
+        limit,
+        plan,
+        message: `Bạn đã đạt giới hạn tối đa ${limit} mẫu tùy chỉnh của gói ${planName}. Vui lòng nâng cấp lên gói ${nextPlan} để tạo thêm mẫu.`
+      };
+    }
+    
+    return { allowed: true, current, limit, plan };
+  } catch (e) {
+    console.warn('checkCustomTemplateLimit fallback allow:', e);
+    return { allowed: true, current: 0, limit: 5, plan: 'free' };
+  }
+}
+
+export async function getCustomTemplates(userId: string): Promise<CustomTemplateRow[]> {
+  noStore();
+  const sql = getSql();
+  const rows = await sql`
+    select * from custom_note_templates
+    where user_id = ${userId}
+    order by created_at desc
+  `;
+  return rows as unknown as CustomTemplateRow[];
+}
+
+export async function createCustomTemplate(input: {
+  user_id: string;
+  name: string;
+  description_prompt: string;
+}): Promise<CustomTemplateRow> {
+  const limitCheck = await checkCustomTemplateLimit(input.user_id);
+  if (!limitCheck.allowed) {
+    throw new Error(limitCheck.message || `Đã vượt quá giới hạn ${limitCheck.limit} mẫu tùy chỉnh.`);
+  }
+  const sql = getSql();
+  const rows = await sql`
+    insert into custom_note_templates (user_id, name, description_prompt)
+    values (${input.user_id}, ${input.name}, ${input.description_prompt})
+    returning *
+  `;
+  return (rows as unknown as CustomTemplateRow[])[0];
+}
+
+export async function deleteCustomTemplate(templateId: string): Promise<void> {
+  const sql = getSql();
+  await sql`delete from custom_note_templates where id = ${templateId}`;
 }
 
 // ============================================================
@@ -264,4 +380,38 @@ export async function applyCouponToUser(userId: string, couponCode: string) {
   `;
 
   return coupon;
+}
+
+// ============================================================
+// SUBSCRIPTIONS & PLAN UPGRADES (ZeroInvoice)
+// ============================================================
+
+export async function upgradeUserPlan(
+  userIdOrEmail: string,
+  plan: 'free' | 'pro' | 'ultra',
+  invoiceId?: string,
+  amount?: number,
+  couponCode?: string
+): Promise<void> {
+  const sql = getSql();
+  // Update profiles table
+  const updatedProfiles = await sql`
+    update profiles
+    set plan = ${plan},
+        plan_renews_at = now() + interval '30 days'
+    where id::text = ${userIdOrEmail} or email = ${userIdOrEmail}
+    returning id
+  `;
+
+  const userId = updatedProfiles[0]?.id || userIdOrEmail;
+
+  // Insert or record in subscriptions table if exists
+  try {
+    await sql`
+      insert into subscriptions (user_id, zeroinvoice_invoice_id, status, amount, coupon_code, renews_at)
+      values (${userId}, ${invoiceId || null}, 'active', ${amount || null}, ${couponCode || null}, now() + interval '30 days')
+    `;
+  } catch (e) {
+    console.warn('Could not insert subscription record:', e);
+  }
 }

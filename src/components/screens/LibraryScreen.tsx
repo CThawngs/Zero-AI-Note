@@ -47,6 +47,8 @@ export const LibraryScreen: React.FC = () => {
     setFocusSearchInput,
     isLoadingScreen,
     addToast,
+    user,
+    setCurrentScreen,
     theme,
     language,
     t
@@ -183,14 +185,37 @@ export const LibraryScreen: React.FC = () => {
             </div>
           </div>
 
-          <button
-            id="btn-library-new-note"
-            onClick={() => startNewChatNote()}
-            className="self-start sm:self-auto flex items-center gap-2 px-3.5 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-[var(--accent-text)] rounded-xl text-xs font-semibold shadow-md shadow-[var(--accent-primary)]/25 active:scale-95 transition-all cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>{t('newNote')}</span>
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Note quota badge */}
+            <div className="flex items-center gap-2">
+              <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-xl border ${
+                notes.length >= (user.plan === 'ultra' || user.role === 'admin' ? Infinity : user.plan === 'pro' ? 50 : 20)
+                  ? 'bg-red-500/15 border-red-500/30 text-red-600 dark:text-red-400'
+                  : 'bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-secondary)]'
+              }`}>
+                {language === 'vi' 
+                  ? `Lưu trữ: ${notes.length}/${user.plan === 'ultra' || user.role === 'admin' ? '∞' : user.plan === 'pro' ? '50' : '20'} Notes` 
+                  : `Storage: ${notes.length}/${user.plan === 'ultra' || user.role === 'admin' ? '∞' : user.plan === 'pro' ? '50' : '20'} Notes`}
+              </span>
+              {user.plan !== 'ultra' && user.role !== 'admin' && notes.length >= (user.plan === 'pro' ? 40 : 15) && (
+                <button
+                  onClick={() => setCurrentScreen('pricing')}
+                  className="text-[11px] font-bold text-[var(--accent-primary)] hover:underline cursor-pointer"
+                >
+                  {language === 'vi' ? 'Nâng gói' : 'Upgrade'}
+                </button>
+              )}
+            </div>
+
+            <button
+              id="btn-library-new-note"
+              onClick={() => startNewChatNote()}
+              className="flex items-center gap-2 px-3.5 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-[var(--accent-text)] rounded-xl text-xs font-semibold shadow-md shadow-[var(--accent-primary)]/25 active:scale-95 transition-all cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>{t('newNote')}</span>
+            </button>
+          </div>
         </div>
 
         {/* Search, Filter, Sort & View Mode row */}

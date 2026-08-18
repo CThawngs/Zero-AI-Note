@@ -60,9 +60,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ note });
   } catch (err) {
     console.error('[POST /api/notes] error:', err);
+    const isLimit = err instanceof Error && (err.message.includes('giới hạn') || err.message.includes('limit'));
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Failed to create note' },
-      { status: 500 }
+      { error: err instanceof Error ? err.message : 'Failed to create note', code: isLimit ? 'NOTE_LIMIT_EXCEEDED' : undefined },
+      { status: isLimit ? 403 : 500 }
     );
   }
 }

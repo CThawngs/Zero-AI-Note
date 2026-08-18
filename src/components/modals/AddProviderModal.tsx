@@ -98,7 +98,7 @@ export const AddProviderModal: React.FC<AddProviderModalProps> = ({ isOpen, onCl
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={language === 'vi' ? 'Thêm Provider AI (BYOK - Bring Your Own Key)' : 'Add AI Provider (BYOK)'}
+      title={language === 'vi' ? 'Tự Kết Nối AI / Thêm API Key Riêng' : 'Connect Your Own AI Provider'}
       subtitle={language === 'vi' ? 'Kết nối trực tiếp API Key riêng của bạn để không bị giới hạn token chung' : 'Connect your own API key to bypass shared rate limits'}
       maxWidth="max-w-xl"
     >

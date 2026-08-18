@@ -227,12 +227,12 @@ export const Header: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Section 2: Custom BYOK Providers */}
+                    {/* Section 2: Custom AI Providers */}
                     {customModels.length > 0 && (
                       <div className="space-y-1 pt-1.5 border-t border-[var(--border-color)]">
                         <div className="flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
                           <Server className="w-3 h-3 text-[var(--accent-primary)]" />
-                          <span>{isEn ? 'Your BYOK Providers' : 'Nhà cung cấp riêng của bạn (BYOK)'}</span>
+                          <span>{isEn ? 'Your Connected AI Providers' : 'Nhà cung cấp AI tự kết nối'}</span>
                         </div>
 
                         {filteredCustomModels.map((m) => {
@@ -265,7 +265,7 @@ export const Header: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Add BYOK Provider Button */}
+                  {/* Add AI Provider Button */}
                   <div className="pt-2 border-t border-[var(--border-color)]">
                     <button
                       id="btn-goto-add-provider"
@@ -277,7 +277,7 @@ export const Header: React.FC = () => {
                       className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-[var(--accent-text)] text-xs font-bold shadow-xs cursor-pointer active:scale-95 transition-all"
                     >
                       <PlusCircle className="w-3.5 h-3.5" />
-                      <span>{isEn ? '+ Add Custom BYOK Key' : '+ Thêm Provider Riêng (BYOK)'}</span>
+                      <span>{isEn ? '+ Connect Custom AI Key' : '+ Tự kết nối AI riêng'}</span>
                     </button>
                   </div>
                 </motion.div>

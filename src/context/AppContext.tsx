@@ -733,12 +733,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const addCustomTemplate = (title: string, description: string, prompt?: string) => {
+    const userPlan = (user.plan || 'free').toLowerCase();
+    const isUltra = userPlan === 'ultra' || user.role === 'admin';
+    const customLimit = isUltra ? Infinity : (userPlan === 'pro' ? 25 : 5);
+    const existingCustom = templates.filter(t => t.isCustom);
+    if (existingCustom.length >= customLimit) {
+      addToast(
+        language === 'vi' ? 'Đã đạt giới hạn mẫu tùy chỉnh' : 'Custom Template Limit Reached',
+        language === 'vi' 
+          ? `Bạn đã đạt giới hạn tối đa ${customLimit} mẫu của gói ${userPlan.toUpperCase()}. Vui lòng nâng cấp.`
+          : `Custom template limit of ${customLimit} reached. Upgrade for more.`,
+        'warning'
+      );
+      setCurrentScreen('pricing');
+      return;
+    }
+
     const newTmpl: TemplateItem = {
       id: 'tmpl_' + Date.now(),
       title,
       description,
       iconType: 'custom',
       isCustom: true,
+      planTier: 'free',
       sampleLayout: {
         columns: language === 'vi' ? ['Phần 1: Cốt lõi', 'Phần 2: Mở rộng', 'Phần 3: Đúc kết'] : ['Part 1: Core', 'Part 2: Deep Dive', 'Part 3: Summary'],
         description: description || (language === 'vi' ? 'Mẫu tùy chỉnh do bạn tự thiết kế.' : 'Custom user template.'),
@@ -1094,6 +1111,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         language === 'vi' ? 'Vui lòng đăng nhập để tạo ghi chú.' : 'Please log in to create notes.',
         'error'
       );
+      return;
+    }
+
+    const userPlan = (user.plan || 'free').toLowerCase();
+    const isUltra = userPlan === 'ultra' || user.role === 'admin';
+    const noteLimit = isUltra ? Infinity : (userPlan === 'pro' ? 50 : 20);
+    if (notes.length >= noteLimit) {
+      addToast(
+        language === 'vi' ? 'Đã đạt giới hạn lưu trữ ghi chú' : 'Note Storage Limit Reached',
+        language === 'vi' 
+          ? `Bạn đã đạt giới hạn tối đa ${noteLimit} ghi chú của gói ${userPlan.toUpperCase()}. Vui lòng nâng cấp hoặc dọn dẹp ghi chú cũ.`
+          : `Note limit of ${noteLimit} reached for ${userPlan.toUpperCase()}. Please upgrade or delete old notes.`,
+        'warning'
+      );
+      setCurrentScreen('pricing');
       return;
     }
 

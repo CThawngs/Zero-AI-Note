@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Modal } from '../common/Modal';
 import { useApp } from '../../context/AppContext';
+import { Sparkles, Lock } from 'lucide-react';
 
 interface CustomTemplateModalProps {
   isOpen: boolean;
@@ -8,16 +9,24 @@ interface CustomTemplateModalProps {
 }
 
 export const CustomTemplateModal: React.FC<CustomTemplateModalProps> = ({ isOpen, onClose }) => {
-  const { addCustomTemplate, theme, language, t } = useApp();
+  const { addCustomTemplate, templates, user, setCurrentScreen, theme, language, t } = useApp();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [prompt, setPrompt] = useState('');
 
   const isDark = theme === 'dark';
+  const customTemplates = templates.filter(t => t.isCustom);
+  const userPlan = (user.plan || 'free').toLowerCase();
+  const isProOrUltra = userPlan === 'pro' || userPlan === 'ultra' || user.role === 'admin';
+  const isUltra = userPlan === 'ultra' || user.role === 'admin';
+
+  const limit = isUltra ? Infinity : (isProOrUltra ? 25 : 5);
+  const limitLabel = isUltra ? '∞' : (isProOrUltra ? '25' : '5');
+  const isLimitReached = customTemplates.length >= limit;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!title.trim() || isLimitReached) return;
     addCustomTemplate(title.trim(), description.trim(), prompt.trim());
     setTitle('');
     setDescription('');
@@ -34,6 +43,41 @@ export const CustomTemplateModal: React.FC<CustomTemplateModalProps> = ({ isOpen
       maxWidth="max-w-lg"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Plan Limit Badge */}
+        <div className="flex items-center justify-between p-3 rounded-xl border bg-[var(--bg-app)] border-[var(--border-color)]">
+          <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+            <Sparkles className="w-4 h-4 text-[var(--accent-primary)]" />
+            <span>
+              {language === 'vi' 
+                ? `Hạn mức gói ${userPlan.toUpperCase()}: ${customTemplates.length}/${limitLabel} mẫu tùy chỉnh` 
+                : `${userPlan.toUpperCase()} Quota: ${customTemplates.length}/${limitLabel} custom templates`}
+            </span>
+          </div>
+          {!isUltra && (
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                setCurrentScreen('pricing');
+              }}
+              className="text-[11px] font-bold text-[var(--accent-primary)] hover:underline cursor-pointer"
+            >
+              {language === 'vi' ? 'Nâng cấp' : 'Upgrade'}
+            </button>
+          )}
+        </div>
+
+        {isLimitReached && (
+          <div className="p-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs flex items-center gap-2">
+            <Lock className="w-4 h-4 shrink-0" />
+            <span>
+              {language === 'vi'
+                ? `Bạn đã đạt giới hạn tối đa ${limit} mẫu của gói ${userPlan.toUpperCase()}. Hãy nâng cấp để tạo thêm.`
+                : `You reached the limit of ${limit} templates for ${userPlan.toUpperCase()}. Upgrade for more.`}
+            </span>
+          </div>
+        )}
+
         <div>
           <label className="block text-xs font-medium mb-1.5 text-[var(--text-primary)]">
             {t('templateTitleInput')} <span className="text-[var(--status-error)]">*</span>
@@ -42,10 +86,11 @@ export const CustomTemplateModal: React.FC<CustomTemplateModalProps> = ({ isOpen
             id="input-custom-template-title"
             type="text"
             required
+            disabled={isLimitReached}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder={language === 'vi' ? 'Ví dụ: Ghi chú Họp Sprint Scrum' : 'e.g. Sprint Retrospective Protocol'}
-            className="w-full border rounded-xl px-3.5 py-2.5 text-xs sm:text-sm focus:outline-none focus:border-[var(--accent-primary)] transition-colors bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
+            className="w-full border rounded-xl px-3.5 py-2.5 text-xs sm:text-sm focus:outline-none focus:border-[var(--accent-primary)] transition-colors bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] disabled:opacity-50"
           />
         </div>
 
@@ -56,10 +101,11 @@ export const CustomTemplateModal: React.FC<CustomTemplateModalProps> = ({ isOpen
           <input
             id="input-custom-template-desc"
             type="text"
+            disabled={isLimitReached}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder={language === 'vi' ? 'Mô tả mục đích sử dụng mẫu ghi chú...' : 'Describe template goal and usage...'}
-            className="w-full border rounded-xl px-3.5 py-2.5 text-xs sm:text-sm focus:outline-none focus:border-[var(--accent-primary)] transition-colors bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
+            className="w-full border rounded-xl px-3.5 py-2.5 text-xs sm:text-sm focus:outline-none focus:border-[var(--accent-primary)] transition-colors bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] disabled:opacity-50"
           />
         </div>
 
@@ -70,10 +116,11 @@ export const CustomTemplateModal: React.FC<CustomTemplateModalProps> = ({ isOpen
           <textarea
             id="input-custom-template-prompt"
             rows={4}
+            disabled={isLimitReached}
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             placeholder={language === 'vi' ? 'Yêu cầu AI chia note thành 3 phần: 1. Mục tiêu sprint, 2. Việc đã hoàn thành, 3. Blockers và Action Items...' : 'Instruct AI: Format into 1. Sprint Goal, 2. Shipped deliverables, 3. Roadblocks & Follow-ups...'}
-            className="w-full border rounded-xl p-3 text-xs focus:outline-none focus:border-[var(--accent-primary)] custom-scrollbar resize-none transition-colors bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
+            className="w-full border rounded-xl p-3 text-xs focus:outline-none focus:border-[var(--accent-primary)] custom-scrollbar resize-none transition-colors bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] disabled:opacity-50"
           />
         </div>
 
@@ -88,7 +135,8 @@ export const CustomTemplateModal: React.FC<CustomTemplateModalProps> = ({ isOpen
           <button
             type="submit"
             id="btn-save-custom-template"
-            className="px-5 py-2 rounded-xl bg-[var(--accent-primary)] hover:opacity-90 text-[var(--accent-text)] text-xs font-semibold shadow-xs cursor-pointer active:scale-95 transition-all"
+            disabled={isLimitReached}
+            className="px-5 py-2 rounded-xl bg-[var(--accent-primary)] hover:opacity-90 text-[var(--accent-text)] text-xs font-semibold shadow-xs cursor-pointer active:scale-95 transition-all disabled:opacity-50"
           >
             {t('save')}
           </button>
