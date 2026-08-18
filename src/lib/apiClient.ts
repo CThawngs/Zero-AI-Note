@@ -74,7 +74,7 @@ export async function archiveNote(noteId: string): Promise<void> {
 }
 
 export async function restoreNote(noteId: string): Promise<void> {
-  const res = await fetch(`/api/notes?id=${encodeURIComponent(noteId)}&restore=1`, { method: 'POST' });
+  const res = await fetch(`/api/notes/restore?id=${encodeURIComponent(noteId)}`, { method: 'POST' });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     throw new Error(data.error || 'Failed to restore note');

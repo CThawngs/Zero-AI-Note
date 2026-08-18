@@ -94,7 +94,6 @@ export async function PATCH(request: NextRequest) {
 
 /**
  * DELETE /api/notes?id=...&permanent=1 — xoá vĩnh viễn (mặc định archive).
- * POST /api/notes?id=...&restore=1 — khôi phục note đã archive.
  */
 export async function DELETE(request: NextRequest) {
   try {
@@ -118,35 +117,6 @@ export async function DELETE(request: NextRequest) {
     console.error('[DELETE /api/notes] error:', err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Failed to delete note' },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * POST /api/notes?id=...&restore=1 — khôi phục (Next.js route handler
- * chỉ có thể export một POST, nên dùng query param để phân biệt).
- */
-export async function POST_RESTORE(request: NextRequest) {
-  try {
-    const session = await getSession();
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const id = request.nextUrl.searchParams.get('id');
-    if (!id) {
-      return NextResponse.json({ error: 'Missing note id' }, { status: 400 });
-    }
-
-    if (request.nextUrl.searchParams.get('restore') === '1') {
-      await restoreNote(id);
-    }
-    return NextResponse.json({ success: true });
-  } catch (err) {
-    console.error('[POST /api/notes restore] error:', err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Failed to restore note' },
       { status: 500 }
     );
   }

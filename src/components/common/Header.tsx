@@ -349,14 +349,6 @@ export const Header: React.FC = () => {
             )}
           </AnimatePresence>
         </div>
-
-        {/* Global Pipeline Status Pill */}
-        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl border border-[var(--border-color)] bg-[var(--bg-app)] text-xs text-[var(--text-secondary)] shadow-2xs">
-          <span className="w-2 h-2 rounded-full bg-[var(--status-success)] animate-pulse" />
-          <span className="font-medium text-[var(--text-primary)]">
-            {isEn ? 'Ready to process' : 'Sẵn sàng xử lý'}
-          </span>
-        </div>
       </div>
 
       {/* Right side Actions: Theme Toggle, Upgrade, Notifications, Share */}
