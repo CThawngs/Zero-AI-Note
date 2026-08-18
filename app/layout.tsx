@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import { AppProvider } from '@/src/context/AppContext';
 import '../src/index.css';
 
@@ -37,9 +38,12 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
           rel="stylesheet"
         />
-        <script src="https://accounts.google.com/gsi/client" async defer></script>
       </head>
-      <body className="antialiased">
+      <body className="antialiased" suppressHydrationWarning>
+        <Script
+          src="https://accounts.google.com/gsi/client"
+          strategy="afterInteractive"
+        />
         <AppProvider>
           {children}
         </AppProvider>

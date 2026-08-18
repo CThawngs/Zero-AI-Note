@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { AppProvider, useApp } from './context/AppContext';
+import { useApp } from './context/AppContext';
 import { Sidebar } from './components/common/Sidebar';
 import { Header } from './components/common/Header';
 import { ToastContainer } from './components/common/ToastContainer';
@@ -17,8 +17,7 @@ import { PricingScreen } from './components/screens/PricingScreen';
 import { AdminCouponScreen } from './components/screens/AdminCouponScreen';
 
 const MainApp: React.FC = () => {
-  const { currentScreen, theme } = useApp();
-  const isDark = theme === 'dark';
+  const { currentScreen } = useApp();
 
   // If on login screen
   if (currentScreen === 'login') {
@@ -85,11 +84,7 @@ const MainApp: React.FC = () => {
 };
 
 export function App() {
-  return (
-    <AppProvider>
-      <MainApp />
-    </AppProvider>
-  );
+  return <MainApp />;
 }
 
 export default App;
