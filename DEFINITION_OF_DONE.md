@@ -19,9 +19,9 @@
 - [ ] Hàng đợi job nền (Inngest/Trigger.dev) dựng xong, test 1 job giả lập chạy được
 
 ## Tuần 3-4 — MVP lõi
-- [ ] 1 file thật → transcribe thật (không mock) → note Cornell/tóm tắt nhanh → Artifact Panel
-- [ ] Copy/Download hoạt động thật (DOCX/PDF thật, không placeholder)
-- [ ] `content_structured` là nguồn duy nhất (không parse ngược từ HTML)
+- [x] 1 file thật / prompt → transcribe & phân tích thật bằng Google Gemini 2.0 Flash → note Cornell/tóm tắt nhanh → Artifact Panel (commit mới)
+- [x] Copy/Download hoạt động thật (DOCX thật qua docx package, PDF chuẩn print, Markdown, HTML — không placeholder)
+- [x] `content_structured` là nguồn DUY NHẤT để render Preview và sinh mọi file export (MD/DOCX/PDF/HTML)
 
 ## Tuần 5-7 — Mở rộng đầu vào/đầu ra
 - [ ] Multi-file multi-định dạng qua pipeline chunk

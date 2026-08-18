@@ -84,20 +84,29 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
           error_callback: (err) => {
             setIsLoading(false);
             console.error('[Google OAuth] Token client error:', err);
-            // Fallback to standard redirect if popup blocked
-            window.location.href = '/api/auth/google/login';
+            // KHÔNG fallback redirect nữa — redirect flow gây redirect_uri_mismatch.
+            // Hiện lỗi rõ ràng để người dùng cấu hình đúng.
+            if (onError) {
+              onError(new Error('Không thể khởi tạo Google Sign-In. Kiểm tra cấu hình OAuth trong Google Cloud Console (Authorized JavaScript origins + Redirect URIs).'));
+            }
           },
         });
 
         tokenClient.requestAccessToken();
         return;
       } catch (e) {
-        console.warn('[Google OAuth] TokenClient init failed, falling back to redirect:', e);
+        setIsLoading(false);
+        console.warn('[Google OAuth] TokenClient init failed:', e);
+        if (onError) {
+          onError(new Error('Không thể khởi tạo Google Sign-In. Kiểm tra cấu hình OAuth trong Google Cloud Console (Authorized JavaScript origins + Redirect URIs).'));
+        }
+      }
+    } else {
+      setIsLoading(false);
+      if (onError) {
+        onError(new Error('Google Identity Services chưa sẵn sàng. Vui lòng tải lại trang và thử lại.'));
       }
     }
-
-    // Fallback: Standard OAuth 2.0 redirect
-    window.location.href = '/api/auth/google/login';
   };
 
   if (!googleClientId) {

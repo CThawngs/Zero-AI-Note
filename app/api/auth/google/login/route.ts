@@ -3,6 +3,12 @@ import { NextRequest, NextResponse } from 'next/server';
 export const runtime = 'nodejs';
 
 function getRedirectUri(request: NextRequest): string {
+  // Ưu tiên NEXT_PUBLIC_APP_URL — deterministic, khớp tuyệt đối với Authorized redirect URIs
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').trim().replace(/\/$/, '');
+  if (appUrl) {
+    return `${appUrl}/api/auth/google/callback`;
+  }
+
   const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || 'localhost:3000';
   const proto = request.headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
   

@@ -64,6 +64,10 @@ export interface NoteItem {
       title: string;
       definition?: string;
       text: string;
+      cue?: string;
+      note?: string;
+      question?: string;
+      answer?: string;
       lowConfidenceSnippet?: string;
       lowConfidenceReason?: string;
       tableData?: {

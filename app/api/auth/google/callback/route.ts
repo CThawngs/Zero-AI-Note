@@ -6,6 +6,15 @@ import { findUserByEmail, createUser } from '@/lib/auth/users';
 export const runtime = 'nodejs';
 
 function getRedirectContext(request: NextRequest): { baseUrl: string; redirectUri: string } {
+  // Ưu tiên NEXT_PUBLIC_APP_URL — deterministic, khớp tuyệt đối với Authorized redirect URIs
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').trim().replace(/\/$/, '');
+  if (appUrl) {
+    return {
+      baseUrl: appUrl,
+      redirectUri: `${appUrl}/api/auth/google/callback`,
+    };
+  }
+
   const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || 'localhost:3000';
   const proto = request.headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
   

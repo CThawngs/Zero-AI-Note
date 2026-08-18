@@ -958,11 +958,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     const isAuto = currentMethod === 'auto';
-    const finalChosenMethod: NoteMethod = isAuto ? 'cornell' : currentMethod;
-    if (isAuto) {
-      setAutoSelectedMethod('cornell');
-    }
-
+    
     const newUserMsg: ChatMessage = {
       id: userMsgId,
       sender: 'user',
@@ -975,111 +971,80 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsProcessingChat(true);
     setProcessingStep(1);
 
-    // AI Multi-step Pipeline simulation
-    setTimeout(() => {
-      setProcessingStep(2);
-      setTimeout(() => {
-        setProcessingStep(3);
-        setTimeout(async () => {
-          setIsProcessingChat(false);
-          setProcessingStep(4);
+    const isEn = language === 'en';
 
-          // Generate note in database
-          try {
-            const isEn = language === 'en';
-            const newNote = await createNote({
-              user_id: user.id,
-              title: text.length > 40 ? text.substring(0, 40) + '...' : text,
-              method: finalChosenMethod,
-              output_language: isEn ? 'en' : 'vi',
-              content_structured: {
-                overview: isEn
-                  ? `Detailed structured note deconstructed from prompt "${text}". Complies with ${finalChosenMethod.toUpperCase()} methodology standards.`
-                  : `Bản ghi chú chi tiết được trích xuất từ câu hỏi "${text}". Cấu trúc tuân theo chuẩn phương pháp ${finalChosenMethod.toUpperCase()}.`,
-                sections: [
-                  {
-                    title: isEn ? '1. Core Conceptual Pillars' : '1. Luận điểm trọng tâm',
-                    definition: isEn
-                      ? 'Automated classification of primary takeaways and key statistical metrics.'
-                      : 'Hệ thống tự động phân loại các ý tưởng then chốt và trích dẫn số liệu quan trọng.',
-                    text: isEn
-                      ? 'The synthesis provides a comprehensive breakdown of workflow efficiency and active recall. Structural hierarchy increases knowledge retention by up to 70%.'
-                      : 'Tài liệu cung cấp cái nhìn toàn diện về tối ưu hóa quy trình làm việc và ghi nhớ chủ động. Các phân tích chỉ ra rằng việc cấu trúc thông tin dạng phân cấp giúp gia tăng khả năng ghi nhớ lên 70%.',
-                    lowConfidenceSnippet: isEn
-                      ? 'This ratio may fluctuate depending on experimental methodologies.'
-                      : 'Tỷ lệ này có thể thay đổi tùy theo phương pháp đo lường của từng nghiên cứu.',
-                    lowConfidenceReason: isEn
-                      ? 'Data requires further citation verification against raw audio source.'
-                      : 'Dữ liệu cần xác minh thêm từ nguồn gốc.',
-                    tableData: {
-                      headers: isEn ? ['Metric', 'Baseline', 'Post-Implementation (%)'] : ['Chỉ số', 'Trước áp dụng', 'Sau áp dụng (%)'],
-                      rows: isEn ? [
-                        ['Comprehension Speed', '150 wpm', '+120%'],
-                        ['7-Day Retention', '35%', '+85%'],
-                        ['Review Time Required', '45 mins', '-60%']
-                      ] : [
-                        ['Tốc độ đọc hiểu', '150 từ/phút', '+120%'],
-                        ['Độ nhớ sau 7 ngày', '35%', '+85%'],
-                        ['Thời gian ôn tập', '45 phút', '-60%']
-                      ]
-                    },
-                    bulletPoints: isEn ? [
-                      'Automated multi-modal parsing across videos, podcasts and long-form papers.',
-                      'Precise millisecond timestamp synchronization and citation anchor tags.',
-                      'Multi-format export capabilities (Markdown, DOCX, PDF, HTML, Flashcards).'
-                    ] : [
-                      'Trích xuất tự động từ video và văn bản dài.',
-                      'Liên kết trực tiếp tới mốc thời gian timestamp chính xác.',
-                      'Dễ dàng xuất ra nhiều định dạng (Markdown, Word, PDF, HTML).'
-                    ]
-                  }
-                ],
-                summaryText: isEn
-                  ? 'Note is fully formatted and primed for structured review or export.'
-                  : 'Ghi chú đã được tối ưu hóa sẵn sàng để ôn tập hoặc xuất bản tài liệu nghiên cứu.'
-              },
-              confidence_flags: {}
-                          });
+    try {
+      setTimeout(() => setProcessingStep(2), 600);
 
-            // Update notes list
-            const updatedNotes = await getNotes(user.id);
-            setNotes(updatedNotes.map(mapNoteRow));
+      const res = await fetch('/api/notes/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: text,
+          method: currentMethod,
+          language: isEn ? 'en' : 'vi',
+          model: selectedModel || 'gemini-2.5-flash',
+          sources: attachedSources || [],
+        }),
+      });
 
-            setActiveArtifactNote(mapNoteRow(newNote));
-            setIsArtifactOpen(true);
+      setProcessingStep(3);
 
-            setChatMessages(prev => [
-              ...prev,
-              {
-                id: 'msg_ai_done_' + Date.now(),
-                sender: 'ai',
-                text: isEn 
-                  ? (isAuto 
-                      ? `AI analyzed your source and auto-selected CORNELL method as the optimal structure! You can view and export it in the Artifact Panel on the right.`
-                      : `I have completed structuring the note with ${finalChosenMethod.toUpperCase()} method! You can view and export it in the Artifact Panel on the right.`)
-                  : (isAuto
-                      ? `AI đã phân tích nội dung và tự động chọn phương pháp CORNELL phù hợp nhất! Bạn có thể xem và tải về ở Artifact Panel bên phải.`
-                      : `Tôi đã hoàn thành cấu trúc ghi chú theo phương pháp ${finalChosenMethod.toUpperCase()}! Bạn có thể xem và tải về ở Artifact Panel bên phải.`),
-                timestamp: nowTime,
-                noteResultId: newNote.id
-              }
-            ]);
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to generate note');
+      }
 
-            addToast(
-              isEn ? 'Note Generated' : 'Tạo note thành công', 
-              isEn ? 'Artifact panel opened with new note.' : 'Artifact Panel đã mở với nội dung ghi chú mới.', 
-              'success'
-            );
-          } catch (err) {
-            addToast(
-              language === 'vi' ? 'Lỗi tạo note' : 'Note generation failed',
-              err instanceof Error ? err.message : 'Unknown error',
-              'error'
-            );
-          }
-        }, 1200);
-      }, 1500);
-    }, 1500);
+      const generatedNote: NoteItem = data.note;
+
+      // Update state with generated note
+      setNotes(prev => [generatedNote, ...prev.filter(n => n.id !== generatedNote.id)]);
+      setActiveArtifactNote(generatedNote);
+      setIsArtifactOpen(true);
+      setProcessingStep(4);
+
+      setChatMessages(prev => [
+        ...prev,
+        {
+          id: 'msg_ai_done_' + Date.now(),
+          sender: 'ai',
+          text: isEn 
+            ? (isAuto 
+                ? `AI analyzed your source and auto-selected ${generatedNote.method.toUpperCase()} method as the optimal structure! You can view and export it in the Artifact Panel on the right.`
+                : `I have completed structuring the note with ${generatedNote.method.toUpperCase()} method! You can view and export it in the Artifact Panel on the right.`)
+            : (isAuto
+                ? `AI đã phân tích nội dung và tự động chọn phương pháp ${generatedNote.method.toUpperCase()} phù hợp nhất! Bạn có thể xem và tải về ở Artifact Panel bên phải.`
+                : `Tôi đã hoàn thành cấu trúc ghi chú theo phương pháp ${generatedNote.method.toUpperCase()}! Bạn có thể xem và tải về ở Artifact Panel bên phải.`),
+          timestamp: nowTime,
+          noteResultId: generatedNote.id
+        }
+      ]);
+
+      addToast(
+        isEn ? 'Note Generated' : 'Tạo ghi chú thành công', 
+        isEn ? `"${generatedNote.title}" is ready.` : `Ghi chú "${generatedNote.title}" đã sẵn sàng.`, 
+        'success'
+      );
+    } catch (err) {
+      console.error('Note generation failed:', err);
+      const errMsg = err instanceof Error ? err.message : 'Error generating note';
+      setChatMessages(prev => [
+        ...prev,
+        {
+          id: 'msg_ai_err_' + Date.now(),
+          sender: 'ai',
+          text: isEn ? `Error: ${errMsg}` : `Lỗi: ${errMsg}`,
+          timestamp: nowTime,
+        }
+      ]);
+      addToast(
+        isEn ? 'Generation Error' : 'Lỗi tạo ghi chú',
+        errMsg,
+        'error'
+      );
+    } finally {
+      setIsProcessingChat(false);
+    }
   };
 
   return (

@@ -292,7 +292,34 @@
 
 ---
 
-## 15. References
+## 15. Core AI Generation Pipeline & Multi-Format Export (Tuần 3-4 MVP) (2026-08-18)
+
+### Problem
+- Trước đây hệ thống sử dụng simulation timeout và mock template trong `AppContext.tsx` để giả lập việc tạo ghi chú.
+- Các nút tải file trong Artifact Panel chỉ hiển thị toast thông báo mà không sinh ra file thực tế.
+
+### Fix & Architecture Applied
+1. **Google Gemini 2.0 Flash AI Engine (`lib/ai/gemini.ts`)**:
+   - Tích hợp `@google/genai` chính thức từ Google.
+   - Nhận diện phương pháp (`auto`, `cornell`, `outline`, `qa`, `flashcard`, `quick-summary`, `executive-summary`, `custom`).
+   - Trả về JSON `StructuredNoteOutput` với đầy đủ cấu trúc: `title`, `method`, `summary`, `category`, `keywords`, `coreQuestions`, `content` (overview, sections, cues, notes, definitions, bulletPoints, tableData, summaryText) và `rawMarkdown`.
+2. **Nguồn Dữ Liệu Duy Nhất (`content_structured`)**:
+   - `content_structured` JSON là nguồn duy nhất để render Preview trên web và sinh mọi file export, tuyệt đối không parse ngược từ HTML.
+3. **Multi-Format Export Engine (`lib/export/`) & `/api/notes/export`**:
+   - **DOCX**: Sử dụng thư viện `docx` chính thức để tạo file Microsoft Word `.docx` thật, với bảng Cornell 2 cột (Cues bên trái, Notes bên phải, Summary ở cuối) và phân cấp Outline chuẩn.
+   - **PDF**: Tạo giao diện HTML chuẩn in ấn và kích hoạt hộp thoại lưu PDF của trình duyệt.
+   - **Markdown (.md)**: Tạo file Markdown GFM tương thích 100%.
+   - **HTML (.html)**: Tạo tài liệu HTML độc lập có sẵn style CSS chuyên nghiệp.
+4. **Artifact Panel Integration (`src/components/screens/ArtifactPanel.tsx`)**:
+   - Cho phép chọn tải một hoặc nhiều định dạng cùng lúc (Multi-format parallel download).
+   - Tích hợp Copy vào Clipboard tức thì và Code/Markdown raw view.
+5. **Database Persistence**:
+   - Lưu trữ trực tiếp ghi chú mới vào bảng `notes` trên Neon Serverless Postgres.
+   - Cập nhật số phút xử lý `processing_minutes_used` trong `profiles`.
+
+---
+
+## 16. References
 - [Neon Documentation](https://neon.tech/docs)
 - [Drizzle ORM](https://orm.drizzle.team)
 - [gitleaks](https://github.com/gitleaks/gitleaks)
@@ -301,3 +328,5 @@
 - [JWT.io](https://jwt.io)
 - [Google Identity Services](https://developers.google.com/identity/gsi/web)
 - [google-auth-library](https://github.com/googleapis/google-auth-library-nodejs)
+- [Google Gen AI SDK](https://github.com/googleapis/genai-js)
+- [Docx JS](https://docx.js.org/)
