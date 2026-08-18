@@ -45,6 +45,8 @@ export const NoteDetailScreen: React.FC = () => {
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [audioProgress, setAudioProgress] = useState(25);
   const [isCopied, setIsCopied] = useState(false);
+  const [isDownloadOpen, setIsDownloadOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [askInput, setAskInput] = useState('');
   const [askHistory, setAskHistory] = useState<{ q: string; a: string; time: string }[]>([
     {
@@ -95,6 +97,74 @@ export const NoteDetailScreen: React.FC = () => {
     setIsCopied(true);
     addToast(t('copied'), t('toastCopied'));
     setTimeout(() => setIsCopied(false), 2000);
+  };
+
+  const triggerDownloadFile = async (format: 'docx' | 'md' | 'html' | 'pdf') => {
+    try {
+      setIsExporting(true);
+      const response = await fetch('/api/notes/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          format,
+          note: {
+            title: activeNote.title,
+            method: activeNote.method,
+            summary: activeNote.summary,
+            category: activeNote.category,
+            keywords: activeNote.keywords,
+            coreQuestions: activeNote.coreQuestions,
+            content: activeNote.content,
+            rawMarkdown: activeNote.rawMarkdown,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Export ${format.toUpperCase()} failed`);
+      }
+
+      if (format === 'pdf') {
+        const html = await response.text();
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+          printWindow.document.write(html);
+          printWindow.document.close();
+          setTimeout(() => {
+            printWindow.focus();
+            printWindow.print();
+          }, 300);
+        }
+        return;
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const safeTitle = (activeNote.title || 'zero-ai-note')
+        .replace(/[^a-zA-Z0-9_\-\u00C0-\u024F\u1EA0-\u1EF9]/g, '_')
+        .substring(0, 50);
+      a.download = `${safeTitle}.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      addToast(
+        language === 'vi' ? 'Xuất tệp thành công' : 'Export Succeeded',
+        language === 'vi' ? `Đã tải xuống ${format.toUpperCase()}` : `Downloaded ${format.toUpperCase()}`
+      );
+    } catch (e: any) {
+      addToast(
+        language === 'vi' ? 'Lỗi xuất tệp' : 'Export Failed',
+        e?.message || 'Có lỗi xảy ra khi tải tệp.',
+        'error'
+      );
+    } finally {
+      setIsExporting(false);
+      setIsDownloadOpen(false);
+    }
   };
 
   const handleAskSubmit = (e: React.FormEvent) => {
@@ -197,6 +267,57 @@ export const NoteDetailScreen: React.FC = () => {
             {isCopied ? <Check className="w-3.5 h-3.5 text-[var(--status-success)]" /> : <Copy className="w-3.5 h-3.5 text-[var(--text-secondary)]" />}
             <span>{isCopied ? t('copied') : t('copyMarkdown')}</span>
           </button>
+
+          {/* Download Multi-format Dropdown */}
+          <div className="relative">
+            <button
+              id="btn-download-note-detail"
+              onClick={() => setIsDownloadOpen(!isDownloadOpen)}
+              disabled={isExporting}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer active:scale-95 ${
+                isDark 
+                  ? 'bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] border-[var(--border-color)] text-[var(--text-primary)]' 
+                  : 'bg-white hover:bg-[var(--bg-hover)] border-[var(--border-color)] text-[var(--text-primary)] shadow-2xs'
+              }`}
+            >
+              <Download className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
+              <span>{isExporting ? (language === 'vi' ? 'Đang xuất...' : 'Exporting...') : (language === 'vi' ? 'Tải file' : 'Export')}</span>
+            </button>
+
+            <AnimatePresence>
+              {isDownloadOpen && (
+                <>
+                  <div className="fixed inset-0 z-20" onClick={() => setIsDownloadOpen(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: 4 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: 4 }}
+                    className={`absolute right-0 mt-1.5 w-44 rounded-xl shadow-2xl p-1.5 z-30 space-y-1 text-xs border ${
+                      isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)]' : 'bg-white border-[var(--border-color)]'
+                    }`}
+                  >
+                    {[
+                      { id: 'pdf', label: 'PDF Document (.pdf)', desc: 'Fixed Layout' },
+                      { id: 'docx', label: 'Word Document (.docx)', desc: 'Standard Tables' },
+                      { id: 'md', label: 'Markdown (.md)', desc: 'Plain Text' },
+                      { id: 'html', label: 'Interactive HTML (.html)', desc: 'Standalone' }
+                    ].map(fmt => (
+                      <button
+                        key={fmt.id}
+                        onClick={() => triggerDownloadFile(fmt.id as any)}
+                        className={`w-full text-left px-2.5 py-2 rounded-lg transition-colors cursor-pointer flex flex-col ${
+                          isDark ? 'hover:bg-[var(--bg-hover)] text-[var(--text-primary)]' : 'hover:bg-[var(--bg-app)] text-[var(--text-primary)]'
+                        }`}
+                      >
+                        <span className="font-semibold">{fmt.label}</span>
+                        <span className="text-[10px] text-[var(--text-muted)]">{fmt.desc}</span>
+                      </button>
+                    ))}
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
 
           {/* Share Button */}
           <button

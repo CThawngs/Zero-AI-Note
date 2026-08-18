@@ -576,6 +576,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     loadData();
   }, [user.id, user.role, language]);
 
+  // Load custom templates from localStorage
+  useEffect(() => {
+    try {
+      const storageKey = `zero_ai_custom_templates_${user.id || 'default'}`;
+      const stored = localStorage.getItem(storageKey);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setTemplates([...initialTemplates, ...parsed]);
+        }
+      }
+    } catch {}
+  }, [user.id]);
+
   const openNoteDetail = (note: NoteItem) => {
     setActiveNote(note);
     setActiveArtifactNote(note);
@@ -731,7 +745,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         previewMarkdown: `# ${title}\n\n${prompt || (language === 'vi' ? 'Cấu trúc tùy chỉnh được tối ưu cho phong cách học tập của bạn.' : 'Custom structure optimized for your workflow.')}`
       }
     };
-    setTemplates(prev => [...prev, newTmpl]);
+    setTemplates(prev => {
+      const updated = [...prev, newTmpl];
+      const customOnly = updated.filter(t => t.isCustom);
+      try {
+        const storageKey = `zero_ai_custom_templates_${user.id || 'default'}`;
+        localStorage.setItem(storageKey, JSON.stringify(customOnly));
+      } catch {}
+      return updated;
+    });
     addToast(
       language === 'vi' ? 'Tạo mẫu thành công' : 'Template Created', 
       language === 'vi' ? `Mẫu "${title}" đã được thêm vào danh sách.` : `Template "${title}" added to your list.`
