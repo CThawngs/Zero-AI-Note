@@ -1,5 +1,14 @@
-const ZEROINVOICE_API_KEY = process.env.ZEROINVOICE_API_KEY || 'zi_17762c7f1f650f2833f268e692573e5fa5e250b29b7a82de';
+const ZEROINVOICE_API_KEY = process.env.ZEROINVOICE_API_KEY;
 const ZEROINVOICE_BASE_URL = process.env.ZEROINVOICE_BASE_URL || 'https://zeroinvoice-silk.vercel.app';
+
+// Fail-closed: nếu thiếu API key → crash rõ ràng, không fallback yếu
+if (!ZEROINVOICE_API_KEY) {
+  throw new Error(
+    'Missing ZEROINVOICE_API_KEY environment variable. ' +
+    'Set it in Vercel Environment Variables (and .env.local for local dev). ' +
+    'The ZeroInvoice billing integration will not start without it.'
+  );
+}
 
 export interface ZeroInvoiceBillResponse {
   data: {

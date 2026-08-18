@@ -1,15 +1,59 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { upgradeUserPlan } from '@/lib/neon/queries';
 import { getSql } from '@/lib/db';
 
 export const runtime = 'nodejs';
 
+const WEBHOOK_SECRET = process.env.ZEROINVOICE_WEBHOOK_SECRET;
+
 /**
  * POST /api/billing/webhook — Nhận webhook thanh toán từ ZeroInvoice / VietQR
+ *
+ * Bảo mật: xác minh chữ ký HMAC-SHA256 qua header `x-webhook-signature`
+ * (hoặc `x-zerinvoice-signature` / `x-signature`). Fail-closed: nếu thiếu
+ * secret hoặc chữ ký sai → từ chối 401, KHÔNG xử lý.
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    // 1) Xác minh webhook secret
+    if (!WEBHOOK_SECRET) {
+      console.error('[ZeroInvoice Webhook] Missing ZEROINVOICE_WEBHOOK_SECRET env var');
+      return NextResponse.json(
+        { error: 'Webhook not configured (missing secret)' },
+        { status: 500 }
+      );
+    }
+
+    const rawBody = await request.text();
+    const signature =
+      request.headers.get('x-webhook-signature') ||
+      request.headers.get('x-zerinvoice-signature') ||
+      request.headers.get('x-signature') ||
+      '';
+
+    if (!signature) {
+      return NextResponse.json({ error: 'Missing webhook signature' }, { status: 401 });
+    }
+
+    const expected = crypto
+      .createHmac('sha256', WEBHOOK_SECRET)
+      .update(rawBody)
+      .digest('hex');
+
+    const provided = signature.toLowerCase();
+    const valid =
+      provided === expected ||
+      provided === `sha256=${expected}` ||
+      provided === `hmac sha256=${expected}`;
+
+    if (!valid) {
+      console.warn('[ZeroInvoice Webhook] Invalid signature — rejected');
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+    }
+
+    // 2) Parse & xử lý
+    const body = JSON.parse(rawBody);
     console.log('[ZeroInvoice Webhook Received]:', body);
 
     const billId = body.bill_id || body.id || body.data?.bill_id;
