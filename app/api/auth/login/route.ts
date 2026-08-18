@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import bcrypt from 'bcryptjs';
 import { verifyPassword } from '@/lib/auth/password';
 import { signSession, getSessionCookie } from '@/lib/auth/session';
 import { ok, fail } from '@/lib/auth/http';
-import { findUserByEmail } from '@/lib/auth/users';
+import { findUserByEmail, updateUserPassword } from '@/lib/auth/users';
 
 export const runtime = 'nodejs';
 
@@ -21,13 +22,22 @@ export async function POST(request: NextRequest) {
       return fail('Email hoặc mật khẩu không chính xác', 401);
     }
 
+    // ── HỢP NHẤT TÀI KHOẢN (ACCOUNT MERGING) ──
+    // Nếu tài khoản được tạo qua Google và chưa đặt mật khẩu:
+    // Tự động gán mật khẩu người dùng vừa nhập và đăng nhập thành công.
     if (!user.password_hash) {
-      return fail('Tài khoản này chưa tạo mật khẩu. Vui lòng đăng nhập bằng Google hoặc thiết lập mật khẩu.', 401);
-    }
-
-    const valid = await verifyPassword(password, user.password_hash);
-    if (!valid) {
-      return fail('Email hoặc mật khẩu không chính xác', 401);
+      if (password.length >= 8) {
+        const passwordHash = await bcrypt.hash(password, 10);
+        await updateUserPassword(user.id, passwordHash);
+        user.password_hash = passwordHash;
+      } else {
+        return fail('Tài khoản này được đăng ký qua Google. Vui lòng nhập mật khẩu ≥ 8 ký tự để liên kết hoặc đăng nhập bằng Google.', 401);
+      }
+    } else {
+      const valid = await verifyPassword(password, user.password_hash);
+      if (!valid) {
+        return fail('Email hoặc mật khẩu không chính xác', 401);
+      }
     }
 
     const token = await signSession({
@@ -53,7 +63,7 @@ export async function POST(request: NextRequest) {
     response.headers.set('Set-Cookie', getSessionCookie(token));
     return response;
   } catch (error) {
-    console.error('login failed:', error);
-    return fail('Internal server error', 500);
+    console.error('Login failed:', error);
+    return fail('Lỗi máy chủ khi đăng nhập', 500);
   }
 }
