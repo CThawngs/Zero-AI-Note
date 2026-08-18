@@ -5,11 +5,23 @@ import { findUserByEmail, createUser } from '@/lib/auth/users';
 
 export const runtime = 'nodejs';
 
-export async function GET(request: NextRequest) {
-  const host = request.headers.get('host') || 'localhost:3000';
+function getRedirectContext(request: NextRequest): { baseUrl: string; redirectUri: string } {
+  const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || 'localhost:3000';
   const proto = request.headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
-  const baseUrl = `${proto}://${host}`;
-  const redirectUri = `${baseUrl}/api/auth/google/callback`;
+  
+  let baseUrl = `${proto}://${host}`;
+  if (host.includes('zero-ai-note.vercel.app')) {
+    baseUrl = 'https://zero-ai-note.vercel.app';
+  }
+
+  return {
+    baseUrl,
+    redirectUri: `${baseUrl}/api/auth/google/callback`,
+  };
+}
+
+export async function GET(request: NextRequest) {
+  const { baseUrl, redirectUri } = getRedirectContext(request);
 
   try {
     const { searchParams } = new URL(request.url);
@@ -17,7 +29,7 @@ export async function GET(request: NextRequest) {
     const error = searchParams.get('error');
 
     if (error) {
-      console.error('[Google OAuth Callback] Access denied by user:', error);
+      console.error('[Google OAuth Callback] Access denied by user or Google error:', error);
       return NextResponse.redirect(`${baseUrl}/?error=google_denied`);
     }
 

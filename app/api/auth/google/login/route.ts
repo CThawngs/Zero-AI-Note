@@ -2,6 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 
+function getRedirectUri(request: NextRequest): string {
+  const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || 'localhost:3000';
+  const proto = request.headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
+  
+  let baseUrl = `${proto}://${host}`;
+  // Normalize production domain if on Vercel
+  if (host.includes('zero-ai-note.vercel.app')) {
+    baseUrl = 'https://zero-ai-note.vercel.app';
+  }
+
+  return `${baseUrl}/api/auth/google/callback`;
+}
+
 export async function GET(request: NextRequest) {
   const clientId = (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '').trim();
   if (!clientId) {
@@ -11,9 +24,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const host = request.headers.get('host') || 'localhost:3000';
-  const proto = request.headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
-  const redirectUri = `${proto}://${host}/api/auth/google/callback`;
+  const redirectUri = getRedirectUri(request);
 
   const params = new URLSearchParams({
     client_id: clientId,
