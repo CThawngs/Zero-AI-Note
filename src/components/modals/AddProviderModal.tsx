@@ -8,87 +8,30 @@ interface AddProviderModalProps {
   onClose: () => void;
 }
 
-interface ProviderPreset {
-  id: string;
-  name: string;
-  endpointUrl: string;
-  defaultModel: string;
-  discoveredModels: string[];
-}
-
-const PRESETS: ProviderPreset[] = [
-  {
-    id: 'google',
-    name: 'Google AI (Gemini)',
-    endpointUrl: 'https://generativelanguage.googleapis.com/v1beta',
-    defaultModel: 'gemini-2.0-flash',
-    discoveredModels: ['gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-2.0-pro-exp'],
-  },
-  {
-    id: 'openai',
-    name: 'OpenAI',
-    endpointUrl: 'https://api.openai.com/v1',
-    defaultModel: 'gpt-4o-mini',
-    discoveredModels: ['gpt-4o-mini', 'gpt-4o', 'o3-mini', 'gpt-4-turbo'],
-  },
-  {
-    id: 'anthropic',
-    name: 'Anthropic Claude',
-    endpointUrl: 'https://api.anthropic.com/v1',
-    defaultModel: 'claude-3-5-haiku-20241022',
-    discoveredModels: ['claude-3-5-haiku-20241022', 'claude-3-7-sonnet-20250219', 'claude-3-opus-20240229'],
-  },
-  {
-    id: 'openrouter',
-    name: 'OpenRouter (Multi-Model)',
-    endpointUrl: 'https://openrouter.ai/api/v1',
-    defaultModel: 'deepseek/deepseek-r1',
-    discoveredModels: ['deepseek/deepseek-r1', 'meta-llama/llama-3.3-70b-instruct', 'google/gemini-2.0-flash-exp:free', 'anthropic/claude-3.5-sonnet'],
-  },
-  {
-    id: 'groq',
-    name: 'Groq (Ultra Fast)',
-    endpointUrl: 'https://api.groq.com/openai/v1',
-    defaultModel: 'llama-3.3-70b-versatile',
-    discoveredModels: ['llama-3.3-70b-versatile', 'mixtral-8x7b-32768', 'gemma2-9b-it'],
-  },
-  {
-    id: 'nvidia',
-    name: 'NVIDIA NIM',
-    endpointUrl: 'https://integrate.api.nvidia.com/v1',
-    defaultModel: 'meta/llama-3.1-70b-instruct',
-    discoveredModels: ['meta/llama-3.1-70b-instruct', 'mistralai/mistral-large-2-instruct'],
-  },
-  {
-    id: 'custom',
-    name: 'Custom / Local (Ollama/vLLM)',
-    endpointUrl: 'http://localhost:11434/v1',
-    defaultModel: 'llama3:latest',
-    discoveredModels: ['llama3:latest', 'qwen2.5:latest', 'mistral:latest', 'phi3:latest'],
-  },
-];
+import { BYOK_PROVIDER_PRESETS, ProviderCatalogPreset } from '../../data/modelCatalog';
 
 export const AddProviderModal: React.FC<AddProviderModalProps> = ({ isOpen, onClose }) => {
   const { addAIProvider, setSelectedModel, language, t } = useApp();
   const [selectedPresetId, setSelectedPresetId] = useState<string>('google');
-  const [name, setName] = useState('Google AI (Gemini)');
-  const [providerId, setProviderId] = useState('google');
-  const [endpointUrl, setEndpointUrl] = useState('https://generativelanguage.googleapis.com/v1beta');
-  const [defaultModel, setDefaultModel] = useState('gemini-2.0-flash');
+  const [name, setName] = useState(BYOK_PROVIDER_PRESETS[0].name);
+  const [providerId, setProviderId] = useState(BYOK_PROVIDER_PRESETS[0].id);
+  const [endpointUrl, setEndpointUrl] = useState(BYOK_PROVIDER_PRESETS[0].endpointUrl);
+  const [defaultModel, setDefaultModel] = useState(BYOK_PROVIDER_PRESETS[0].defaultModel);
   const [apiKey, setApiKey] = useState('');
   const [useForNewChats, setUseForNewChats] = useState(true);
   const [autoDiscoverModels, setAutoDiscoverModels] = useState(true);
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; latency: number; error?: string } | null>(null);
-  const [discoveredModels, setDiscoveredModels] = useState<string[]>(PRESETS[0].discoveredModels);
+  const [discoveredModels, setDiscoveredModels] = useState<{ id: string; name: string; desc: string }[]>(
+    BYOK_PROVIDER_PRESETS[0].models
+  );
 
-  const applyPreset = (preset: ProviderPreset) => {
+  const applyPreset = (preset: ProviderCatalogPreset) => {
     setSelectedPresetId(preset.id);
     setName(preset.name);
     setProviderId(preset.id);
     setEndpointUrl(preset.endpointUrl);
-    setDefaultModel(preset.defaultModel);
-    setDiscoveredModels(preset.discoveredModels);
+    setDiscoveredModels(preset.models);
     setTestResult(null);
   };
 
@@ -166,7 +109,7 @@ export const AddProviderModal: React.FC<AddProviderModalProps> = ({ isOpen, onCl
             {language === 'vi' ? 'Chọn Nhà Cung Cấp Nhanh:' : 'Quick Select Provider:'}
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-            {PRESETS.map((p) => (
+            {BYOK_PROVIDER_PRESETS.map((p) => (
               <button
                 key={p.id}
                 type="button"
@@ -254,7 +197,7 @@ export const AddProviderModal: React.FC<AddProviderModalProps> = ({ isOpen, onCl
               </span>
               <select
                 id="select-discovered-model"
-                value={discoveredModels.includes(defaultModel) ? defaultModel : ''}
+                value={discoveredModels.some(m => m.id === defaultModel) ? defaultModel : ''}
                 onChange={(e) => {
                   if (e.target.value) {
                     setDefaultModel(e.target.value);
@@ -265,7 +208,7 @@ export const AddProviderModal: React.FC<AddProviderModalProps> = ({ isOpen, onCl
               >
                 <option value="">{language === 'vi' ? '— Chọn model có sẵn —' : '— Select preset model —'}</option>
                 {discoveredModels.map((m) => (
-                  <option key={m} value={m}>{m}</option>
+                  <option key={m.id} value={m.id}>{m.name} ({m.desc})</option>
                 ))}
               </select>
             </div>
