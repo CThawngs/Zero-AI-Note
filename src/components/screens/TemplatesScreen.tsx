@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   LayoutTemplate, 
   Plus, 
@@ -12,7 +12,9 @@ import {
   Calculator, 
   Check, 
   ArrowRight,
-  BookOpen
+  BookOpen,
+  Search,
+  ArrowUpDown
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { TemplateItem } from '../../types';
@@ -23,6 +25,10 @@ export const TemplatesScreen: React.FC = () => {
   const { templates, useTemplateInChat, addToast, theme, language, t } = useApp();
   const [selectedPreviewTemplate, setSelectedPreviewTemplate] = useState<TemplateItem | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [sortOption, setSortOption] = useState<'default' | 'az' | 'za'>('default');
+  const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
 
   const isDark = theme === 'dark';
 
@@ -38,44 +44,196 @@ export const TemplatesScreen: React.FC = () => {
     }
   };
 
-  const builtInTemplates = templates.filter(t => !t.isCustom);
-  const customTemplates = templates.filter(t => t.isCustom);
+  let filteredTemplates = templates.filter(tmpl => {
+    if (categoryFilter === 'builtin' && tmpl.isCustom) return false;
+    if (categoryFilter === 'custom' && !tmpl.isCustom) return false;
+    if (categoryFilter === 'cornell' && tmpl.iconType !== 'cornell') return false;
+    if (categoryFilter === 'outline' && tmpl.iconType !== 'outline') return false;
+    if (categoryFilter === 'qa' && tmpl.iconType !== 'qa') return false;
+    if (categoryFilter === 'flashcard' && tmpl.iconType !== 'flashcard') return false;
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      return (
+        tmpl.title.toLowerCase().includes(q) ||
+        tmpl.description.toLowerCase().includes(q) ||
+        tmpl.sampleLayout?.columns?.some(col => col.toLowerCase().includes(q))
+      );
+    }
+    return true;
+  });
+
+  filteredTemplates = [...filteredTemplates].sort((a, b) => {
+    if (sortOption === 'az') return a.title.localeCompare(b.title);
+    if (sortOption === 'za') return b.title.localeCompare(a.title);
+    return 0;
+  });
+
+  const builtInTemplates = filteredTemplates.filter(t => !t.isCustom);
+  const customTemplates = filteredTemplates.filter(t => t.isCustom);
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden transition-colors bg-[var(--bg-app)] text-[var(--text-primary)]">
       {/* Header */}
-      <div className="p-4 sm:p-6 pb-4 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors border-[var(--border-color)] bg-[var(--bg-card)]">
-        <div>
-          <h2 className="text-lg sm:text-xl font-bold tracking-tight text-[var(--text-primary)]">
-            {t('templatesTitle')}
-          </h2>
-          <p className="text-xs mt-0.5 text-[var(--text-secondary)]">
-            {language === 'vi' 
-              ? 'Lựa chọn hoặc tự tạo cấu trúc dàn ý tối ưu cho từng loại tài liệu' 
-              : 'Pre-designed structural frameworks and custom prompt outlines'}
-          </p>
+      <div className="p-4 sm:p-6 pb-4 border-b space-y-4 transition-colors border-[var(--border-color)] bg-[var(--bg-card)]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-lg sm:text-xl font-bold tracking-tight text-[var(--text-primary)]">
+              {t('templatesTitle')}
+            </h2>
+            <p className="text-xs mt-0.5 text-[var(--text-secondary)]">
+              {language === 'vi' 
+                ? 'Lựa chọn hoặc tự tạo cấu trúc dàn ý tối ưu cho từng loại tài liệu' 
+                : 'Pre-designed structural frameworks and custom prompt outlines'}
+            </p>
+          </div>
+
+          <button
+            id="btn-create-template-header"
+            onClick={() => setIsCreateModalOpen(true)}
+            className="self-start sm:self-auto flex items-center gap-2 px-4 py-2 bg-[var(--accent-primary)] hover:opacity-90 text-[var(--accent-text)] rounded-xl text-xs font-semibold shadow-md shadow-[var(--accent-primary)]/25 transition-all cursor-pointer active:scale-95"
+          >
+            <Plus className="w-4 h-4" />
+            <span>{t('createTemplate')}</span>
+          </button>
         </div>
 
-        <button
-          id="btn-create-template-header"
-          onClick={() => setIsCreateModalOpen(true)}
-          className="self-start sm:self-auto flex items-center gap-2 px-4 py-2 bg-[var(--accent-primary)] hover:opacity-90 text-[var(--accent-text)] rounded-xl text-xs font-semibold shadow-md shadow-[var(--accent-primary)]/25 transition-all cursor-pointer active:scale-95"
-        >
-          <Plus className="w-4 h-4" />
-          <span>{t('createTemplate')}</span>
-        </button>
+        {/* Search, Filter & Sort Controls */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="relative flex-1 min-w-[200px] sm:min-w-[240px] max-w-md">
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+            <input
+              id="input-search-templates"
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={language === 'vi' ? 'Tìm kiếm mẫu ghi chú...' : 'Search templates...'}
+              className="w-full rounded-xl pl-10 pr-8 py-2 text-xs border focus:outline-none focus:border-[var(--accent-primary)] bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] shadow-2xs"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] text-sm cursor-pointer p-1"
+              >
+                ×
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 overflow-x-auto pb-0.5 custom-scrollbar">
+            <div className="flex items-center gap-1.5">
+              {[
+                { id: 'all', label: t('all') },
+                { id: 'builtin', label: language === 'vi' ? 'Có sẵn' : 'Built-in' },
+                { id: 'custom', label: language === 'vi' ? 'Tùy chỉnh' : 'Custom' },
+                { id: 'cornell', label: 'Cornell' },
+                { id: 'outline', label: 'Outline' },
+                { id: 'qa', label: 'Q&A' },
+                { id: 'flashcard', label: 'Flashcard' }
+              ].map((f) => (
+                <button
+                  key={f.id}
+                  id={`filter-tmpl-${f.id}`}
+                  onClick={() => setCategoryFilter(f.id)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap border active:scale-95 ${
+                    categoryFilter === f.id
+                      ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] border-[var(--accent-primary)]/40 shadow-2xs'
+                      : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Sort Dropdown */}
+            <div className="relative">
+              <button
+                id="tmpl-sort-btn"
+                onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-colors cursor-pointer whitespace-nowrap active:scale-95 bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-2xs"
+              >
+                <ArrowUpDown className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
+                <span>
+                  {sortOption === 'default' 
+                    ? (language === 'vi' ? 'Mặc định' : 'Default') 
+                    : sortOption === 'az' 
+                    ? (language === 'vi' ? 'Tên A → Z' : 'Name A → Z') 
+                    : (language === 'vi' ? 'Tên Z → A' : 'Name Z → A')}
+                </span>
+              </button>
+              <AnimatePresence>
+                {isSortDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-20" onClick={() => setIsSortDropdownOpen(false)} />
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.96, y: 4 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.96, y: 4 }}
+                      className="absolute right-0 mt-1.5 w-36 rounded-xl shadow-2xl p-1.5 z-30 space-y-1 text-xs border bg-[var(--bg-card)] border-[var(--border-color)]"
+                    >
+                      {[
+                        { id: 'default', label: language === 'vi' ? 'Mặc định' : 'Default' },
+                        { id: 'az', label: language === 'vi' ? 'Tên A → Z' : 'Name A → Z' },
+                        { id: 'za', label: language === 'vi' ? 'Tên Z → A' : 'Name Z → A' }
+                      ].map(s => (
+                        <button
+                          key={s.id}
+                          id={`sort-tmpl-${s.id}`}
+                          onClick={() => {
+                            setSortOption(s.id as any);
+                            setIsSortDropdownOpen(false);
+                          }}
+                          className={`w-full text-left px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                            sortOption === s.id 
+                              ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-semibold' 
+                              : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
+                          }`}
+                        >
+                          {s.label}
+                        </button>
+                      ))}
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-8 custom-scrollbar">
-        {/* Section 1: Built-in Templates */}
-        <section className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-[var(--accent-primary)]" />
-            <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
-              {language === 'vi' ? 'Mẫu Tiêu Chuẩn (Có sẵn)' : 'Standard Built-in Templates'}
+        {filteredTemplates.length === 0 ? (
+          <div className="h-64 flex flex-col items-center justify-center text-center p-6 border border-dashed rounded-2xl border-[var(--border-color)] bg-[var(--bg-card)]">
+            <LayoutTemplate className="w-10 h-10 text-[var(--text-muted)] mb-3" />
+            <h3 className="text-sm font-semibold text-[var(--text-primary)]">
+              {language === 'vi' ? 'Không tìm thấy mẫu phù hợp' : 'No templates found'}
             </h3>
+            <p className="text-xs mt-1 text-[var(--text-muted)]">
+              {language === 'vi' ? 'Hãy thử điều chỉnh từ khóa tìm kiếm hoặc đặt lại bộ lọc.' : 'Try adjusting your search query or resetting filters.'}
+            </p>
+            <button
+              onClick={() => {
+                setSearchQuery('');
+                setCategoryFilter('all');
+              }}
+              className="mt-4 px-4 py-2 bg-[var(--accent-primary)] hover:opacity-90 text-[var(--accent-text)] text-xs font-semibold rounded-xl transition-colors cursor-pointer active:scale-95 shadow-md shadow-[var(--accent-primary)]/20"
+            >
+              {language === 'vi' ? 'Đặt lại bộ lọc' : 'Reset filters'}
+            </button>
           </div>
+        ) : (
+          <>
+            {/* Section 1: Built-in Templates */}
+            {builtInTemplates.length > 0 && (
+              <section className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-[var(--accent-primary)]" />
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+                    {language === 'vi' ? `Mẫu Tiêu Chuẩn (${builtInTemplates.length})` : `Standard Built-in Templates (${builtInTemplates.length})`}
+                  </h3>
+                </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
             {builtInTemplates.map((template) => (
@@ -118,9 +276,11 @@ export const TemplatesScreen: React.FC = () => {
             ))}
           </div>
         </section>
+      )}
 
-        {/* Section 2: Custom Templates */}
-        <section className="space-y-4">
+            {/* Section 2: Custom Templates */}
+            {(customTemplates.length > 0 || categoryFilter === 'all' || categoryFilter === 'custom') && (
+              <section className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Layers className="w-4 h-4 text-[var(--accent-primary)]" />
@@ -191,6 +351,9 @@ export const TemplatesScreen: React.FC = () => {
             </div>
           </div>
         </section>
+        )}
+        </>
+        )}
       </div>
 
       {/* Template Preview Modal */}

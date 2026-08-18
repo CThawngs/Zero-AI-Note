@@ -103,6 +103,10 @@ export interface SourceFileItem {
   type: 'pdf' | 'video' | 'audio' | 'image' | 'doc';
   size: string;
   uploadDate: string;
+  /** Alias cho sort (FilesScreen dùng uploadedAt) */
+  uploadedAt?: string;
+  /** Kích thước bytes (FilesScreen sort theo sizeBytes) */
+  sizeBytes?: number;
   linkedNoteId?: string;
   linkedNoteTitle?: string;
   status: 'processed' | 'auto-delete' | 'error';
@@ -138,6 +142,7 @@ export interface CouponItem {
   usage_count: number;
   usage_limit: number | null; // null for unlimited
   expires_at: string | null;
+  created_at?: string | null;
   status: 'active' | 'expired' | 'disabled';
 }
 

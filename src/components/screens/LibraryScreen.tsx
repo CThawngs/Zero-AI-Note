@@ -92,29 +92,43 @@ export const LibraryScreen: React.FC = () => {
   let filteredNotes = notes.filter(n => {
     if (libraryActiveTab === 'shared' && !n.isShared) return false;
     if (libraryFilter !== 'all') {
-      if (libraryFilter === 'khoa-hoc' && (n.category !== 'Khoa học' && n.category !== 'Science')) return false;
-      if (libraryFilter === 'du-an' && (n.category !== 'Dự án Alpha' && n.category !== 'Project Alpha')) return false;
-      if (libraryFilter === 'ca-nhan' && (n.category !== 'Cá nhân' && n.category !== 'Personal')) return false;
-      if (libraryFilter === 'ngon-ngu' && (n.category !== 'Học ngôn ngữ' && n.category !== 'Language Learning')) return false;
+      if (libraryFilter === 'khoa-hoc') return n.category === 'Khoa học' || n.category === 'Science';
+      if (libraryFilter === 'du-an') return n.category === 'Dự án Alpha' || n.category === 'Project Alpha';
+      if (libraryFilter === 'ca-nhan') return n.category === 'Cá nhân' || n.category === 'Personal';
+      if (libraryFilter === 'ngon-ngu') return n.category === 'Học ngôn ngữ' || n.category === 'Language Learning';
+      if (n.method === libraryFilter) return true;
+      if (n.category?.toLowerCase() === libraryFilter.toLowerCase()) return true;
+      return false;
     }
     if (librarySearchQuery.trim()) {
-      const q = librarySearchQuery.toLowerCase();
+      const q = librarySearchQuery.toLowerCase().trim();
       return (
-        n.title.toLowerCase().includes(q) ||
-        n.summary.toLowerCase().includes(q) ||
-        n.category.toLowerCase().includes(q) ||
-        n.keywords.some(kw => kw.toLowerCase().includes(q))
+        n.title?.toLowerCase().includes(q) ||
+        n.summary?.toLowerCase().includes(q) ||
+        n.category?.toLowerCase().includes(q) ||
+        n.method?.toLowerCase().includes(q) ||
+        n.keywords?.some(kw => kw.toLowerCase().includes(q)) ||
+        n.sources?.some(s => s.name?.toLowerCase().includes(q)) ||
+        n.coreQuestions?.some(cq => cq.toLowerCase().includes(q))
       );
     }
     return true;
   });
 
   // Sort
-  if (librarySort === 'az') {
-    filteredNotes = [...filteredNotes].sort((a, b) => a.title.localeCompare(b.title));
-  } else if (librarySort === 'oldest') {
-    filteredNotes = [...filteredNotes].reverse();
-  }
+  filteredNotes = [...filteredNotes].sort((a, b) => {
+    if (librarySort === 'az') return a.title.localeCompare(b.title);
+    if (librarySort === 'za') return b.title.localeCompare(a.title);
+    if (librarySort === 'oldest') {
+      const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+      const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+      return timeA - timeB;
+    }
+    // Default 'recent'
+    const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+    const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+    return timeB - timeA;
+  });
 
   const getSourceIcon = (type: string) => {
     switch (type) {
@@ -294,8 +308,9 @@ export const LibraryScreen: React.FC = () => {
                     >
                       {[
                         { id: 'recent', label: t('recent') },
-                        { id: 'az', label: t('nameAsc') },
-                        { id: 'oldest', label: t('createdDate') }
+                        { id: 'az', label: language === 'vi' ? 'Tên A → Z' : 'Name A → Z' },
+                        { id: 'za', label: language === 'vi' ? 'Tên Z → A' : 'Name Z → A' },
+                        { id: 'oldest', label: language === 'vi' ? 'Cũ nhất trước' : 'Oldest first' }
                       ].map(s => (
                         <button
                           key={s.id}

@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   ShieldCheck, 
   ArrowLeft, 
   Plus, 
   Search, 
   Filter, 
+  ArrowUpDown,
   Tag, 
   Edit3, 
   Trash2, 
@@ -37,6 +38,8 @@ export const AdminCouponScreen: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [sortOption, setSortOption] = useState<'newest' | 'oldest' | 'discount-high' | 'code-az'>('newest');
+  const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState<CouponItem | null>(null);
   const [deleteConfirmCoupon, setDeleteConfirmCoupon] = useState<CouponItem | null>(null);
@@ -160,14 +163,32 @@ export const AdminCouponScreen: React.FC = () => {
     }
   };
 
-  const filteredCoupons = coupons.filter(c => {
-      if (statusFilter !== 'all' && c.status !== statusFilter) return false;
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        return c.code.toLowerCase().includes(q) || (c.applies_to ?? '').toLowerCase().includes(q);
-      }
-      return true;
-    });
+  let filteredCoupons = coupons.filter(c => {
+    if (statusFilter !== 'all' && c.status !== statusFilter) return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      return (
+        c.code.toLowerCase().includes(q) ||
+        (c.applies_to ?? '').toLowerCase().includes(q) ||
+        String(c.discount_value ?? '').includes(q)
+      );
+    }
+    return true;
+  });
+
+  filteredCoupons = [...filteredCoupons].sort((a, b) => {
+    if (sortOption === 'code-az') return a.code.localeCompare(b.code);
+    if (sortOption === 'discount-high') return (b.discount_value || 0) - (a.discount_value || 0);
+    if (sortOption === 'oldest') {
+      const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return timeA - timeB;
+    }
+    // Default 'newest'
+    const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+    const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+    return timeB - timeA;
+  });
 
   const getStatusBadge = (status: string) => {
     if (status === 'active') {
@@ -310,26 +331,84 @@ export const AdminCouponScreen: React.FC = () => {
                 />
               </div>
 
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 custom-scrollbar">
-                {[
-                  { id: 'all', label: language === 'vi' ? 'Tất cả' : 'All' },
-                  { id: 'active', label: language === 'vi' ? 'Đang hoạt động' : 'Active' },
-                  { id: 'expired', label: language === 'vi' ? 'Hết hạn' : 'Expired' },
-                  { id: 'disabled', label: language === 'vi' ? 'Đã tắt' : 'Disabled' }
-                ].map((s) => (
+              <div className="flex items-center gap-2 overflow-x-auto pb-0.5 custom-scrollbar">
+                <div className="flex items-center gap-1.5">
+                  {[
+                    { id: 'all', label: language === 'vi' ? 'Tất cả' : 'All' },
+                    { id: 'active', label: language === 'vi' ? 'Đang hoạt động' : 'Active' },
+                    { id: 'expired', label: language === 'vi' ? 'Hết hạn' : 'Expired' },
+                    { id: 'disabled', label: language === 'vi' ? 'Đã tắt' : 'Disabled' }
+                  ].map((s) => (
+                    <button
+                      key={s.id}
+                      id={`filter-coupon-status-${s.id}`}
+                      onClick={() => setStatusFilter(s.id)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer border whitespace-nowrap active:scale-95 ${
+                        statusFilter === s.id
+                          ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] border-[var(--accent-primary)]/40 shadow-2xs'
+                          : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Sort Dropdown */}
+                <div className="relative">
                   <button
-                    key={s.id}
-                    id={`filter-coupon-status-${s.id}`}
-                    onClick={() => setStatusFilter(s.id)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer border whitespace-nowrap active:scale-95 ${
-                      statusFilter === s.id
-                        ? 'bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] border-[var(--accent-primary)]/40'
-                        : isDark ? 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]' : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                    }`}
+                    id="coupon-sort-btn"
+                    onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-colors cursor-pointer whitespace-nowrap active:scale-95 bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-2xs"
                   >
-                    {s.label}
+                    <ArrowUpDown className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
+                    <span>
+                      {sortOption === 'newest' 
+                        ? (language === 'vi' ? 'Mới nhất' : 'Newest') 
+                        : sortOption === 'discount-high' 
+                        ? (language === 'vi' ? 'Giảm cao nhất' : 'Max Discount')
+                        : sortOption === 'code-az' 
+                        ? (language === 'vi' ? 'Mã A → Z' : 'Code A → Z')
+                        : (language === 'vi' ? 'Cũ nhất' : 'Oldest')}
+                    </span>
                   </button>
-                ))}
+                  <AnimatePresence>
+                    {isSortDropdownOpen && (
+                      <>
+                        <div className="fixed inset-0 z-20" onClick={() => setIsSortDropdownOpen(false)} />
+                        <motion.div 
+                          initial={{ opacity: 0, scale: 0.96, y: 4 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.96, y: 4 }}
+                          className="absolute right-0 mt-1.5 w-44 rounded-xl shadow-2xl p-1.5 z-30 space-y-1 text-xs border bg-[var(--bg-card)] border-[var(--border-color)]"
+                        >
+                          {[
+                            { id: 'newest', label: language === 'vi' ? 'Mới nhất' : 'Newest' },
+                            { id: 'discount-high', label: language === 'vi' ? 'Giảm nhiều nhất' : 'Highest Discount' },
+                            { id: 'code-az', label: language === 'vi' ? 'Mã A → Z' : 'Code A → Z' },
+                            { id: 'oldest', label: language === 'vi' ? 'Cũ nhất' : 'Oldest' }
+                          ].map(s => (
+                            <button
+                              key={s.id}
+                              id={`sort-coupon-${s.id}`}
+                              onClick={() => {
+                                setSortOption(s.id as any);
+                                setIsSortDropdownOpen(false);
+                              }}
+                              className={`w-full text-left px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                                sortOption === s.id 
+                                  ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-semibold' 
+                                  : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
+                              }`}
+                            >
+                              {s.label}
+                            </button>
+                          ))}
+                        </motion.div>
+                      </>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
             </div>
           </div>

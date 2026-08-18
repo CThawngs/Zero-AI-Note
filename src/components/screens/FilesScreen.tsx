@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   Search, 
   Filter, 
+  ArrowUpDown,
   Upload, 
   FileText, 
   Video, 
@@ -23,17 +24,37 @@ export const FilesScreen: React.FC = () => {
   const { files, deleteSourceFile, openNoteDetail, notes, addToast, theme, language, t } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [sortOption, setSortOption] = useState<'recent' | 'oldest' | 'name' | 'size'>('recent');
+  const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   const isDark = theme === 'dark';
 
-  const filteredFiles = files.filter(f => {
+  let filteredFiles = files.filter(f => {
     if (typeFilter !== 'all' && f.type !== typeFilter) return false;
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      return f.name.toLowerCase().includes(q) || f.linkedNoteTitle?.toLowerCase().includes(q);
+      const q = searchQuery.toLowerCase().trim();
+      return (
+        f.name.toLowerCase().includes(q) ||
+        f.type.toLowerCase().includes(q) ||
+        f.linkedNoteTitle?.toLowerCase().includes(q)
+      );
     }
     return true;
+  });
+
+  filteredFiles = [...filteredFiles].sort((a, b) => {
+    if (sortOption === 'name') return a.name.localeCompare(b.name);
+    if (sortOption === 'size') return (b.sizeBytes || 0) - (a.sizeBytes || 0);
+    if (sortOption === 'oldest') {
+      const timeA = a.uploadedAt ? new Date(a.uploadedAt).getTime() : 0;
+      const timeB = b.uploadedAt ? new Date(b.uploadedAt).getTime() : 0;
+      return timeA - timeB;
+    }
+    // Default 'recent'
+    const timeA = a.uploadedAt ? new Date(a.uploadedAt).getTime() : 0;
+    const timeB = b.uploadedAt ? new Date(b.uploadedAt).getTime() : 0;
+    return timeB - timeA;
   });
 
   const getFileIcon = (type: string) => {
@@ -134,27 +155,85 @@ export const FilesScreen: React.FC = () => {
             />
           </div>
 
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 custom-scrollbar">
-            {[
-              { id: 'all', label: t('all') },
-              { id: 'pdf', label: 'PDF' },
-              { id: 'video', label: 'Video' },
-              { id: 'audio', label: 'Audio' },
-              { id: 'image', label: language === 'vi' ? 'Ảnh' : 'Image' }
-            ].map((f) => (
+          <div className="flex items-center gap-2 overflow-x-auto pb-0.5 custom-scrollbar">
+            <div className="flex items-center gap-1.5">
+              {[
+                { id: 'all', label: t('all') },
+                { id: 'pdf', label: 'PDF' },
+                { id: 'video', label: 'Video' },
+                { id: 'audio', label: 'Audio' },
+                { id: 'image', label: language === 'vi' ? 'Ảnh' : 'Image' }
+              ].map((f) => (
+                <button
+                  key={f.id}
+                  id={`filter-file-${f.id}`}
+                  onClick={() => setTypeFilter(f.id)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap border active:scale-95 ${
+                    typeFilter === f.id
+                      ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] border-[var(--accent-primary)]/40 shadow-2xs'
+                      : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Sort Dropdown */}
+            <div className="relative">
               <button
-                key={f.id}
-                id={`filter-file-${f.id}`}
-                onClick={() => setTypeFilter(f.id)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap border active:scale-95 ${
-                  typeFilter === f.id
-                    ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] border-[var(--accent-primary)]/40 shadow-2xs'
-                    : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                }`}
+                id="files-sort-btn"
+                onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-colors cursor-pointer whitespace-nowrap active:scale-95 bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-2xs"
               >
-                {f.label}
+                <ArrowUpDown className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
+                <span>
+                  {sortOption === 'recent' 
+                    ? (language === 'vi' ? 'Mới nhất' : 'Recent') 
+                    : sortOption === 'oldest' 
+                    ? (language === 'vi' ? 'Cũ nhất' : 'Oldest')
+                    : sortOption === 'name' 
+                    ? (language === 'vi' ? 'Tên A → Z' : 'Name A → Z')
+                    : (language === 'vi' ? 'Dung lượng lớn' : 'Size (Largest)')}
+                </span>
               </button>
-            ))}
+              <AnimatePresence>
+                {isSortDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-20" onClick={() => setIsSortDropdownOpen(false)} />
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.96, y: 4 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.96, y: 4 }}
+                      className="absolute right-0 mt-1.5 w-44 rounded-xl shadow-2xl p-1.5 z-30 space-y-1 text-xs border bg-[var(--bg-card)] border-[var(--border-color)]"
+                    >
+                      {[
+                        { id: 'recent', label: language === 'vi' ? 'Mới nhất' : 'Recent' },
+                        { id: 'oldest', label: language === 'vi' ? 'Cũ nhất' : 'Oldest' },
+                        { id: 'name', label: language === 'vi' ? 'Tên A → Z' : 'Name A → Z' },
+                        { id: 'size', label: language === 'vi' ? 'Dung lượng lớn' : 'Size (Largest)' }
+                      ].map(s => (
+                        <button
+                          key={s.id}
+                          id={`sort-file-${s.id}`}
+                          onClick={() => {
+                            setSortOption(s.id as any);
+                            setIsSortDropdownOpen(false);
+                          }}
+                          className={`w-full text-left px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                            sortOption === s.id 
+                              ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-semibold' 
+                              : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
+                          }`}
+                        >
+                          {s.label}
+                        </button>
+                      ))}
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
       </div>

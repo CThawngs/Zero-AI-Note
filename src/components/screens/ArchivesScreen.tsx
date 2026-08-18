@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   Archive, 
   RotateCcw, 
@@ -8,7 +8,9 @@ import {
   Clock, 
   FileText, 
   Search,
-  ShieldAlert
+  ShieldAlert,
+  ArrowUpDown,
+  Filter
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { NoteItem } from '../../types';
@@ -17,14 +19,45 @@ import { Modal } from '../common/Modal';
 export const ArchivesScreen: React.FC = () => {
   const { archivedNotes, restoreNote, deleteNotePermanently, theme, language, t } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterOption, setFilterOption] = useState<'all' | 'urgent' | 'safe'>('all');
+  const [sortOption, setSortOption] = useState<'recent' | 'oldest' | 'name' | 'expiring'>('recent');
+  const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
   const [confirmDeleteNote, setConfirmDeleteNote] = useState<NoteItem | null>(null);
 
   const isDark = theme === 'dark';
 
-  const filteredArchived = archivedNotes.filter(n => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    return n.title.toLowerCase().includes(q) || n.summary.toLowerCase().includes(q);
+  let filteredArchived = archivedNotes.filter(n => {
+    const daysLeft = n.archiveDaysLeft !== undefined ? n.archiveDaysLeft : 30;
+    if (filterOption === 'urgent' && daysLeft > 5) return false;
+    if (filterOption === 'safe' && daysLeft <= 5) return false;
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      return (
+        n.title.toLowerCase().includes(q) ||
+        n.summary.toLowerCase().includes(q) ||
+        (n.category && n.category.toLowerCase().includes(q))
+      );
+    }
+    return true;
+  });
+
+  filteredArchived = [...filteredArchived].sort((a, b) => {
+    if (sortOption === 'name') return a.title.localeCompare(b.title);
+    if (sortOption === 'expiring') {
+      const daysA = a.archiveDaysLeft !== undefined ? a.archiveDaysLeft : 30;
+      const daysB = b.archiveDaysLeft !== undefined ? b.archiveDaysLeft : 30;
+      return daysA - daysB;
+    }
+    if (sortOption === 'oldest') {
+      const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+      const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+      return timeA - timeB;
+    }
+    // Default 'recent'
+    const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+    const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+    return timeB - timeA;
   });
 
   return (
@@ -37,30 +70,116 @@ export const ArchivesScreen: React.FC = () => {
       }`}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className={`text-lg sm:text-xl font-bold tracking-tight ${'text-[var(--text-primary)]'}`}>
+            <h2 className="text-lg sm:text-xl font-bold tracking-tight text-[var(--text-primary)]">
               {t('archivesTitle')}
             </h2>
-            <p className={`text-xs mt-0.5 ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
+            <p className="text-xs mt-0.5 text-[var(--text-secondary)]">
               {language === 'vi' 
                 ? 'Danh sách ghi chú tạm thời bị loại bỏ hoặc hoàn thành' 
                 : 'Archived notes and trash bin pending deletion'}
             </p>
           </div>
+        </div>
 
-          <div className="relative min-w-[200px] sm:min-w-[240px]">
-            <Search className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 ${
-              isDark ? 'text-[var(--text-muted)]' : 'text-[var(--text-muted)]'
-            }`} />
+        {/* Search, Filter & Sort Controls */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="relative flex-1 min-w-[200px] sm:min-w-[240px] max-w-md">
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
             <input
               id="input-search-archives"
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={language === 'vi' ? 'Tìm kiếm trong mục lưu trữ...' : 'Search archived notes...'}
-              className={`w-full rounded-xl pl-10 pr-4 py-2 text-xs border focus:outline-none focus:border-[var(--accent-primary)] ${
-                isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)]' : 'bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)]'
-              }`}
+              className="w-full rounded-xl pl-10 pr-8 py-2 text-xs border focus:outline-none focus:border-[var(--accent-primary)] bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] shadow-2xs"
             />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] text-sm cursor-pointer p-1"
+              >
+                ×
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 overflow-x-auto pb-0.5 custom-scrollbar">
+            <div className="flex items-center gap-1.5">
+              {[
+                { id: 'all', label: t('all') },
+                { id: 'urgent', label: language === 'vi' ? 'Sắp hết hạn (≤ 5 ngày)' : 'Expiring Soon (≤ 5 days)' },
+                { id: 'safe', label: language === 'vi' ? 'Còn hạn an toàn' : 'Safe (> 5 days)' }
+              ].map((f) => (
+                <button
+                  key={f.id}
+                  id={`filter-archive-${f.id}`}
+                  onClick={() => setFilterOption(f.id as any)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap border active:scale-95 ${
+                    filterOption === f.id
+                      ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] border-[var(--accent-primary)]/40 shadow-2xs'
+                      : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Sort Dropdown */}
+            <div className="relative">
+              <button
+                id="archive-sort-btn"
+                onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-colors cursor-pointer whitespace-nowrap active:scale-95 bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-2xs"
+              >
+                <ArrowUpDown className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
+                <span>
+                  {sortOption === 'recent' 
+                    ? (language === 'vi' ? 'Mới lưu trữ' : 'Recent') 
+                    : sortOption === 'expiring' 
+                    ? (language === 'vi' ? 'Sắp hết hạn' : 'Expiring soonest')
+                    : sortOption === 'name' 
+                    ? (language === 'vi' ? 'Tên A → Z' : 'Name A → Z') 
+                    : (language === 'vi' ? 'Cũ nhất' : 'Oldest')}
+                </span>
+              </button>
+              <AnimatePresence>
+                {isSortDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-20" onClick={() => setIsSortDropdownOpen(false)} />
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.96, y: 4 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.96, y: 4 }}
+                      className="absolute right-0 mt-1.5 w-44 rounded-xl shadow-2xl p-1.5 z-30 space-y-1 text-xs border bg-[var(--bg-card)] border-[var(--border-color)]"
+                    >
+                      {[
+                        { id: 'recent', label: language === 'vi' ? 'Mới lưu trữ' : 'Recent' },
+                        { id: 'expiring', label: language === 'vi' ? 'Sắp hết hạn trước' : 'Expiring soonest' },
+                        { id: 'name', label: language === 'vi' ? 'Tên A → Z' : 'Name A → Z' },
+                        { id: 'oldest', label: language === 'vi' ? 'Cũ nhất' : 'Oldest' }
+                      ].map(s => (
+                        <button
+                          key={s.id}
+                          id={`sort-archive-${s.id}`}
+                          onClick={() => {
+                            setSortOption(s.id as any);
+                            setIsSortDropdownOpen(false);
+                          }}
+                          className={`w-full text-left px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                            sortOption === s.id 
+                              ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-semibold' 
+                              : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
+                          }`}
+                        >
+                          {s.label}
+                        </button>
+                      ))}
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
 
