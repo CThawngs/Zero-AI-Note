@@ -167,10 +167,10 @@ export async function createCoupon(input: {
 }
 
 export async function updateCoupon(couponId: string, data: Record<string, unknown>): Promise<void> {
-  const res = await fetch(`/api/admin/coupons?id=${encodeURIComponent(couponId)}`, {
-    method: 'PATCH',
+  const res = await fetch('/api/admin/coupons', {
+    method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+    body: JSON.stringify({ id: couponId, ...data }),
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));

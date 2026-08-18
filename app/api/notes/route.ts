@@ -1,25 +1,152 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth/session';
-import { getNotes } from '@/lib/neon/queries';
+import {
+  getNotes,
+  getArchivedNotes,
+  createNote,
+  updateNote,
+  archiveNote,
+  restoreNote,
+  deleteNotePermanently,
+} from '@/lib/neon/queries';
 
 export const runtime = 'nodejs';
 
 /**
- * GET /api/notes — trả về danh sách notes của user đang đăng nhập.
+ * GET /api/notes — danh sách notes (hoặc archived nếu ?archived=1).
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await getSession();
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const rows = await getNotes(session.sub);
+    const archived = request.nextUrl.searchParams.get('archived') === '1';
+    const rows = archived
+      ? await getArchivedNotes(session.sub)
+      : await getNotes(session.sub);
     return NextResponse.json({ notes: rows });
   } catch (err) {
     console.error('[GET /api/notes] error:', err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Failed to load notes' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * POST /api/notes — tạo note mới.
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const note = await createNote({
+      user_id: session.sub,
+      title: body.title ?? 'Untitled',
+      method: body.method ?? 'cornell',
+      output_language: body.output_language ?? 'vi',
+      content_structured: body.content_structured ?? {},
+      confidence_flags: body.confidence_flags ?? {},
+    });
+    return NextResponse.json({ note });
+  } catch (err) {
+    console.error('[POST /api/notes] error:', err);
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Failed to create note' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * PATCH /api/notes?id=... — đổi tên note.
+ */
+export async function PATCH(request: NextRequest) {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const id = request.nextUrl.searchParams.get('id');
+    if (!id) {
+      return NextResponse.json({ error: 'Missing note id' }, { status: 400 });
+    }
+
+    const body = await request.json();
+    await updateNote(id, { title: body.title });
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error('[PATCH /api/notes] error:', err);
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Failed to update note' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * DELETE /api/notes?id=...&permanent=1 — xoá vĩnh viễn (mặc định archive).
+ * POST /api/notes?id=...&restore=1 — khôi phục note đã archive.
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const id = request.nextUrl.searchParams.get('id');
+    if (!id) {
+      return NextResponse.json({ error: 'Missing note id' }, { status: 400 });
+    }
+
+    if (request.nextUrl.searchParams.get('permanent') === '1') {
+      await deleteNotePermanently(id);
+    } else {
+      await archiveNote(id);
+    }
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error('[DELETE /api/notes] error:', err);
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Failed to delete note' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * POST /api/notes?id=...&restore=1 — khôi phục (Next.js route handler
+ * chỉ có thể export một POST, nên dùng query param để phân biệt).
+ */
+export async function POST_RESTORE(request: NextRequest) {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const id = request.nextUrl.searchParams.get('id');
+    if (!id) {
+      return NextResponse.json({ error: 'Missing note id' }, { status: 400 });
+    }
+
+    if (request.nextUrl.searchParams.get('restore') === '1') {
+      await restoreNote(id);
+    }
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error('[POST /api/notes restore] error:', err);
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Failed to restore note' },
       { status: 500 }
     );
   }
