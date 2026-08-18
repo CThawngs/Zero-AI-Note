@@ -26,7 +26,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [displayName, setDisplayName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleChooserOpen, setIsGoogleChooserOpen] = useState(false);
 
   // Field errors
   const [errors, setErrors] = useState<{
@@ -50,7 +49,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       setErrors({});
       setTouched({});
       setSuccessInfo(null);
-      setIsGoogleChooserOpen(false);
     }
   }, [isOpen, initialMode]);
 

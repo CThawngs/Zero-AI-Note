@@ -1,9 +1,19 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+
+interface GoogleAuthResponse {
+  id: string;
+  email: string;
+  displayName: string;
+  role: string;
+  plan: string;
+  needsPasswordSetup: boolean;
+  [key: string]: unknown;
+}
 
 interface GoogleSignInButtonProps {
-  onSuccess: (userData: any) => void;
+  onSuccess: (userData: GoogleAuthResponse) => void;
   onError?: (err: Error) => void;
   isDark?: boolean;
   text?: 'signin_with' | 'signup_with' | 'continue_with';
@@ -21,86 +31,118 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
   const [isSdkReady, setIsSdkReady] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Default demo / configured Google Client ID
-  const googleClientId =
-    process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
-    '1047462061234-sample.apps.googleusercontent.com';
+  // Client ID from env
+  const googleClientId = (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '').trim().replace(/^["']|["']$/g, '');
 
-  const handleCredentialResponse = async (response: any) => {
-    setIsLoading(true);
-    try {
-      const res = await fetch('/api/auth/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ credential: response.credential }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Google authentication failed');
-      onSuccess(data.user);
-    } catch (err) {
-      if (onError) onError(err instanceof Error ? err : new Error(String(err)));
-    } finally {
-      setIsLoading(false);
+  const handleCredentialResponse = useCallback(
+    async (response: { credential?: string }) => {
+      if (!response.credential) {
+        if (onError) onError(new Error('Không nhận được Google credential. Vui lòng thử lại.'));
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const res = await fetch('/api/auth/google', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ credential: response.credential }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? 'Đăng nhập Google thất bại');
+        onSuccess(data.user);
+      } catch (err) {
+        if (onError) onError(err instanceof Error ? err : new Error(String(err)));
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [onSuccess, onError]
+  );
+
+  const initAndRenderGsi = useCallback(() => {
+    if (!googleClientId || typeof window === 'undefined') return;
+
+    const win = window as unknown as {
+      google?: {
+        accounts?: {
+          id?: {
+            initialize: (config: Record<string, unknown>) => void;
+            renderButton: (el: HTMLElement, config: Record<string, unknown>) => void;
+            prompt: () => void;
+          };
+        };
+      };
+    };
+
+    if (win.google?.accounts?.id && containerRef.current) {
+      try {
+        win.google.accounts.id.initialize({
+          client_id: googleClientId,
+          callback: handleCredentialResponse,
+          auto_select: false,
+          cancel_on_tap_outside: true,
+          itp_support: true,
+        });
+
+        containerRef.current.innerHTML = '';
+        win.google.accounts.id.renderButton(containerRef.current, {
+          theme: isDark ? 'filled_black' : 'outline',
+          size: 'large',
+          type: 'standard',
+          shape: 'rectangular',
+          text: text,
+          logo_alignment: 'left',
+          width: containerRef.current.offsetWidth || 340,
+        });
+
+        setIsSdkReady(true);
+      } catch (e) {
+        console.warn('Google Identity Services render warning:', e);
+      }
     }
-  };
+  }, [googleClientId, handleCredentialResponse, isDark, text]);
 
   useEffect(() => {
-    let checkInterval: NodeJS.Timeout;
+    if (!googleClientId) return;
 
-    const initGsi = () => {
-      if (typeof window !== 'undefined' && (window as any).google?.accounts?.id) {
-        try {
-          (window as any).google.accounts.id.initialize({
-            client_id: googleClientId,
-            callback: handleCredentialResponse,
-            auto_select: false,
-            cancel_on_tap_outside: true,
-          });
-
-          if (containerRef.current) {
-            containerRef.current.innerHTML = '';
-            (window as any).google.accounts.id.renderButton(containerRef.current, {
-              theme: isDark ? 'filled_black' : 'outline',
-              size: 'large',
-              type: 'standard',
-              shape: 'rectangular',
-              text: text,
-              logo_alignment: 'left',
-              width: containerRef.current.offsetWidth || 340,
-            });
-          }
-          setIsSdkReady(true);
-        } catch (e) {
-          console.warn('Google Identity Services init failed:', e);
-        }
+    // Retry loop until Google script loads and containerRef is ready in DOM
+    const interval = setInterval(() => {
+      const win = window as unknown as { google?: { accounts?: { id?: unknown } } };
+      if (win.google?.accounts?.id && containerRef.current) {
+        initAndRenderGsi();
+        clearInterval(interval);
       }
-    };
+    }, 200);
 
-    if (typeof window !== 'undefined') {
-      if ((window as any).google?.accounts?.id) {
-        initGsi();
-      } else {
-        checkInterval = setInterval(() => {
-          if ((window as any).google?.accounts?.id) {
-            clearInterval(checkInterval);
-            initGsi();
-          }
-        }, 300);
-      }
-    }
+    // Initial attempt
+    initAndRenderGsi();
 
-    return () => {
-      if (checkInterval) clearInterval(checkInterval);
-    };
-  }, [googleClientId, isDark, text]);
+    return () => clearInterval(interval);
+  }, [googleClientId, initAndRenderGsi]);
 
-  // Fallback trigger if button clicked or GSI is loading
+  // Fail-closed: if no Client ID configured, show notification
+  if (!googleClientId) {
+    return (
+      <div className={`w-full text-center text-xs py-2.5 px-3 rounded-xl border border-dashed ${
+        isDark ? 'border-white/10 text-neutral-500 bg-white/2' : 'border-gray-300 text-gray-400 bg-gray-50'
+      } ${className}`}>
+        Google Sign-In chưa được cấu hình Client ID
+      </div>
+    );
+  }
+
   const handleFallbackClick = () => {
-    if (typeof window !== 'undefined' && (window as any).google?.accounts?.id) {
-      try {
-        (window as any).google.accounts.id.prompt();
-      } catch {
-        // Fallback popup if prompt restricted
+    if (typeof window !== 'undefined') {
+      const win = window as unknown as {
+        google?: { accounts?: { id?: { prompt: () => void } } };
+      };
+      if (win.google?.accounts?.id) {
+        try {
+          win.google.accounts.id.prompt();
+        } catch (e) {
+          console.warn('Google One Tap prompt failed:', e);
+        }
       }
     }
   };
@@ -113,7 +155,7 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
         className="w-full flex justify-center overflow-hidden min-h-[40px]"
       />
 
-      {/* Styled Overlay / Fallback Button in case GSI is loading or custom styled */}
+      {/* Styled Overlay / Fallback Button while GSI iframe is rendering */}
       {!isSdkReady && (
         <button
           type="button"

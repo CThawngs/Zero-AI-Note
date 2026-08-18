@@ -31,7 +31,6 @@ export const LoginScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
-  const [isGoogleChooserOpen, setIsGoogleChooserOpen] = useState(false);
 
   // Field errors
   const [errors, setErrors] = useState<{
@@ -179,33 +178,6 @@ export const LoginScreen: React.FC = () => {
       }
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleGoogleAccountSelect = async (acc: { email: string; name: string }) => {
-    try {
-      const res = await fetch('/api/auth/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: acc.email,
-          displayName: acc.name,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Google authentication failed');
-
-      setIsGoogleChooserOpen(false);
-      setUser(data.user);
-      addToast(
-        vi ? 'Đăng nhập Google thành công' : 'Google sign in successful',
-        vi ? 'Chào mừng bạn đến với Zero AI Note!' : 'Welcome to Zero AI Note!',
-        'success'
-      );
-      setCurrentScreen('chat');
-    } catch (err) {
-      throw err;
     }
   };
 
@@ -529,7 +501,15 @@ export const LoginScreen: React.FC = () => {
             {/* Google Sign In Component */}
             <GoogleSignInButton
               onSuccess={(user) => {
-                setUser(user);
+                setUser({
+                  id: user.id,
+                  email: user.email,
+                  name: user.displayName ?? user.email.split('@')[0],
+                  avatar: '',
+                  role: user.role as 'user' | 'admin',
+                  plan: user.plan as 'free' | 'pro' | 'ultra',
+                  needsPasswordSetup: user.needsPasswordSetup,
+                });
                 addToast(
                   vi ? 'Đăng nhập Google thành công' : 'Google sign in successful',
                   vi ? 'Chào mừng bạn đến với Zero AI Note!' : 'Welcome to Zero AI Note!',

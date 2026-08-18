@@ -234,7 +234,7 @@
 
 ### Pending ⏳
 - [ ] Storage integration (Neon Object Storage or R2) — chờ Zero chốt
-- [ ] Google OAuth implementation
+- [x] Google OAuth implementation — ✅ hoàn tất 2026-08-18
 - [ ] BYOK provider caching
 - [ ] Multi-region deployment
 
@@ -273,10 +273,31 @@
 
 ---
 
-## 14. References
+## 14. Google OAuth — Security Fix (2026-08-18)
+
+### Problem
+- `GoogleSignInButton.tsx` fallback sang dummy Client ID `1047462061234-sample.apps.googleusercontent.com` khi thiếu `NEXT_PUBLIC_GOOGLE_CLIENT_ID` → Google trả `Error 401: invalid_client`
+- Backend route `app/api/auth/google/route.ts` chỉ decode base64 JWT payload mà KHÔNG verify chữ ký Google → **lỗ hổng bảo mật critical**: attacker có thể forge JWT giả với email bất kỳ
+
+### Fix Applied
+1. **GoogleSignInButton.tsx**: Bỏ dummy fallback → fail-closed (hiện "Google Sign-In chưa được cấu hình" khi thiếu env var). Xóa `any` types → `GoogleAuthResponse` typed interface.
+2. **app/api/auth/google/route.ts**: Thay `decodeJwtPayload()` bằng `google-auth-library` `OAuth2Client.verifyIdToken()` — verify chữ ký crypto + audience + expiry + issuer. Trả `401` nếu token không hợp lệ, `503` nếu server chưa cấu hình.
+3. **middleware.ts**: Thêm `/api/auth/google` vào `PUBLIC_ROUTES`.
+4. **LoginScreen.tsx**: Map `GoogleAuthResponse` → `UserProfile` (thêm `name`, `avatar` fields).
+5. **`.env.example`**: Thêm `NEXT_PUBLIC_GOOGLE_CLIENT_ID` vào bản đồ env.
+
+### [ANTIGRAVITY QUYẾT ĐỊNH]
+- Dùng `google-auth-library` (Google official SDK) thay vì `jsonwebtoken` + JWKS fetch thủ công — lý do: SDK chính thức handle cả key rotation, caching, retry tự động.
+- Google Sign-In button hiện thông báo thay vì render button lỗi khi thiếu Client ID — lý do: fail-closed (PRD mục 3.3), tránh UX xấu khi user click button sẽ fail.
+
+---
+
+## 15. References
 - [Neon Documentation](https://neon.tech/docs)
 - [Drizzle ORM](https://orm.drizzle.team)
 - [gitleaks](https://github.com/gitleaks/gitleaks)
 - [Cloudflare R2](https://developers.cloudflare.com/r2)
 - [Next.js Middleware](https://nextjs.org/docs/middleware)
 - [JWT.io](https://jwt.io)
+- [Google Identity Services](https://developers.google.com/identity/gsi/web)
+- [google-auth-library](https://github.com/googleapis/google-auth-library-nodejs)
