@@ -177,3 +177,13 @@ export interface ChatMessage {
   };
   noteResultId?: string;
 }
+
+export interface AppNotification {
+  id: string;
+  title: string;
+  content: string;
+  time: string;
+  timestamp: number;
+  type?: 'info' | 'warning' | 'error' | 'success';
+  read?: boolean;
+}

@@ -16,7 +16,14 @@ import {
   Search,
   Sparkles,
   ShieldCheck,
-  Server
+  Server,
+  Trash2,
+  BellOff,
+  AlertCircle,
+  AlertTriangle,
+  CheckCircle2,
+  Info,
+  X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useApp } from '../../context/AppContext';
@@ -35,7 +42,11 @@ export const Header: React.FC = () => {
     setSelectedModel, 
     aiProviders,
     setIsMobileSidebarOpen,
-    addToast,
+    notifications,
+    hasUnreadNotifications,
+    markNotificationsAsRead,
+    clearAllNotifications,
+    deleteNotification,
     t
   } = useApp();
 
@@ -44,15 +55,6 @@ export const Header: React.FC = () => {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [showAllNotifications, setShowAllNotifications] = useState(false);
   const [modelSearchQuery, setModelSearchQuery] = useState('');
-
-  const notifications = [
-    { id: 1, title: 'Server Upgrade', content: 'The AI server is undergoing an upgrade to enhance performance and stability.', time: '2 mins ago', flag: 'red' },
-    { id: 2, title: 'New Template', content: 'A new research template has been added to your library.', time: '1 hour ago', flag: 'green' },
-    { id: 3, title: 'Quota Warning', content: 'You have used 80% of your monthly AI quota. Consider upgrading to the Pro plan for more.', time: '3 hours ago', flag: 'orange' },
-    { id: 4, title: 'Export Ready', content: 'Your document export is processing and will be ready for download shortly.', time: '5 hours ago', flag: 'blue' },
-    { id: 5, title: 'Update Available', content: 'Version 2.1 is now available. Click to update for new features.', time: '1 day ago', flag: 'orange' },
-    { id: 6, title: 'Welcome', content: 'Welcome to Zero AI Note. Start by creating your first research project.', time: '2 days ago', flag: 'green' },
-  ];
 
   // Custom models derived from user's configured BYOK providers
   const customModels: ModelCatalogItem[] = useMemo(() => {
@@ -99,7 +101,6 @@ export const Header: React.FC = () => {
 
   const handleShare = () => {
     navigator.clipboard?.writeText(window.location.href);
-    addToast(t('copied'), t('toastCopied'));
   };
 
   const isDark = theme === 'dark';
@@ -202,11 +203,6 @@ export const Header: React.FC = () => {
                               onClick={() => {
                                 setSelectedModel(m.id);
                                 setIsModelDropdownOpen(false);
-                                addToast(
-                                  language === 'vi' ? 'Đã chọn mô hình Gemini' : 'Gemini Model Selected', 
-                                  m.name, 
-                                  'info'
-                                );
                               }}
                               className={`w-full flex items-start justify-between p-2 rounded-xl text-xs transition-colors cursor-pointer text-left ${
                                 isSelected
@@ -251,11 +247,6 @@ export const Header: React.FC = () => {
                               onClick={() => {
                                 setSelectedModel(m.name);
                                 setIsModelDropdownOpen(false);
-                                addToast(
-                                  language === 'vi' ? 'Đã đổi mô hình AI' : 'Model Switched', 
-                                  `${m.name} (${m.provider})`, 
-                                  'info'
-                                );
                               }}
                               className={`w-full flex items-center justify-between p-2 rounded-xl text-xs transition-colors cursor-pointer text-left ${
                                 isSelected
@@ -407,11 +398,16 @@ export const Header: React.FC = () => {
           </button>
         )}
 
-        {/* Notifications Dropdown */}
+        {/* Notifications Bell Dropdown */}
         <div className="relative">
           <button
             id="btn-notifications-toggle"
-            onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+            onClick={() => {
+              if (!isNotificationsOpen) {
+                markNotificationsAsRead();
+              }
+              setIsNotificationsOpen(!isNotificationsOpen);
+            }}
             className={`relative p-2 rounded-xl border transition-colors cursor-pointer active:scale-95 ${
               isDark 
                 ? 'bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] hover:text-[var(--accent-primary)]' 
@@ -420,7 +416,9 @@ export const Header: React.FC = () => {
             aria-label="Notifications"
           >
             <Bell className="w-4 h-4" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[var(--status-error)]" />
+            {hasUnreadNotifications && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[var(--status-error)] animate-pulse" />
+            )}
           </button>
 
           <AnimatePresence>
@@ -439,40 +437,104 @@ export const Header: React.FC = () => {
                     isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)]' : 'bg-white border-[var(--border-color)]'
                   }`}
                 >
-                  <div className="flex items-center justify-between px-1">
-                    <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-primary)]">{t('notifications')}</span>
-                    <span className="text-xs text-[var(--status-info)] cursor-pointer hover:underline">
-                      {language === 'vi' ? 'Đánh dấu đã đọc' : 'Mark all as read'}
-                    </span>
-                  </div>
-
-                  <div className="space-y-1.5 max-h-80 overflow-y-auto custom-scrollbar">
-                    {(showAllNotifications ? notifications : notifications.slice(0, 3)).map((n) => (
-                      <div 
-                        key={n.id} 
-                        className={`p-2.5 rounded-xl border text-xs space-y-1 cursor-pointer transition-colors ${
-                          isDark 
-                            ? 'bg-[var(--bg-app)] border-[var(--border-color)] hover:border-[var(--accent-primary)]/40' 
-                            : 'bg-gray-50 border-gray-100 hover:border-gray-200'
-                        }`}
+                  {/* Notification Header */}
+                  <div className="flex items-center justify-between px-1 pb-2 border-b border-[var(--border-color)]">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-primary)]">
+                        {language === 'vi' ? 'Thông báo' : 'Notifications'}
+                      </span>
+                      {notifications.length > 0 && (
+                        <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-bold">
+                          {notifications.length}
+                        </span>
+                      )}
+                    </div>
+                    {notifications.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={clearAllNotifications}
+                        className="text-[11px] text-[var(--status-error)] hover:underline flex items-center gap-1 cursor-pointer transition-colors"
                       >
-                        <div className="flex items-center justify-between">
-                          <span className="font-semibold text-[var(--text-primary)]">{n.title}</span>
-                          <span className="text-[10px] text-[var(--text-muted)]">{n.time}</span>
-                        </div>
-                        <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{n.content}</p>
-                      </div>
-                    ))}
+                        <Trash2 className="w-3 h-3" />
+                        <span>{language === 'vi' ? 'Xóa tất cả' : 'Clear all'}</span>
+                      </button>
+                    )}
                   </div>
 
-                  <div className="pt-1 border-t border-[var(--border-color)]">
-                    <button 
-                      onClick={() => setShowAllNotifications(!showAllNotifications)}
-                      className="w-full text-center text-xs font-semibold text-[var(--accent-primary)] hover:underline py-1"
-                    >
-                      {showAllNotifications ? (language === 'vi' ? 'Thu gọn' : 'Collapse') : (language === 'vi' ? 'Xem tất cả' : 'View all')}
-                    </button>
-                  </div>
+                  {/* Notification List */}
+                  {notifications.length === 0 ? (
+                    <div className="py-7 text-center space-y-2">
+                      <div className="w-10 h-10 mx-auto rounded-full flex items-center justify-center bg-[var(--bg-app)] text-[var(--text-muted)]">
+                        <BellOff className="w-5 h-5" />
+                      </div>
+                      <p className="text-xs font-semibold text-[var(--text-primary)]">
+                        {language === 'vi' ? 'Không có thông báo nào' : 'No notifications'}
+                      </p>
+                      <p className="text-[11px] text-[var(--text-muted)] max-w-xs mx-auto">
+                        {language === 'vi' ? 'Các cảnh báo hệ thống hoặc cập nhật tài khoản sẽ xuất hiện tại đây.' : 'System alerts and account updates will appear here.'}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5 max-h-80 overflow-y-auto custom-scrollbar">
+                      {(showAllNotifications ? notifications : notifications.slice(0, 3)).map((n) => {
+                        const isErr = n.type === 'error';
+                        const isWarn = n.type === 'warning';
+                        const isSuccess = n.type === 'success';
+                        return (
+                          <div 
+                            key={n.id} 
+                            className={`p-2.5 rounded-xl border text-xs space-y-1 relative group transition-colors ${
+                              isDark 
+                                ? 'bg-[var(--bg-app)] border-[var(--border-color)] hover:border-[var(--accent-primary)]/40' 
+                                : 'bg-gray-50 border-gray-100 hover:border-gray-200'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-center gap-1.5 font-semibold text-[var(--text-primary)] min-w-0 pr-1">
+                                {isErr && <AlertCircle className="w-3.5 h-3.5 text-[var(--status-error)] shrink-0" />}
+                                {isWarn && <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
+                                {isSuccess && <CheckCircle2 className="w-3.5 h-3.5 text-[var(--status-success)] shrink-0" />}
+                                {!isErr && !isWarn && !isSuccess && <Info className="w-3.5 h-3.5 text-[var(--accent-primary)] shrink-0" />}
+                                <span className="truncate">{n.title}</span>
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <span className="text-[10px] text-[var(--text-muted)]">{n.time}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => deleteNotification(n.id)}
+                                  className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 text-[var(--text-muted)] hover:text-[var(--status-error)] transition-all cursor-pointer"
+                                  title={language === 'vi' ? 'Xóa' : 'Delete'}
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            </div>
+                            <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{n.content}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Notification Footer: View All & Clear All */}
+                  {notifications.length > 3 && (
+                    <div className="pt-2 flex items-center justify-between border-t border-[var(--border-color)]">
+                      <button 
+                        onClick={() => setShowAllNotifications(!showAllNotifications)}
+                        className="text-xs font-semibold text-[var(--accent-primary)] hover:underline py-1 cursor-pointer"
+                      >
+                        {showAllNotifications 
+                          ? (language === 'vi' ? 'Thu gọn' : 'Collapse') 
+                          : (language === 'vi' ? `Xem tất cả (${notifications.length})` : `View all (${notifications.length})`)}
+                      </button>
+                      <button 
+                        onClick={clearAllNotifications}
+                        className="text-xs text-[var(--text-muted)] hover:text-[var(--status-error)] hover:underline py-1 cursor-pointer"
+                      >
+                        {language === 'vi' ? 'Xóa hết' : 'Clear all'}
+                      </button>
+                    </div>
+                  )}
                 </motion.div>
               </>
             )}

@@ -14,7 +14,8 @@ import {
   ToastMessage, 
   NoteMethod, 
   ChatMessage,
-  ColorPalette
+  ColorPalette,
+  AppNotification
 } from '../types';
 import {
   getNotes,
@@ -169,6 +170,14 @@ interface AppContextType {
   // Settings tab
   settingsActiveTab: 'account' | 'appearance' | 'ai-providers' | 'notifications';
   setSettingsActiveTab: (tab: 'account' | 'appearance' | 'ai-providers' | 'notifications') => void;
+
+  // Notifications Center (Per Account)
+  notifications: AppNotification[];
+  hasUnreadNotifications: boolean;
+  addNotification: (title: string, content: string, type?: 'info' | 'warning' | 'error' | 'success') => void;
+  markNotificationsAsRead: () => void;
+  clearAllNotifications: () => void;
+  deleteNotification: (id: string) => void;
 
   // Global Toasts
   toasts: ToastMessage[];
@@ -356,12 +365,91 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Chat conversation
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
+  // Initial default notifications
+  const DEFAULT_INITIAL_NOTIFICATIONS: AppNotification[] = [
+    {
+      id: 'notif_welcome',
+      title: 'Chào mừng bạn đến với Zero AI Note',
+      content: 'Bắt đầu nghiên cứu, tạo ghi chú Cornell và xuất file DOCX/PDF chuyên nghiệp.',
+      time: 'Hôm nay',
+      timestamp: Date.now(),
+      type: 'success',
+      read: false,
+    },
+    {
+      id: 'notif_gemini_pool',
+      title: 'Google Gemini 2.0 Flash Sẵn Sàng',
+      content: 'Mô hình AI đa năng đã được kích hoạt mặc định trên hệ thống.',
+      time: 'Hôm nay',
+      timestamp: Date.now() - 300000,
+      type: 'info',
+      read: false,
+    },
+  ];
+
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+
+  // Load account-specific notifications
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const storageKey = user.email ? `zero_ai_notifications_${user.email}` : 'zero_ai_notifications_guest';
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        setNotifications(JSON.parse(saved));
+      } else {
+        setNotifications(DEFAULT_INITIAL_NOTIFICATIONS);
+        localStorage.setItem(storageKey, JSON.stringify(DEFAULT_INITIAL_NOTIFICATIONS));
+      }
+    } catch {
+      setNotifications(DEFAULT_INITIAL_NOTIFICATIONS);
+    }
+  }, [user.email]);
+
+  const saveNotifications = (newList: AppNotification[]) => {
+    setNotifications(newList);
+    if (typeof window !== 'undefined') {
+      const storageKey = user.email ? `zero_ai_notifications_${user.email}` : 'zero_ai_notifications_guest';
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(newList));
+      } catch {}
+    }
+  };
+
+  const addNotification = (title: string, content: string, type: 'info' | 'warning' | 'error' | 'success' = 'info') => {
+    const newNotif: AppNotification = {
+      id: 'notif_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      title,
+      content,
+      time: 'Vừa xong',
+      timestamp: Date.now(),
+      type,
+      read: false,
+    };
+    saveNotifications([newNotif, ...notifications]);
+  };
+
+  const markNotificationsAsRead = () => {
+    const updated = notifications.map(n => ({ ...n, read: true }));
+    saveNotifications(updated);
+  };
+
+  const clearAllNotifications = () => {
+    saveNotifications([]);
+  };
+
+  const deleteNotification = (id: string) => {
+    const updated = notifications.filter(n => n.id !== id);
+    saveNotifications(updated);
+  };
+
+  const hasUnreadNotifications = notifications.some(n => !n.read);
+
+  // Silent addToast (No popup on normal actions; errors route to Bell Notifications)
   const addToast = (title: string, description?: string, type: 'success' | 'error' | 'info' | 'warning' = 'success') => {
-    const id = 'toast_' + Math.random().toString(36).substring(2, 9);
-    setToasts(prev => [...prev, { id, title, description, type }]);
-    setTimeout(() => {
-      removeToast(id);
-    }, 4000);
+    if (type === 'error' || type === 'warning') {
+      addNotification(title, description || '', type);
+    }
   };
 
   const removeToast = (id: string) => {
@@ -1136,6 +1224,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setIsArtifactFullscreen,
       settingsActiveTab,
       setSettingsActiveTab,
+      notifications,
+      hasUnreadNotifications,
+      addNotification,
+      markNotificationsAsRead,
+      clearAllNotifications,
+      deleteNotification,
       toasts,
       addToast,
       removeToast,
