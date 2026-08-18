@@ -17,12 +17,10 @@ export async function GET(request: NextRequest) {
       return ok({ authenticated: false, user: null });
     }
 
-    let needsPasswordSetup = false;
     let displayName = null;
     try {
       const user = await findUserById(session.sub);
       if (user) {
-        needsPasswordSetup = !user.password_hash;
         displayName = user.display_name;
       }
     } catch {
@@ -39,7 +37,7 @@ export async function GET(request: NextRequest) {
         plan: session.plan,
         processingMinutesUsed: session.processingMinutesUsed,
         processingMinutesLimit: session.processingMinutesLimit,
-        needsPasswordSetup,
+        needsPasswordSetup: false,
       },
     });
   } catch (error) {

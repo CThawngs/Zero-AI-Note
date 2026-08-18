@@ -117,10 +117,10 @@ export async function POST(request: NextRequest) {
     let needsPasswordSetup = false;
 
     if (user) {
-      // Merge into existing account
-      needsPasswordSetup = !user.password_hash;
+      // Existing user: Merge silently, NEVER prompt password setup
+      needsPasswordSetup = false;
     } else {
-      // Create new user in Neon Postgres
+      // Brand new user created via Google: allow initial password setup
       user = await createUser({
         email,
         displayName,

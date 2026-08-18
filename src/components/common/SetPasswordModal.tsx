@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Lock, Eye, EyeOff, ShieldCheck, CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
+import { Lock, Eye, EyeOff, ShieldCheck, CheckCircle2, AlertCircle, ArrowRight, X } from 'lucide-react';
 import { useApp } from '@/src/context/AppContext';
 
 export const SetPasswordModal: React.FC = () => {
@@ -17,7 +17,7 @@ export const SetPasswordModal: React.FC = () => {
   const isDark = theme === 'dark';
   const vi = language === 'vi';
 
-  // Only show if user is logged in and needs password setup
+  // Only show if user is logged in and specifically flagged as brand-new account needing initial setup
   const isOpen = Boolean(user.id && user.needsPasswordSetup);
 
   if (!isOpen) return null;
@@ -38,6 +38,10 @@ export const SetPasswordModal: React.FC = () => {
 
     setErrors(errs);
     return Object.keys(errs).length === 0;
+  };
+
+  const handleDismiss = () => {
+    setUser((prev) => ({ ...prev, needsPasswordSetup: false }));
   };
 
   const handleSetPassword = async (e: React.FormEvent) => {
@@ -89,8 +93,18 @@ export const SetPasswordModal: React.FC = () => {
           transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
           className={`relative w-full max-w-[420px] border rounded-2xl shadow-2xl overflow-hidden p-5 sm:p-6 ${cardBg}`}
         >
+          {/* Close / Skip button in top right */}
+          <button
+            type="button"
+            onClick={handleDismiss}
+            className="absolute top-4 right-4 p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+            aria-label="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
+
           {/* Header Icon */}
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-3 mb-4 pr-6">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
               isSuccess
                 ? isDark ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'
@@ -102,7 +116,7 @@ export const SetPasswordModal: React.FC = () => {
               <h2 className="text-base sm:text-lg font-bold leading-tight">
                 {isSuccess
                   ? (vi ? 'Thiết lập mật khẩu thành công!' : 'Password Set Successfully!')
-                  : (vi ? 'Thiết lập mật khẩu tài khoản' : 'Set Account Password')}
+                  : (vi ? 'Tạo mật khẩu cho tài khoản' : 'Set Account Password')}
               </h2>
               <p className={`text-[11px] sm:text-xs mt-0.5 ${textMuted}`}>
                 {user.email}
@@ -116,8 +130,8 @@ export const SetPasswordModal: React.FC = () => {
                 isDark ? 'bg-white/5 border-white/8 text-neutral-300' : 'bg-gray-50 border-gray-100 text-gray-700'
               }`}>
                 {vi
-                  ? 'Bạn đã đăng nhập bằng Google. Vui lòng tạo mật khẩu bảo mật (tối thiểu 8 ký tự) để có thể đăng nhập bằng email & mật khẩu bất cứ lúc nào.'
-                  : 'You signed in with Google. Please set a secure password (min 8 chars) so you can also sign in via email & password.'}
+                  ? 'Bạn vừa tạo tài khoản qua Google. Bạn có thể tạo thêm mật khẩu dự phòng (tùy chọn) để đăng nhập bằng form tay bất cứ lúc nào.'
+                  : 'You created an account via Google. You can optionally set a backup password to sign in via email & password.'}
               </p>
 
               {errors.general && (
@@ -132,11 +146,11 @@ export const SetPasswordModal: React.FC = () => {
               <form onSubmit={handleSetPassword} className="space-y-3">
                 {/* New Password */}
                 <div>
-                  <label className={`block text-[11px] font-medium mb-1 ${textMuted}`}>
+                  <label className="block text-xs font-semibold mb-1">
                     {vi ? 'Mật khẩu mới' : 'New Password'}
                   </label>
                   <div className="relative">
-                    <Lock className={`w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 ${errors.password ? 'text-red-500' : textMuted}`} />
+                    <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
                     <input
                       type={showPassword ? 'text' : 'password'}
                       value={password}
@@ -152,7 +166,7 @@ export const SetPasswordModal: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className={`absolute right-2.5 top-1/2 -translate-y-1/2 cursor-pointer ${textMuted} hover:opacity-80`}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-200 cursor-pointer p-0.5"
                     >
                       {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                     </button>
@@ -167,11 +181,11 @@ export const SetPasswordModal: React.FC = () => {
 
                 {/* Confirm Password */}
                 <div>
-                  <label className={`block text-[11px] font-medium mb-1 ${textMuted}`}>
-                    {vi ? 'Xác nhận lại mật khẩu' : 'Confirm Password'}
+                  <label className="block text-xs font-semibold mb-1">
+                    {vi ? 'Xác nhận mật khẩu' : 'Confirm Password'}
                   </label>
                   <div className="relative">
-                    <Lock className={`w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 ${errors.confirmPassword ? 'text-red-500' : textMuted}`} />
+                    <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
                     <input
                       type={showPassword ? 'text' : 'password'}
                       value={confirmPassword}
@@ -193,23 +207,35 @@ export const SetPasswordModal: React.FC = () => {
                   )}
                 </div>
 
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className={`w-full mt-2 py-3 px-4 rounded-xl font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer ${
-                    isDark ? 'bg-white hover:bg-neutral-100 text-black' : 'bg-black hover:bg-gray-900 text-white'
-                  }`}
-                >
-                  {isLoading ? (
-                    <div className="w-4 h-4 border-[2px] border-current border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <span>{vi ? 'Lưu mật khẩu & Tiếp tục' : 'Save Password & Continue'}</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
+                {/* Action Buttons */}
+                <div className="space-y-2 pt-2">
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className={`w-full py-3 px-4 rounded-xl font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer ${
+                      isDark ? 'bg-white hover:bg-neutral-100 text-black' : 'bg-black hover:bg-gray-900 text-white'
+                    }`}
+                  >
+                    {isLoading ? (
+                      <div className="w-4 h-4 border-[2px] border-current border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <span>{vi ? 'Lưu mật khẩu & Tiếp tục' : 'Save Password & Continue'}</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDismiss}
+                    className={`w-full py-2.5 px-4 rounded-xl font-medium text-xs flex items-center justify-center transition-all cursor-pointer ${
+                      isDark ? 'text-neutral-400 hover:text-white hover:bg-white/5' : 'text-gray-500 hover:text-black hover:bg-gray-100'
+                    }`}
+                  >
+                    <span>{vi ? 'Bỏ qua (Để sau)' : 'Skip for now'}</span>
+                  </button>
+                </div>
               </form>
             </>
           ) : (
