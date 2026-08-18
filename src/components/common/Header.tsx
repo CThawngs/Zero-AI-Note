@@ -1,40 +1,39 @@
+'use client';
+
 import React, { useState } from 'react';
 import { 
+  Cpu, 
   ChevronDown, 
-  Globe, 
-  Sparkles, 
   Bell, 
+  Sun, 
+  Moon, 
+  Crown, 
   Share2, 
-  Crown,
-  Check,
-  Cpu,
+  Check, 
   Menu,
-  Sun,
-  Moon,
   PlusCircle,
-  AlertCircle
+  Zap,
+  Layers,
+  ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useApp } from '../../context/AppContext';
 
 export const Header: React.FC = () => {
   const { 
+    theme, 
+    toggleTheme, 
+    language, 
+    setLanguage, 
+    user, 
+    setCurrentScreen, 
+    setSettingsActiveTab,
     selectedModel, 
     setSelectedModel, 
     aiProviders,
-    selectedLanguage, 
-    setSelectedLanguage,
-    isProcessingChat,
-    user,
-    setCurrentScreen,
-    setSettingsActiveTab,
+    setIsMobileSidebarOpen,
     addToast,
-    theme,
-    toggleTheme,
-    language,
-    setLanguage,
-    t,
-    setIsMobileSidebarOpen
+    t
   } = useApp();
 
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
@@ -51,17 +50,32 @@ export const Header: React.FC = () => {
     { id: 6, title: 'Welcome', content: 'Welcome to Zero AI Note. Start by creating your first research project.', time: '2 days ago', flag: 'green' },
   ];
 
-  // Dynamic models derived exclusively from configured AI Providers
-  const configuredModels = aiProviders.map(p => ({
+  // 1. Built-in System Gemini Model (Default Free Pool)
+  const systemModel = {
+    name: 'Gemini 2.0 Flash (Default)',
+    modelId: 'gemini-2.5-flash',
+    provider: 'Google AI (Free Pool)',
+    providerId: 'google-system',
+    status: 'active' as const,
+    badge: language === 'vi' ? 'Miễn phí' : 'Free Pool',
+    isSystem: true,
+  };
+
+  // 2. User-configured Custom BYOK Models
+  const customModels = aiProviders.map(p => ({
     name: p.defaultModel,
+    modelId: p.defaultModel,
     provider: p.name,
     providerId: p.providerId,
     status: p.status,
-    latency: p.latencyMs,
-    badge: p.status === 'active' ? `${p.latencyMs}ms` : (language === 'vi' ? 'Tạm tắt' : 'Disabled')
+    badge: p.status === 'active' ? `${p.latencyMs}ms` : (language === 'vi' ? 'Tạm tắt' : 'Disabled'),
+    isSystem: false,
   }));
 
-  const activeModels = configuredModels.filter(m => m.status === 'active');
+  const allAvailableModels = [systemModel, ...customModels];
+  const currentModel = allAvailableModels.find(
+    m => m.name === selectedModel || m.modelId === selectedModel
+  ) || systemModel;
 
   const availableLanguages = [
     { name: 'Tiếng Việt', code: 'vi' as const, flag: '🇻🇳' },
@@ -74,13 +88,6 @@ export const Header: React.FC = () => {
   };
 
   const isDark = theme === 'dark';
-
-  const hasModels = configuredModels.length > 0;
-
-  // Display text for model button (strictly dynamic based on configured providers)
-  const currentModelDisplay = hasModels
-    ? (configuredModels.find(m => m.name === selectedModel)?.name || activeModels[0]?.name || configuredModels[0].name)
-    : (language === 'vi' ? 'Chưa cấu hình Model' : 'No Model Configured');
 
   return (
     <header className={`h-14 px-4 sm:px-6 flex items-center justify-between shrink-0 z-10 transition-colors duration-250 border-b ${
@@ -104,23 +111,20 @@ export const Header: React.FC = () => {
           <Menu className="w-4 h-4" />
         </button>
 
-        {/* AI Engine Model Dropdown (Dynamic from configured AI Providers) */}
+        {/* AI Engine Model Dropdown (Default System Pool + BYOK Providers) */}
         <div className="relative">
           <button
             id="header-model-selector"
             onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
-            className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl border text-xs font-medium transition-all cursor-pointer active:scale-[0.98] ${
-              !hasModels
-                ? 'bg-[var(--bg-app)] border-dashed border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent-primary)]/50'
-                : 'bg-[var(--bg-app)] border-[var(--border-color)] hover:border-[var(--accent-primary)]/60 text-[var(--text-primary)] hover:text-[var(--accent-primary)]'
-            } shadow-2xs`}
+            className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl border text-xs font-medium transition-all cursor-pointer active:scale-[0.98] bg-[var(--bg-app)] border-[var(--border-color)] hover:border-[var(--accent-primary)]/60 text-[var(--text-primary)] shadow-2xs"
           >
-            {hasModels ? (
-              <Cpu className="w-3.5 h-3.5 shrink-0 text-[var(--accent-primary)]" />
-            ) : (
-              <Cpu className="w-3.5 h-3.5 shrink-0 text-[var(--text-muted)]" />
-            )}
-            <span className="max-w-[110px] sm:max-w-[160px] truncate font-medium">{currentModelDisplay}</span>
+            <Zap className="w-3.5 h-3.5 shrink-0 text-[var(--accent-primary)]" />
+            <span className="max-w-[130px] sm:max-w-[190px] truncate font-semibold">
+              {currentModel.name}
+            </span>
+            <span className="hidden sm:inline-block text-[10px] px-1.5 py-0.2 rounded bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-bold">
+              {currentModel.badge}
+            </span>
             <ChevronDown className={`w-3 h-3 transition-transform ${isModelDropdownOpen ? 'rotate-180' : ''} text-[var(--text-muted)]`} />
           </button>
 
@@ -136,109 +140,81 @@ export const Header: React.FC = () => {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 6, scale: 0.98 }}
                   transition={{ duration: 0.15 }}
-                  className={`absolute left-0 mt-1.5 w-72 rounded-2xl shadow-2xl p-1.5 z-40 space-y-1 border ${
+                  className={`absolute left-0 mt-1.5 w-80 rounded-2xl shadow-2xl p-2 z-40 space-y-2 border ${
                     isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)]' : 'bg-white border-[var(--border-color)]'
                   }`}
                 >
-                  <div className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] flex items-center justify-between">
+                  <div className="px-2 py-1 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] flex items-center justify-between">
                     <span>{t('modelSelectorLabel')}</span>
                     <span className="text-xs font-normal text-[var(--text-muted)]">
-                      {configuredModels.length} {language === 'vi' ? 'nhà cung cấp' : 'providers'}
+                      {allAvailableModels.length} {language === 'vi' ? 'mô hình' : 'models'}
                     </span>
                   </div>
 
-                  {configuredModels.length === 0 ? (
-                    /* Empty state khi chưa thêm Provider nào */
-                    <div className="p-4 text-center space-y-2.5">
-                      <div className="w-9 h-9 mx-auto rounded-full flex items-center justify-center bg-[var(--bg-app)] text-[var(--text-muted)]">
-                        <AlertCircle className="w-5 h-5 text-[var(--accent-primary)]" />
-                      </div>
-                      <div className="space-y-0.5">
-                        <p className="text-xs font-semibold text-[var(--text-primary)]">
-                          {language === 'vi' ? 'Chưa có Provider AI nào' : 'No AI Providers configured'}
-                        </p>
-                        <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                          {language === 'vi' 
-                            ? 'Thêm Provider AI trong Cài đặt để bắt đầu' 
-                            : 'Add an AI Provider in Settings to start'}
-                        </p>
-                      </div>
-                      <button
-                        id="btn-goto-add-provider"
-                        onClick={() => {
-                          setIsModelDropdownOpen(false);
-                          setCurrentScreen('settings');
-                          setSettingsActiveTab('ai-providers');
-                        }}
-                        className="w-full mt-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-[var(--accent-text)] text-xs font-semibold shadow-xs cursor-pointer active:scale-95 transition-all"
-                      >
-                        <PlusCircle className="w-3.5 h-3.5" />
-                        <span>{language === 'vi' ? '+ Thêm Provider AI' : '+ Add AI Provider'}</span>
-                      </button>
-                    </div>
-                  ) : (
-                    /* Danh sách model từ các AI Provider thực tế đã cấu hình */
-                    <div className="space-y-0.5 max-h-64 overflow-y-auto custom-scrollbar">
-                      {configuredModels.map((m) => {
-                        const isSelected = selectedModel === m.name;
-                        const isInactive = m.status === 'inactive';
-                        return (
-                          <button
-                            key={`${m.providerId}-${m.name}`}
-                            id={`model-option-${m.name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}`}
-                            disabled={isInactive}
-                            onClick={() => {
-                              setSelectedModel(m.name);
-                              setIsModelDropdownOpen(false);
-                              addToast(
-                                language === 'vi' ? 'Đã đổi mô hình AI' : 'Model Switched', 
-                                `${m.name} (${m.provider})`, 
-                                'info'
-                              );
-                            }}
-                            className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs transition-colors cursor-pointer text-left ${
-                              isInactive 
-                                ? 'opacity-50 cursor-not-allowed bg-transparent'
-                                : isSelected
-                                  ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] border border-[var(--accent-primary)]/40 font-semibold' 
-                                  : 'text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
-                            }`}
-                          >
-                            <div className="text-left min-w-0 pr-2">
+                  {/* List of Models */}
+                  <div className="space-y-1 max-h-72 overflow-y-auto custom-scrollbar">
+                    {allAvailableModels.map((m) => {
+                      const isSelected = (selectedModel === m.name || selectedModel === m.modelId) || (!selectedModel && m.isSystem);
+                      const isInactive = m.status === 'inactive';
+                      return (
+                        <button
+                          key={`${m.providerId}-${m.name}`}
+                          id={`model-option-${m.name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}`}
+                          disabled={isInactive}
+                          onClick={() => {
+                            setSelectedModel(m.isSystem ? 'gemini-2.5-flash' : m.name);
+                            setIsModelDropdownOpen(false);
+                            addToast(
+                              language === 'vi' ? 'Đã chuyển mô hình AI' : 'Model Switched', 
+                              `${m.name} (${m.provider})`, 
+                              'info'
+                            );
+                          }}
+                          className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-colors cursor-pointer text-left ${
+                            isInactive 
+                              ? 'opacity-50 cursor-not-allowed bg-transparent'
+                              : isSelected
+                                ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] border border-[var(--accent-primary)]/40 font-semibold' 
+                                : 'text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
+                          }`}
+                        >
+                          <div className="text-left min-w-0 pr-2">
+                            <div className="flex items-center gap-1.5">
+                              {m.isSystem && <Zap className="w-3 h-3 text-[var(--accent-primary)] shrink-0" />}
                               <p className="font-semibold truncate">{m.name}</p>
-                              <p className="text-xs text-[var(--text-muted)] truncate">{m.provider}</p>
                             </div>
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
-                                isInactive 
-                                  ? 'bg-[var(--bg-app)] text-[var(--text-muted)]'
-                                  : 'bg-[var(--bg-hover)] text-[var(--accent-primary)]'
-                              }`}>
-                                {m.badge}
-                              </span>
-                              {isSelected && <Check className="w-3.5 h-3.5 text-[var(--status-success)]" />}
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
+                            <p className="text-[11px] text-[var(--text-muted)] truncate">{m.provider}</p>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                              isInactive 
+                                ? 'bg-[var(--bg-app)] text-[var(--text-muted)]'
+                                : 'bg-[var(--bg-hover)] text-[var(--accent-primary)] font-bold'
+                            }`}>
+                              {m.badge}
+                            </span>
+                            {isSelected && <Check className="w-3.5 h-3.5 text-[var(--status-success)]" />}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
 
-                  {configuredModels.length > 0 && (
-                    <div className="pt-1 border-t border-[var(--border-color)]">
-                      <button
-                        onClick={() => {
-                          setIsModelDropdownOpen(false);
-                          setCurrentScreen('settings');
-                          setSettingsActiveTab('ai-providers');
-                        }}
-                        className="w-full flex items-center justify-center gap-1 py-1.5 text-xs text-[var(--accent-primary)] hover:underline cursor-pointer"
-                      >
-                        <PlusCircle className="w-3 h-3" />
-                        <span>{language === 'vi' ? 'Quản lý AI Providers trong Cài đặt' : 'Manage Providers in Settings'}</span>
-                      </button>
-                    </div>
-                  )}
+                  {/* Add BYOK Provider Button */}
+                  <div className="pt-2 border-t border-[var(--border-color)]">
+                    <button
+                      id="btn-goto-add-provider"
+                      onClick={() => {
+                        setIsModelDropdownOpen(false);
+                        setCurrentScreen('settings');
+                        setSettingsActiveTab('ai-providers');
+                      }}
+                      className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-[var(--accent-text)] text-xs font-semibold shadow-xs cursor-pointer active:scale-95 transition-all"
+                    >
+                      <PlusCircle className="w-3.5 h-3.5" />
+                      <span>{language === 'vi' ? '+ Thêm Provider Riêng (BYOK)' : '+ Add Custom BYOK Key'}</span>
+                    </button>
+                  </div>
                 </motion.div>
               </>
             )}
@@ -250,14 +226,13 @@ export const Header: React.FC = () => {
           <button
             id="header-language-selector"
             onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-medium transition-colors cursor-pointer active:scale-[0.98] ${
+            className={`flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-xl border text-xs font-medium transition-colors cursor-pointer active:scale-[0.98] ${
               isDark 
                 ? 'bg-[var(--bg-app)] border-[var(--border-color)] hover:border-[var(--accent-primary)]/60 text-[var(--text-primary)] hover:text-[var(--accent-primary)]' 
                 : 'bg-[var(--bg-app)] border-[var(--border-color)] hover:border-[var(--accent-primary)]/60 text-[var(--text-primary)] hover:text-[var(--accent-primary)] shadow-2xs'
             }`}
           >
-            <Globe className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
-            <span className="font-semibold">{language.toUpperCase()}</span>
+            <span>{language === 'vi' ? '🇻🇳 VI' : '🇺🇸 EN'}</span>
             <ChevronDown className={`w-3 h-3 transition-transform ${isLangDropdownOpen ? 'rotate-180' : ''} text-[var(--text-muted)]`} />
           </button>
 
@@ -273,84 +248,99 @@ export const Header: React.FC = () => {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 6, scale: 0.98 }}
                   transition={{ duration: 0.15 }}
-                  className={`absolute left-0 mt-1.5 w-36 rounded-xl shadow-2xl p-1 z-40 space-y-0.5 border ${
+                  className={`absolute left-0 mt-1.5 w-40 rounded-2xl shadow-xl p-1.5 z-40 space-y-1 border ${
                     isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)]' : 'bg-white border-[var(--border-color)]'
                   }`}
                 >
-                  {availableLanguages.map((lang) => (
-                    <button
-                      key={lang.code}
-                      id={`lang-option-${lang.code}`}
-                      onClick={() => {
-                        setLanguage(lang.code);
-                        setIsLangDropdownOpen(false);
-                      }}
-                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
-                        language === lang.code
-                          ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-semibold' 
-                          : 'text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span>{lang.flag}</span>
-                        <span>{lang.name}</span>
-                      </div>
-                      {language === lang.code && <Check className="w-3.5 h-3.5 text-[var(--status-success)]" />}
-                    </button>
-                  ))}
+                  <div className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                    {language === 'vi' ? 'Ngôn ngữ' : 'Language'}
+                  </div>
+                  {availableLanguages.map((l) => {
+                    const isSelected = language === l.code;
+                    return (
+                      <button
+                        key={l.code}
+                        id={`lang-option-${l.code}`}
+                        onClick={() => {
+                          setLanguage(l.code);
+                          setIsLangDropdownOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-medium transition-colors cursor-pointer ${
+                          isSelected
+                            ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-bold'
+                            : 'text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span>{l.flag}</span>
+                          <span>{l.name}</span>
+                        </div>
+                        {isSelected && <Check className="w-3.5 h-3.5 text-[var(--accent-primary)]" />}
+                      </button>
+                    );
+                  })}
                 </motion.div>
               </>
             )}
           </AnimatePresence>
         </div>
 
-        {/* Live Status Indicator */}
-        <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-full border border-[var(--border-color)] bg-[var(--bg-app)]">
-          <span className={`w-2 h-2 rounded-full ${
-            isProcessingChat ? 'bg-[var(--accent-primary)] animate-ping' : 'bg-[var(--status-success)]'
-          }`} />
-          <span className="text-xs font-medium text-[var(--text-primary)]">
-            {isProcessingChat ? t('processing') : t('ready')}
+        {/* Global Pipeline Status Pill */}
+        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl border border-[var(--border-color)] bg-[var(--bg-app)] text-xs text-[var(--text-secondary)] shadow-2xs">
+          <span className="w-2 h-2 rounded-full bg-[var(--status-success)] animate-pulse" />
+          <span className="font-medium text-[var(--text-primary)]">
+            {language === 'vi' ? 'Sẵn sàng xử lý' : 'Ready to process'}
           </span>
         </div>
       </div>
 
-      {/* Right side: Theme Toggle + Pro Upgrade + Notifications + Share */}
-      <div className="flex items-center gap-1.5 sm:gap-2.5">
-        {/* Quick Theme Toggle Button in Header */}
+      {/* Right side Actions: Theme Toggle, Upgrade, Notifications, Share */}
+      <div className="flex items-center gap-2 sm:gap-2.5">
+        {/* Theme mode toggle: Light / Dark */}
         <button
-          id="header-theme-toggle"
+          id="btn-theme-toggle"
           onClick={toggleTheme}
-          className="p-2 rounded-xl border transition-all duration-200 cursor-pointer active:scale-95 bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--accent-primary)] hover:bg-[var(--bg-hover)]"
-          title={isDark ? t('lightMode') : t('darkMode')}
+          className={`p-2 rounded-xl border transition-colors cursor-pointer active:scale-95 ${
+            isDark 
+              ? 'bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] hover:text-[var(--accent-primary)]' 
+              : 'bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] hover:text-[var(--accent-primary)] shadow-2xs'
+          }`}
+          title={theme === 'dark' ? t('lightMode') : t('darkMode')}
         >
-          {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          {theme === 'dark' ? <Sun className="w-4 h-4 text-[var(--accent-primary)]" /> : <Moon className="w-4 h-4 text-[var(--accent-primary)]" />}
         </button>
 
+        {/* Upgrade Plan Button (Free Plan Only) */}
         {user.plan === 'free' && (
           <button
-            id="header-upgrade-btn"
+            id="btn-upgrade-plan-header"
             onClick={() => setCurrentScreen('pricing')}
-            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95 bg-[var(--accent-subtle)] border-[var(--accent-primary)]/40 text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/20"
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer active:scale-95 shadow-xs ${
+              isDark
+                ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 border-amber-500/40 text-amber-300 hover:border-amber-400'
+                : 'bg-gradient-to-r from-amber-50 to-orange-50 border-amber-300 text-amber-800 hover:border-amber-400 shadow-2xs'
+            }`}
           >
-            <Crown className="w-3.5 h-3.5 shrink-0 text-[var(--accent-primary)]" />
-            <span className="hidden sm:inline">{t('upgradePro')}</span>
-            <span className="sm:hidden">Pro</span>
+            <Crown className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+            <span className="hidden md:inline">{language === 'vi' ? 'Nâng cấp Pro' : 'Upgrade to Pro'}</span>
+            <span className="md:hidden">Pro</span>
           </button>
         )}
 
-        {/* Notifications */}
+        {/* Notifications Dropdown */}
         <div className="relative">
           <button
-            id="header-notifications-btn"
+            id="btn-notifications-toggle"
             onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-            className={`p-2 rounded-xl border transition-colors relative cursor-pointer active:scale-95 bg-[var(--bg-app)] border-[var(--border-color)] hover:bg-[var(--bg-hover)] ${
-              isNotificationsOpen ? 'text-[var(--text-primary)] border-[var(--accent-primary)]/50' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+            className={`relative p-2 rounded-xl border transition-colors cursor-pointer active:scale-95 ${
+              isDark 
+                ? 'bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] hover:text-[var(--accent-primary)]' 
+                : 'bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] hover:text-[var(--accent-primary)] shadow-2xs'
             }`}
-            title={t('notifications')}
+            aria-label="Notifications"
           >
             <Bell className="w-4 h-4" />
-            <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full ring-2 bg-[var(--accent-primary)] ring-[var(--accent-primary)]/30" />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[var(--status-error)]" />
           </button>
 
           <AnimatePresence>
@@ -358,63 +348,50 @@ export const Header: React.FC = () => {
               <>
                 <div 
                   className="fixed inset-0 z-30" 
-                  onClick={() => {
-                    setIsNotificationsOpen(false);
-                    setShowAllNotifications(false);
-                  }} 
+                  onClick={() => setIsNotificationsOpen(false)} 
                 />
                 <motion.div 
                   initial={{ opacity: 0, y: 6, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 6, scale: 0.98 }}
                   transition={{ duration: 0.15 }}
-                  className={`absolute right-0 mt-1.5 w-80 sm:w-96 max-h-[min(520px,calc(100vh-75px))] flex flex-col rounded-2xl shadow-2xl p-4 z-40 border ${
-                    isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-primary)]' : 'bg-white border-[var(--border-color)] text-gray-800'
+                  className={`absolute right-0 mt-1.5 w-80 sm:w-96 rounded-2xl shadow-2xl border p-3 z-40 space-y-3 ${
+                    isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)]' : 'bg-white border-[var(--border-color)]'
                   }`}
                 >
-                  <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)] mb-2 shrink-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold tracking-tight">
-                        {language === 'vi' ? 'Thông báo' : 'Notifications'}
-                      </span>
-                      <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-[var(--accent-subtle)] text-[var(--accent-primary)] border border-[var(--accent-primary)]/20">
-                        {notifications.length}
-                      </span>
-                    </div>
-                    <button 
-                      onClick={() => setIsNotificationsOpen(false)}
-                      className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:underline cursor-pointer p-1"
-                    >
-                      {language === 'vi' ? 'Đóng' : 'Close'}
-                    </button>
+                  <div className="flex items-center justify-between px-1">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-primary)]">{t('notifications')}</span>
+                    <span className="text-xs text-[var(--status-info)] cursor-pointer hover:underline">
+                      {language === 'vi' ? 'Đánh dấu đã đọc' : 'Mark all as read'}
+                    </span>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto custom-scrollbar pr-1.5 space-y-2 min-h-0">
-                    {notifications.map((notif) => {
-                      // Color flag map
-                      let flagBg = 'bg-blue-500';
-                      if (notif.flag === 'red') flagBg = 'bg-[var(--status-error)]';
-                      else if (notif.flag === 'orange') flagBg = 'bg-amber-500';
-                      else if (notif.flag === 'green') flagBg = 'bg-[var(--status-success)]';
-
-                      return (
-                        <div 
-                          key={notif.id} 
-                          className={`flex gap-2.5 p-2.5 rounded-xl border transition-all hover:border-[var(--accent-primary)]/40 ${
-                            isDark 
-                              ? 'bg-[var(--bg-app)]/60 border-[var(--border-color)] hover:bg-[var(--bg-hover)]' 
-                              : 'bg-gray-50/80 border-gray-200/80 hover:bg-gray-100/80 shadow-2xs'
-                          }`}
-                        >
-                          <span className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${flagBg}`} />
-                          <div className="space-y-0.5 flex-1 min-w-0">
-                            <h4 className="text-xs font-bold leading-snug truncate">{notif.title}</h4>
-                            <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{notif.content}</p>
-                            <span className="text-[10px] text-[var(--text-muted)] font-mono block pt-0.5">{notif.time}</span>
-                          </div>
+                  <div className="space-y-1.5 max-h-80 overflow-y-auto custom-scrollbar">
+                    {(showAllNotifications ? notifications : notifications.slice(0, 3)).map((n) => (
+                      <div 
+                        key={n.id} 
+                        className={`p-2.5 rounded-xl border text-xs space-y-1 cursor-pointer transition-colors ${
+                          isDark 
+                            ? 'bg-[var(--bg-app)] border-[var(--border-color)] hover:border-[var(--accent-primary)]/40' 
+                            : 'bg-gray-50 border-gray-100 hover:border-gray-200'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-[var(--text-primary)]">{n.title}</span>
+                          <span className="text-[10px] text-[var(--text-muted)]">{n.time}</span>
                         </div>
-                      );
-                    })}
+                        <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{n.content}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="pt-1 border-t border-[var(--border-color)]">
+                    <button 
+                      onClick={() => setShowAllNotifications(!showAllNotifications)}
+                      className="w-full text-center text-xs font-semibold text-[var(--accent-primary)] hover:underline py-1"
+                    >
+                      {showAllNotifications ? (language === 'vi' ? 'Thu gọn' : 'Collapse') : (language === 'vi' ? 'Xem tất cả' : 'View all')}
+                    </button>
                   </div>
                 </motion.div>
               </>
@@ -422,14 +399,19 @@ export const Header: React.FC = () => {
           </AnimatePresence>
         </div>
 
-        {/* Share Button */}
+        {/* Global Share Workspace Button */}
         <button
-          id="header-share-workspace-btn"
+          id="btn-global-share"
           onClick={handleShare}
-          className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-colors cursor-pointer active:scale-95 bg-[var(--bg-app)] hover:bg-[var(--bg-hover)] border-[var(--border-color)] text-[var(--text-primary)]"
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-colors cursor-pointer active:scale-95 ${
+            isDark 
+              ? 'bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] hover:border-[var(--accent-primary)]/60' 
+              : 'bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] hover:border-[var(--accent-primary)]/60 shadow-2xs'
+          }`}
+          title="Share workspace"
         >
-          <Share2 className="w-3.5 h-3.5" />
-          <span>{t('share')}</span>
+          <Share2 className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+          <span className="hidden sm:inline">{language === 'vi' ? 'Chia sẻ' : 'Share'}</span>
         </button>
       </div>
     </header>

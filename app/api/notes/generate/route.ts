@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { getSql } from '@/lib/db';
 import { verifySession } from '@/lib/auth/session';
 import { ok, fail } from '@/lib/auth/http';
-import { generateStructuredNote } from '@/lib/ai/gemini';
+import { dispatchStructuredNote } from '@/lib/ai/dispatcher';
 import { NoteMethod, NoteItem } from '@/src/types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -19,12 +19,18 @@ export async function POST(request: NextRequest) {
       method = 'auto',
       language = 'vi',
       model = 'gemini-2.5-flash',
+      providerId,
+      endpointUrl,
+      apiKey,
       sources = [],
     } = body as {
       prompt: string;
       method: NoteMethod;
       language: 'vi' | 'en';
       model: string;
+      providerId?: string;
+      endpointUrl?: string;
+      apiKey?: string;
       sources: { type: 'pdf' | 'youtube' | 'audio' | 'doc' | 'image'; name: string; url?: string }[];
     };
 
@@ -66,16 +72,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Call Gemini 2.0 Flash Engine
-    const generated = await generateStructuredNote({
+    // Call Universal Dispatcher (System Gemini Pool or BYOK Provider)
+    const generated = await dispatchStructuredNote({
       inputText,
       method,
       language,
       model,
+      providerId,
+      endpointUrl,
+      apiKey,
     });
 
     const noteId = uuidv4();
-    const nowIso = new Date().toISOString();
     const formattedDate = new Date().toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US', {
       day: '2-digit',
       month: '2-digit',
@@ -125,8 +133,9 @@ export async function POST(request: NextRequest) {
       note: noteItem,
       message: 'Ghi chú học thuật đã được tạo thành công.',
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Note generation failed:', error);
-    return fail('Lỗi khi tạo ghi chú AI. Vui lòng thử lại.', 500);
+    const message = error?.message || 'Lỗi khi tạo ghi chú AI. Vui lòng thử lại.';
+    return fail(message, 500);
   }
 }

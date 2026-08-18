@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Modal } from '../common/Modal';
-import { Check, Loader2, Sparkles, Activity } from 'lucide-react';
+import { Check, Loader2, Sparkles, AlertCircle, Zap } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 interface AddProviderModalProps {
@@ -8,64 +8,129 @@ interface AddProviderModalProps {
   onClose: () => void;
 }
 
+interface ProviderPreset {
+  id: string;
+  name: string;
+  endpointUrl: string;
+  defaultModel: string;
+  discoveredModels: string[];
+}
+
+const PRESETS: ProviderPreset[] = [
+  {
+    id: 'google',
+    name: 'Google AI (Gemini)',
+    endpointUrl: 'https://generativelanguage.googleapis.com/v1beta',
+    defaultModel: 'gemini-2.0-flash',
+    discoveredModels: ['gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-2.0-pro-exp'],
+  },
+  {
+    id: 'openai',
+    name: 'OpenAI',
+    endpointUrl: 'https://api.openai.com/v1',
+    defaultModel: 'gpt-4o-mini',
+    discoveredModels: ['gpt-4o-mini', 'gpt-4o', 'o3-mini', 'gpt-4-turbo'],
+  },
+  {
+    id: 'anthropic',
+    name: 'Anthropic Claude',
+    endpointUrl: 'https://api.anthropic.com/v1',
+    defaultModel: 'claude-3-5-haiku-20241022',
+    discoveredModels: ['claude-3-5-haiku-20241022', 'claude-3-7-sonnet-20250219', 'claude-3-opus-20240229'],
+  },
+  {
+    id: 'openrouter',
+    name: 'OpenRouter (Multi-Model)',
+    endpointUrl: 'https://openrouter.ai/api/v1',
+    defaultModel: 'deepseek/deepseek-r1',
+    discoveredModels: ['deepseek/deepseek-r1', 'meta-llama/llama-3.3-70b-instruct', 'google/gemini-2.0-flash-exp:free', 'anthropic/claude-3.5-sonnet'],
+  },
+  {
+    id: 'groq',
+    name: 'Groq (Ultra Fast)',
+    endpointUrl: 'https://api.groq.com/openai/v1',
+    defaultModel: 'llama-3.3-70b-versatile',
+    discoveredModels: ['llama-3.3-70b-versatile', 'mixtral-8x7b-32768', 'gemma2-9b-it'],
+  },
+  {
+    id: 'nvidia',
+    name: 'NVIDIA NIM',
+    endpointUrl: 'https://integrate.api.nvidia.com/v1',
+    defaultModel: 'meta/llama-3.1-70b-instruct',
+    discoveredModels: ['meta/llama-3.1-70b-instruct', 'mistralai/mistral-large-2-instruct'],
+  },
+  {
+    id: 'custom',
+    name: 'Custom / Local (Ollama/vLLM)',
+    endpointUrl: 'http://localhost:11434/v1',
+    defaultModel: 'llama3:latest',
+    discoveredModels: ['llama3:latest', 'qwen2.5:latest', 'mistral:latest', 'phi3:latest'],
+  },
+];
+
 export const AddProviderModal: React.FC<AddProviderModalProps> = ({ isOpen, onClose }) => {
-  const { addAIProvider, setSelectedModel, theme, language, t } = useApp();
-  const [name, setName] = useState('');
-  const [providerId, setProviderId] = useState('');
-  const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
-  const [endpointUrl, setEndpointUrl] = useState('https://api.openai.com/v1');
-  const [defaultModel, setDefaultModel] = useState('qwen/qwen3-asr-1.7b');
+  const { addAIProvider, setSelectedModel, language, t } = useApp();
+  const [selectedPresetId, setSelectedPresetId] = useState<string>('google');
+  const [name, setName] = useState('Google AI (Gemini)');
+  const [providerId, setProviderId] = useState('google');
+  const [endpointUrl, setEndpointUrl] = useState('https://generativelanguage.googleapis.com/v1beta');
+  const [defaultModel, setDefaultModel] = useState('gemini-2.0-flash');
   const [apiKey, setApiKey] = useState('');
   const [useForNewChats, setUseForNewChats] = useState(true);
   const [autoDiscoverModels, setAutoDiscoverModels] = useState(true);
   const [isTesting, setIsTesting] = useState(false);
-  const [testResult, setTestResult] = useState<{ success: boolean; latency: number } | null>(null);
-  const [isCheckingModel, setIsCheckingModel] = useState(false);
-  const [modelCheckResult, setModelCheckResult] = useState<boolean | null>(null);
+  const [testResult, setTestResult] = useState<{ success: boolean; latency: number; error?: string } | null>(null);
+  const [discoveredModels, setDiscoveredModels] = useState<string[]>(PRESETS[0].discoveredModels);
 
-  const discoveredModels = [
-    'qwen/qwen3-asr-1.7b',
-    'gpt-4o',
-    'gpt-4o-mini',
-    'claude-3-5-sonnet-20241022',
-    'gemini-2.0-flash',
-    'deepseek-chat',
-    'deepseek-reasoner',
-    'llama-3.3-70b-instruct',
-    'mistral-large-latest',
-    'whisper-large-v3'
-  ];
+  const applyPreset = (preset: ProviderPreset) => {
+    setSelectedPresetId(preset.id);
+    setName(preset.name);
+    setProviderId(preset.id);
+    setEndpointUrl(preset.endpointUrl);
+    setDefaultModel(preset.defaultModel);
+    setDiscoveredModels(preset.discoveredModels);
+    setTestResult(null);
+  };
 
-  const handleTestConnection = () => {
+  const handleTestConnection = async () => {
     if (!endpointUrl) return;
     setIsTesting(true);
     setTestResult(null);
 
-    setTimeout(() => {
+    try {
+      const res = await fetch('/api/providers/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          endpointUrl,
+          apiKey,
+          defaultModel,
+          providerId,
+        }),
+      });
+
+      const data = await res.json();
       setIsTesting(false);
       setTestResult({
-        success: true,
-        latency: Math.floor(Math.random() * 60) + 85
+        success: data.success,
+        latency: data.latency || 120,
+        error: data.error,
       });
-    }, 1100);
-  };
-
-  const handleCheckModel = () => {
-    if (!defaultModel.trim()) return;
-    setIsCheckingModel(true);
-    setModelCheckResult(null);
-
-    setTimeout(() => {
-      setIsCheckingModel(false);
-      setModelCheckResult(true);
-    }, 1200);
+    } catch (err) {
+      setIsTesting(false);
+      setTestResult({
+        success: false,
+        latency: 0,
+        error: err instanceof Error ? err.message : 'Không thể kết nối máy chủ test',
+      });
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !endpointUrl.trim() || !defaultModel.trim() || !testResult?.success) return;
 
-    const finalSlug = (providerId.trim() || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')) || 'custom-provider';
+    const finalSlug = providerId.trim() || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'custom-provider';
     
     addAIProvider({
       name: name.trim(),
@@ -76,7 +141,7 @@ export const AddProviderModal: React.FC<AddProviderModalProps> = ({ isOpen, onCl
       useForNewChats,
       autoDiscoverModels,
       streaming: true,
-      autoFallback: true
+      autoFallback: true,
     });
 
     if (useForNewChats) {
@@ -90,16 +155,39 @@ export const AddProviderModal: React.FC<AddProviderModalProps> = ({ isOpen, onCl
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={language === 'vi' ? 'Thêm Provider AI Tùy Chỉnh' : 'Add Custom AI Provider'}
-      subtitle={language === 'vi' ? 'Kết nối trực tiếp API Key riêng của bạn (BYOK) hoặc máy chủ nội bộ Local LLM' : 'Connect your own API Key (BYOK) or self-hosted local model endpoints'}
-      maxWidth="max-w-lg"
+      title={language === 'vi' ? 'Thêm Provider AI (BYOK - Bring Your Own Key)' : 'Add AI Provider (BYOK)'}
+      subtitle={language === 'vi' ? 'Kết nối trực tiếp API Key riêng của bạn để không bị giới hạn token chung' : 'Connect your own API key to bypass shared rate limits'}
+      maxWidth="max-w-xl"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Name & Provider ID (slug) — Cùng 1 hàng */}
+        {/* Provider Quick Presets */}
+        <div>
+          <label className="block text-xs font-semibold mb-1.5 text-[var(--text-primary)]">
+            {language === 'vi' ? 'Chọn Nhà Cung Cấp Nhanh:' : 'Quick Select Provider:'}
+          </label>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+            {PRESETS.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => applyPreset(p)}
+                className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer text-left truncate ${
+                  selectedPresetId === p.id
+                    ? 'bg-[var(--accent-subtle)] border-[var(--accent-primary)] text-[var(--accent-primary)] ring-1 ring-[var(--accent-primary)]/30'
+                    : 'bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
+                }`}
+              >
+                {p.name.split(' ')[0]}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Name & Provider ID */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-medium mb-1 text-[var(--text-primary)]">
-              {language === 'vi' ? 'Name (Tên hiển thị)' : 'Name (Display Name)'}
+              {language === 'vi' ? 'Tên hiển thị' : 'Display Name'}
               <span className="text-[var(--status-error)] ml-0.5">*</span>
             </label>
             <input
@@ -107,21 +195,15 @@ export const AddProviderModal: React.FC<AddProviderModalProps> = ({ isOpen, onCl
               type="text"
               required
               value={name}
-              onChange={(e) => {
-                const val = e.target.value;
-                setName(val);
-                if (!isSlugManuallyEdited) {
-                  setProviderId(val.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''));
-                }
-              }}
-              placeholder={language === 'vi' ? 'Ví dụ: Qwen Local ASR' : 'e.g. Qwen Local ASR'}
-              className="w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[var(--accent-primary)] transition-colors bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Google AI (Gemini)"
+              className="w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[var(--accent-primary)] transition-colors bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)]"
             />
           </div>
 
           <div>
             <label className="block text-xs font-medium mb-1 text-[var(--text-primary)]">
-              {language === 'vi' ? 'Provider ID (Slug)' : 'Provider ID (Slug)'}
+              {language === 'vi' ? 'Provider ID' : 'Provider ID'}
               <span className="text-[var(--status-error)] ml-0.5">*</span>
             </label>
             <input
@@ -129,12 +211,9 @@ export const AddProviderModal: React.FC<AddProviderModalProps> = ({ isOpen, onCl
               type="text"
               required
               value={providerId}
-              onChange={(e) => {
-                setProviderId(e.target.value);
-                setIsSlugManuallyEdited(true);
-              }}
-              placeholder="qwen-local-asr"
-              className="w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[var(--accent-primary)] transition-colors font-mono bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
+              onChange={(e) => setProviderId(e.target.value)}
+              placeholder="google"
+              className="w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[var(--accent-primary)] transition-colors font-mono bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)]"
             />
           </div>
         </div>
@@ -142,7 +221,7 @@ export const AddProviderModal: React.FC<AddProviderModalProps> = ({ isOpen, onCl
         {/* Endpoint URL */}
         <div>
           <label className="block text-xs font-medium mb-1 text-[var(--text-primary)]">
-            {language === 'vi' ? 'Endpoint URL (Tương thích OpenAI REST)' : 'Endpoint URL (OpenAI REST Compatible)'}
+            {language === 'vi' ? 'Endpoint URL' : 'Endpoint URL'}
             <span className="text-[var(--status-error)] ml-0.5">*</span>
           </label>
           <input
@@ -155,27 +234,23 @@ export const AddProviderModal: React.FC<AddProviderModalProps> = ({ isOpen, onCl
               setTestResult(null);
             }}
             placeholder="https://api.openai.com/v1"
-            className="w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[var(--accent-primary)] transition-colors bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
+            className="w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[var(--accent-primary)] transition-colors bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)]"
           />
         </div>
 
-        {/* Default Model — 2 cách nhập cùng lúc (Dropdown discovered + Text gõ tay) */}
-        <div className="p-3 rounded-xl border space-y-2.5 bg-[var(--bg-hover)] border-[var(--border-color)]">
+        {/* Model Picker & Input */}
+        <div className="p-3 rounded-xl border space-y-2 bg-[var(--bg-hover)] border-[var(--border-color)]">
           <div className="flex items-center justify-between">
             <label className="block text-xs font-semibold text-[var(--text-primary)]">
               {language === 'vi' ? 'Default Model (Mô hình mặc định)' : 'Default Model'}
               <span className="text-[var(--status-error)] ml-0.5">*</span>
             </label>
-            <span className="text-xs text-[var(--text-muted)]">
-              {language === 'vi' ? '2 cách nhập song song' : '2 simultaneous inputs'}
-            </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* Cách 1: Dropdown chọn từ model đã Discover */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <div>
-              <span className="block text-xs font-medium mb-1 text-[var(--text-secondary)]">
-                {language === 'vi' ? 'Chọn từ Discover:' : 'Select Discovered:'}
+              <span className="block text-[11px] font-medium mb-1 text-[var(--text-secondary)]">
+                {language === 'vi' ? 'Gợi ý từ Provider:' : 'Suggested Models:'}
               </span>
               <select
                 id="select-discovered-model"
@@ -183,86 +258,64 @@ export const AddProviderModal: React.FC<AddProviderModalProps> = ({ isOpen, onCl
                 onChange={(e) => {
                   if (e.target.value) {
                     setDefaultModel(e.target.value);
+                    setTestResult(null);
                   }
                 }}
                 className="w-full border rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[var(--accent-primary)] transition-colors cursor-pointer bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)]"
               >
-                <option value="">{language === 'vi' ? '— Chọn model đã Discover —' : '— Discovered Models —'}</option>
+                <option value="">{language === 'vi' ? '— Chọn model có sẵn —' : '— Select preset model —'}</option>
                 {discoveredModels.map((m) => (
                   <option key={m} value={m}>{m}</option>
                 ))}
               </select>
             </div>
 
-            {/* Cách 2: Ô gõ tay tên model tự do */}
             <div>
-              <span className="block text-xs font-medium mb-1 text-[var(--text-secondary)]">
-                {language === 'vi' ? 'Hoặc gõ tay tên model:' : 'Or type custom model:'}
+              <span className="block text-[11px] font-medium mb-1 text-[var(--text-secondary)]">
+                {language === 'vi' ? 'Hoặc nhập tên model tùy ý:' : 'Or custom model ID:'}
               </span>
-              <div className="flex gap-2">
-                <input
-                  id="input-provider-model"
-                  type="text"
-                  required
-                  value={defaultModel}
-                  onChange={(e) => {
-                    setDefaultModel(e.target.value);
-                    setModelCheckResult(null);
-                  }}
-                  placeholder="qwen/qwen3-asr-1.7b"
-                  className="w-full border rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[var(--accent-primary)] transition-colors font-mono bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
-                />
-                <button
-                  type="button"
-                  onClick={handleCheckModel}
-                  disabled={isCheckingModel || !defaultModel.trim()}
-                  className="px-3 py-2 rounded-xl text-xs font-semibold shrink-0 border border-[var(--border-color)] bg-[var(--bg-app)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] cursor-pointer active:scale-95 disabled:opacity-50 flex items-center gap-1"
-                >
-                  {isCheckingModel ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[var(--accent-primary)]" />
-                  ) : null}
-                  <span>{language === 'vi' ? 'Check' : 'Check'}</span>
-                </button>
-              </div>
-              {modelCheckResult !== null && (
-                <div className="mt-1.5 text-xs">
-                  {modelCheckResult ? (
-                    <span className="text-[var(--status-success)] flex items-center gap-1 font-medium">
-                      <span>✓</span> {language === 'vi' ? 'Model khả dụng' : 'Model available'}
-                    </span>
-                  ) : (
-                    <span className="text-[var(--status-error)] flex items-center gap-1 font-medium">
-                      <span>✗</span> {language === 'vi' ? 'Không tìm thấy model này qua provider' : 'Model not found via provider'}
-                    </span>
-                  )}
-                </div>
-              )}
+              <input
+                id="input-provider-model"
+                type="text"
+                required
+                value={defaultModel}
+                onChange={(e) => {
+                  setDefaultModel(e.target.value);
+                  setTestResult(null);
+                }}
+                placeholder="gpt-4o-mini"
+                className="w-full border rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[var(--accent-primary)] transition-colors font-mono bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)]"
+              />
             </div>
           </div>
         </div>
 
-        {/* API Key với ghi chú Tuỳ chọn */}
+        {/* API Key */}
         <div>
           <div className="flex items-center justify-between mb-1">
             <label className="block text-xs font-medium text-[var(--text-primary)]">
-              {language === 'vi' ? 'API Key' : 'API Key'}
+              {language === 'vi' ? 'API Key (Khoá bí mật của bạn)' : 'API Key'}
+              <span className="text-[var(--status-error)] ml-0.5">*</span>
             </label>
-            <span className="text-xs text-[var(--text-muted)]">
-              {language === 'vi' ? 'Tuỳ chọn — để trống nếu endpoint không cần key' : 'Optional — leave empty if endpoint doesn\'t require a key'}
+            <span className="text-[11px] text-[var(--text-muted)]">
+              {language === 'vi' ? 'Mã hóa an toàn phía máy chủ' : 'Securely encrypted server-side'}
             </span>
           </div>
           <input
             id="input-provider-key"
             type="password"
             value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            placeholder="sk-••••••••••••••••••••"
-            className="w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[var(--accent-primary)] transition-colors bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
+            onChange={(e) => {
+              setApiKey(e.target.value);
+              setTestResult(null);
+            }}
+            placeholder="AIzaSy... hoặc sk-..."
+            className="w-full border rounded-xl px-3.5 py-2 text-xs focus:outline-none focus:border-[var(--accent-primary)] transition-colors font-mono bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
           />
         </div>
 
-        {/* 2 Checkbox: "Dùng cho chat mới" và "Tự động Discover models" */}
-        <div className="space-y-2 pt-1">
+        {/* Checkbox "Dùng cho chat mới" */}
+        <div className="pt-1">
           <label className="flex items-center gap-2 cursor-pointer select-none">
             <input
               id="chk-use-for-new-chats"
@@ -272,37 +325,32 @@ export const AddProviderModal: React.FC<AddProviderModalProps> = ({ isOpen, onCl
               className="rounded border-[var(--border-color)] text-[var(--accent-primary)] focus:ring-0 cursor-pointer w-4 h-4"
             />
             <span className="text-xs font-medium text-[var(--text-primary)]">
-              {language === 'vi' ? 'Dùng cho chat mới' : 'Use for new chats'}
-            </span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input
-              id="chk-auto-discover-models"
-              type="checkbox"
-              checked={autoDiscoverModels}
-              onChange={(e) => setAutoDiscoverModels(e.target.checked)}
-              className="rounded border-[var(--border-color)] text-[var(--accent-primary)] focus:ring-0 cursor-pointer w-4 h-4"
-            />
-            <span className="text-xs font-medium text-[var(--text-primary)]">
-              {language === 'vi' ? 'Tự động Discover models' : 'Auto-discover models'}
+              {language === 'vi' ? 'Đặt làm mô hình mặc định cho các ghi chú mới' : 'Set as default model for new notes'}
             </span>
           </label>
         </div>
 
-        {/* Test Connection Button & Status */}
-        <div className="p-3.5 rounded-xl border flex items-center justify-between transition-colors bg-[var(--bg-hover)] border-[var(--border-color)]">
+        {/* Live Test Connection */}
+        <div className="p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 transition-colors bg-[var(--bg-hover)] border-[var(--border-color)]">
           <div>
             <p className="text-xs font-semibold text-[var(--text-primary)]">
-              {language === 'vi' ? 'Kiểm tra kết nối' : 'Connection Test'}
+              {language === 'vi' ? 'Kiểm tra kết nối (Test Ping)' : 'Connection Verification'}
             </p>
             {testResult ? (
-              <p className="text-xs text-[var(--status-success)] font-medium flex items-center gap-1 mt-0.5">
-                <Check className="w-3 h-3" />
-                <span>{language === 'vi' ? `Kết nối thành công (${testResult.latency}ms)` : `Connected successfully (${testResult.latency}ms)`}</span>
-              </p>
+              testResult.success ? (
+                <p className="text-xs text-[var(--status-success)] font-medium flex items-center gap-1 mt-0.5">
+                  <Check className="w-3.5 h-3.5" />
+                  <span>{language === 'vi' ? `Kết nối thành công (${testResult.latency}ms)` : `Connected successfully (${testResult.latency}ms)`}</span>
+                </p>
+              ) : (
+                <p className="text-xs text-[var(--status-error)] font-medium flex items-center gap-1 mt-0.5">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{testResult.error || (language === 'vi' ? 'Kết nối thất bại' : 'Connection failed')}</span>
+                </p>
+              )
             ) : (
               <p className="text-xs mt-0.5 text-[var(--text-muted)]">
-                {language === 'vi' ? 'Cần kiểm tra thành công trước khi lưu' : 'Must pass ping test before saving'}
+                {language === 'vi' ? 'Cần bấm Test thành công trước khi lưu' : 'Must pass live test before saving'}
               </p>
             )}
           </div>
@@ -310,9 +358,9 @@ export const AddProviderModal: React.FC<AddProviderModalProps> = ({ isOpen, onCl
           <button
             type="button"
             id="btn-test-provider-connection"
-            disabled={isTesting}
+            disabled={isTesting || !endpointUrl.trim()}
             onClick={handleTestConnection}
-            className="px-3 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer border active:scale-95 bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border-[var(--border-color)] shadow-2xs"
+            className="px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer border active:scale-95 bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border-[var(--border-color)] shadow-2xs shrink-0"
           >
             {isTesting ? (
               <>
@@ -320,12 +368,12 @@ export const AddProviderModal: React.FC<AddProviderModalProps> = ({ isOpen, onCl
                 <span>{language === 'vi' ? 'Đang test...' : 'Testing...'}</span>
               </>
             ) : (
-              <span>{language === 'vi' ? 'Test kết nối' : 'Test Ping'}</span>
+              <span>{language === 'vi' ? '⚡ Test Kết Nối' : '⚡ Test Connection'}</span>
             )}
           </button>
         </div>
 
-        {/* Action Buttons: Cancel and Save (Disabled until Test passes) */}
+        {/* Action Buttons */}
         <div className="flex justify-end gap-2 pt-2">
           <button
             type="button"
@@ -344,7 +392,7 @@ export const AddProviderModal: React.FC<AddProviderModalProps> = ({ isOpen, onCl
                 : 'bg-[var(--accent-primary)]/40 text-[var(--accent-text)]/50 opacity-50 cursor-not-allowed'
             }`}
           >
-            {language === 'vi' ? 'Lưu Provider' : 'Save Provider'}
+            {language === 'vi' ? 'Lưu & Kích Hoạt Provider' : 'Save & Activate Provider'}
           </button>
         </div>
       </form>

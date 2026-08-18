@@ -973,6 +973,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const isEn = language === 'en';
 
+    const activeProvider = aiProviders.find(p => p.defaultModel === selectedModel || p.name === selectedModel);
+
     try {
       setTimeout(() => setProcessingStep(2), 600);
 
@@ -984,6 +986,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           method: currentMethod,
           language: isEn ? 'en' : 'vi',
           model: selectedModel || 'gemini-2.5-flash',
+          providerId: activeProvider?.providerId,
+          endpointUrl: activeProvider?.endpointUrl,
           sources: attachedSources || [],
         }),
       });
