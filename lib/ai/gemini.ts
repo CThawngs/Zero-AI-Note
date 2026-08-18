@@ -115,23 +115,7 @@ BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON HỢP LỆ THEO SCHEMA SAU (K
 }`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: params.model || 'gemini-2.5-flash',
-      contents: [
-        {
-          role: 'user',
-          parts: [{ text: `Dưới đây là nội dung cần ghi chú:\n\n${params.inputText}` }],
-        },
-      ],
-      config: {
-        systemInstruction: {
-          parts: [{ text: systemInstruction }],
-        },
-        responseMimeType: 'application/json',
-        temperature: 0.2,
-      },
-    });
-
+    const response = await callGenerateContentWithRetry(ai, params, systemInstruction);
     const rawText = response.text || '';
     // Clean potential markdown wrap
     const cleanedText = rawText.replace(/^```json\s*/, '').replace(/\s*```$/, '').trim();
@@ -148,6 +132,57 @@ BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON HỢP LỆ THEO SCHEMA SAU (K
     // If model failed or rate limited, generate structured fallback
     return createEmergencyStructuredNote(params.inputText, method, language);
   }
+}
+
+/**
+ * Retry với exponential backoff khi gặp 429 Resource Exhausted / quota limit.
+ * PRD 3.1 + 10: giảm thiểu hậu quả khi nhiều job AI dùng chung 1 Gemini key
+ * (free tier 15 RPM / 1M TPM) — retry tối đa MAX_PARALLEL_JOBS lần thay vì sập ngay.
+ * Kết hợp return Backoff(tần suất 60s) giúp key hồi phục rồi thử lại.
+ */
+async function callGenerateContentWithRetry(
+  ai: GoogleGenAI,
+  params: { model?: string; inputText: string },
+  systemInstruction: string
+) {
+  const MAX_ATTEMPTS = Number(process.env.GEMINI_MAX_RETRY || 3);
+  const retryDelayMs = 4000; // ~4s, đủ để key qua cửa sổ 60s/15RPM khi chia sẻ
+  const doCall = async () =>
+    ai.models.generateContent({
+      model: params.model || 'gemini-2.5-flash',
+      contents: [
+        {
+          role: 'user',
+          parts: [{ text: `Dưới đây là nội dung cần ghi chú:\n\n${params.inputText}` }],
+        },
+      ],
+      config: {
+        systemInstruction: {
+          parts: [{ text: systemInstruction }],
+        },
+        responseMimeType: 'application/json',
+        temperature: 0.2,
+      },
+    });
+
+  let lastErr: any;
+  for (let i = 0; i < MAX_ATTEMPTS; i++) {
+    try {
+      return await doCall();
+    } catch (err: any) {
+      lastErr = err;
+      const isQuota =
+        err?.status === 429 ||
+        String(err?.message || '').includes('RESOURCE_EXHAUSTED') ||
+        String(err?.message || '').includes('quota');
+      if (!isQuota || i === MAX_ATTEMPTS - 1) {
+        throw err;
+      }
+      console.warn(`[Gemini Note Engine] Rate limited (attempt ${i + 1}/${MAX_ATTEMPTS}), backing off ${retryDelayMs}ms`);
+      await new Promise((r) => setTimeout(r, retryDelayMs));
+    }
+  }
+  throw lastErr;
 }
 
 function generateFallbackMarkdown(data: StructuredNoteOutput): string {
