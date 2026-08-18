@@ -48,6 +48,7 @@ export const SettingsScreen: React.FC = () => {
     addToast,
     theme,
     language,
+    setLanguage,
     logout,
     t
   } = useApp();
@@ -474,7 +475,7 @@ export const SettingsScreen: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-md">
                 <button
                   type="button"
-                  onClick={() => addToast(language === 'vi' ? 'Ngôn ngữ đã chọn' : 'Language Selected', 'Tiếng Việt')}
+                  onClick={() => setLanguage('vi')}
                   className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all active:scale-95 ${
                     language === 'vi'
                       ? 'border-[var(--accent-primary)] bg-[var(--accent-subtle)] font-bold text-[var(--accent-primary)] ring-2 ring-[var(--accent-primary)]/20'
@@ -490,7 +491,7 @@ export const SettingsScreen: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={() => addToast(language === 'vi' ? 'Ngôn ngữ đã chọn' : 'Language Selected', 'English')}
+                  onClick={() => setLanguage('en')}
                   className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all active:scale-95 ${
                     language === 'en'
                       ? 'border-[var(--accent-primary)] bg-[var(--accent-subtle)] font-bold text-[var(--accent-primary)] ring-2 ring-[var(--accent-primary)]/20'

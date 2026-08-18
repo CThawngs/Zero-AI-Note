@@ -255,24 +255,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const setColorPalette = (newPalette: ColorPalette) => {
     setColorPaletteState(newPalette);
-    const targetOpt = THEME_OPTIONS.find(t => t.id === newPalette);
-    const themeName = language === 'vi' ? targetOpt?.nameVi : targetOpt?.nameEn;
-    addToast(
-      language === 'vi' ? 'Đã đổi Theme' : 'Theme Switched',
-      language === 'vi' ? `Bảng màu: ${themeName || newPalette}` : `Palette: ${themeName || newPalette}`,
-      'info'
-    );
   };
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
-    addToast(
-      language === 'vi' ? 'Đã đổi giao diện' : 'Theme mode updated',
-      newTheme === 'dark' 
-        ? (language === 'vi' ? 'Chế độ Tối (Dark)' : 'Dark Mode') 
-        : (language === 'vi' ? 'Chế độ Sáng (Light)' : 'Light Mode'),
-      'info'
-    );
   };
 
   const toggleTheme = () => {
@@ -281,11 +267,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const setLanguage = (newLang: Language) => {
     setLanguageState(newLang);
-    addToast(
-      newLang === 'vi' ? 'Đã chuyển ngôn ngữ' : 'Language switched',
-      newLang === 'vi' ? 'Tiếng Việt' : 'English',
-      'info'
-    );
   };
 
   const toggleLanguage = () => {
