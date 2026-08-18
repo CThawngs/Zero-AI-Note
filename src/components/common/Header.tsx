@@ -116,7 +116,7 @@ export const Header: React.FC = () => {
         ? 'bg-[var(--bg-card)]/95 border-[var(--border-color)] text-[var(--text-primary)]' 
         : 'bg-[var(--bg-card)]/95 border-[var(--border-color)] text-[var(--text-primary)] shadow-xs'
     } backdrop-blur-md`}>
-      {/* Left side: Mobile Menu Button & Model/Language Selectors */}
+      {/* Left side: Mobile Menu Button & Model Selector */}
       <div className="flex items-center gap-2 sm:gap-3">
         {/* Mobile / Tablet Hamburger Button (< 1024px) */}
         <button
@@ -285,8 +285,11 @@ export const Header: React.FC = () => {
             )}
           </AnimatePresence>
         </div>
+      </div>
 
-        {/* Language Selector Dropdown */}
+      {/* Right side Actions: Language Selector, Theme Toggle, Upgrade, Notifications, Share */}
+      <div className="flex items-center gap-2 sm:gap-2.5">
+        {/* Language Selector Dropdown (Placed next to Theme Toggle) */}
         <div className="relative">
           <button
             id="header-language-selector"
@@ -313,7 +316,7 @@ export const Header: React.FC = () => {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 6, scale: 0.98 }}
                   transition={{ duration: 0.15 }}
-                  className={`absolute left-0 mt-1.5 w-40 rounded-2xl shadow-xl p-1.5 z-40 space-y-1 border ${
+                  className={`absolute right-0 sm:right-auto sm:left-0 mt-1.5 w-40 rounded-2xl shadow-xl p-1.5 z-40 space-y-1 border ${
                     isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)]' : 'bg-white border-[var(--border-color)]'
                   }`}
                 >
@@ -349,10 +352,7 @@ export const Header: React.FC = () => {
             )}
           </AnimatePresence>
         </div>
-      </div>
 
-      {/* Right side Actions: Theme Toggle, Upgrade, Notifications, Share */}
-      <div className="flex items-center gap-2 sm:gap-2.5">
         {/* Theme mode toggle: Light / Dark */}
         <button
           id="btn-theme-toggle"

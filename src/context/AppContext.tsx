@@ -587,10 +587,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const archiveNote = async (noteId: string) => {
     try {
       await archiveNoteQuery(noteId);
-      const updatedNotes = await getNotes(user.id);
+      const updatedNotes = await getNotes();
       setNotes(updatedNotes.map(mapNoteRow));
       
-      const updatedArchivedNotes = await getArchivedNotes(user.id);
+      const updatedArchivedNotes = await getArchivedNotes();
       setArchivedNotes(updatedArchivedNotes.map(mapNoteRow));
       
       addToast(
@@ -609,10 +609,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const restoreNote = async (noteId: string) => {
     try {
       await restoreNoteQuery(noteId);
-      const updatedNotes = await getNotes(user.id);
+      const updatedNotes = await getNotes();
       setNotes(updatedNotes.map(mapNoteRow));
       
-      const updatedArchivedNotes = await getArchivedNotes(user.id);
+      const updatedArchivedNotes = await getArchivedNotes();
       setArchivedNotes(updatedArchivedNotes.map(mapNoteRow));
       
       addToast(
@@ -631,10 +631,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const deleteNotePermanently = async (noteId: string) => {
     try {
       await deleteNotePermanentlyQuery(noteId);
-      const updatedNotes = await getNotes(user.id);
+      const updatedNotes = await getNotes();
       setNotes(updatedNotes.map(mapNoteRow));
       
-      const updatedArchivedNotes = await getArchivedNotes(user.id);
+      const updatedArchivedNotes = await getArchivedNotes();
       setArchivedNotes(updatedArchivedNotes.map(mapNoteRow));
       
       addToast(
