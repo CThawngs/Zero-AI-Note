@@ -52,7 +52,7 @@ Sinh viên/giáo viên xử lý bài giảng dài, người đi họp cần ghi 
 |---|---|---|
 | Frontend + API routes | Next.js trên **Vercel** | Đã quen thuộc (ZeroInvoice đang chạy Vercel), free tier đủ dùng giai đoạn đầu |
 | Database (lưu trữ chính) | **Neon** (Postgres serverless) | Đổi từ Supabase vì free tier Supabase giới hạn 2 project hoạt động cùng lúc — dự án thứ 3 của Zero, chưa có doanh thu để nâng cấp trả phí. Neon free tier cho tới 100 project, không giới hạn kiểu này. **Neon là nơi lưu trữ CHÍNH** (text/base64/binary trong DB) |
-| Backup storage (khi Neon đầy) | **Cloudflare R2** (S3-compatible) | Chỉ dùng làm file storage sao lưu khi Neon database đầy — đa vùng, ổn định production, free tier 10GB. Do cùng chuẩn S3 nên chuyển đổi sau này nhẹ nhàng |
+| Backup storage (Presigned URL upload) | **Cloudflare R2** (S3-compatible) | Lưu trữ file media (Video/Audio/PDF/Docx/ppt...) khi tải lên, dùng Presigned URL — đa vùng, ổn định production, free tier 10GB. Do cùng chuẩn S3 nên chuyển đổi sau này nhẹ nhàng |
 | ORM | **Drizzle ORM** (duy nhất) | Không lẫn Prisma/raw Supabase; driver Neon serverless (`@neondatabase/serverless`) |
 | Auth | **JWT tự phát hành** (`jose` + `bcryptjs`), session cookie HttpOnly | Đã thay thế Neon Auth trong quá trình triển khai — 1 cơ chế ký token duy nhất (`lib/auth/session.ts`), fail-closed khi thiếu `ZERO_JWT_SECRET`. Hỗ trợ email/password + Google OAuth (Google Identity Services popup) |
 | Job nền (xử lý file dài) | **Inngest hoặc Trigger.dev** | Chuyên cho chuỗi job AI dài nhiều bước, tách biệt hoàn toàn khỏi nơi hosting app chính |
@@ -495,7 +495,9 @@ Tiêu chí chấm điểm không đòi hỏi billing thật/"Tự kết nối AI
 - ✅ **Bỏ Auto-Sync model free** + bảng `provider_free_models_cache`
 - ✅ **Đổi tên BYOK** → "Tự kết nối AI / Nhà cung cấp AI"
 - ✅ **Auth**: email/password + Google OAuth (GIS popup)
-- ✅ **Storage**: Neon database chính + Cloudflare R2 backup khi Neon đầy
+- Storage:
+  - **Neon** — NetworkDB chính để lưu trữ Text, Metadata, JSON, Profile, Notes (cấu trúc dữ liệu).
+  - **Cloudflare R2** — Upload file media (Video/Audio/PDF/Docx/ppt) qua Presigned URL, không backup fallback. |
 
 **Còn cần xác nhận**:
 - Notebook chia sẻ: chỉ xem hay đồng biên tập
@@ -541,7 +543,7 @@ Bước 4 — Tuân thủ nghiêm các nguyên tắc kỹ thuật đã chốt tr
 - Giới hạn note/custom template kiểm tra server-side trước khi insert
   (Free <20/<5, Pro <50/<25, Ultra ∞/∞)
 - Không dùng Google Cloud Run, không dùng Rust cho phần lõi
-- Neon database là lưu trữ CHÍNH; Cloudflare R2 chỉ là backup khi Neon đầy
+- Neon database là lưu trữ CHÍNH cho Text, Metadata, JSON, Profile, Notes; Cloudflare R2 là nơi lưu file media (Video/Audio/PDF/Docx/ppt...) thông qua Presigned URL. |
 
 Bắt đầu từ việc audit + đóng gói code AI Studio (Bước 2), sau đó mới
 sang Tuần 1-2: nối schema Neon (mục 6) + JWT auth thật vào nền UI đã có.
