@@ -109,20 +109,16 @@ export const Header: React.FC = () => {
           <button
             id="header-model-selector"
             onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
-            className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl border text-xs font-medium transition-colors cursor-pointer active:scale-[0.98] ${
+            className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl border text-xs font-medium transition-all cursor-pointer active:scale-[0.98] ${
               !hasModels
-                ? isDark
-                  ? 'bg-amber-500/10 border-amber-500/30 text-amber-300 hover:bg-amber-500/20'
-                  : 'bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100 shadow-2xs'
-                : isDark 
-                  ? 'bg-[var(--bg-app)] border-[var(--border-color)] hover:border-[var(--accent-primary)]/60 text-[var(--text-primary)] hover:text-[var(--accent-primary)]' 
-                  : 'bg-[var(--bg-app)] border-[var(--border-color)] hover:border-[var(--accent-primary)]/60 text-[var(--text-primary)] hover:text-[var(--accent-primary)] shadow-2xs'
-            }`}
+                ? 'bg-[var(--bg-app)] border-dashed border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent-primary)]/50'
+                : 'bg-[var(--bg-app)] border-[var(--border-color)] hover:border-[var(--accent-primary)]/60 text-[var(--text-primary)] hover:text-[var(--accent-primary)]'
+            } shadow-2xs`}
           >
             {hasModels ? (
               <Cpu className="w-3.5 h-3.5 shrink-0 text-[var(--accent-primary)]" />
             ) : (
-              <AlertCircle className="w-3.5 h-3.5 shrink-0 text-amber-500" />
+              <Cpu className="w-3.5 h-3.5 shrink-0 text-[var(--text-muted)]" />
             )}
             <span className="max-w-[110px] sm:max-w-[160px] truncate font-medium">{currentModelDisplay}</span>
             <ChevronDown className={`w-3 h-3 transition-transform ${isModelDropdownOpen ? 'rotate-180' : ''} text-[var(--text-muted)]`} />
@@ -174,7 +170,7 @@ export const Header: React.FC = () => {
                           setCurrentScreen('settings');
                           setSettingsActiveTab('ai-providers');
                         }}
-                        className="w-full mt-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-white text-xs font-semibold shadow-xs cursor-pointer active:scale-95 transition-all"
+                        className="w-full mt-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-[var(--accent-text)] text-xs font-semibold shadow-xs cursor-pointer active:scale-95 transition-all"
                       >
                         <PlusCircle className="w-3.5 h-3.5" />
                         <span>{language === 'vi' ? '+ Thêm Provider AI' : '+ Add AI Provider'}</span>
