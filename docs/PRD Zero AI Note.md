@@ -92,10 +92,28 @@ User gửi file/link/text + (tùy chọn) chỉ định phương pháp ghi chú
 - Row-Level Security (RLS) trên mọi bảng chứa dữ liệu cá nhân (Neon dùng cú pháp `auth_uid()` qua `current_setting('request.jwt.claims')`, không dùng `auth.uid()` của Supabase) — áp dụng cho `notes`, `notebooks`, `sources`, `byok_providers`, `coupons`, `subscriptions`
 - API key "Tự kết nối AI" mã hoá khi lưu, không log ra console, không lộ client-side
 - Chặn SSRF: validate Endpoint URL tùy ý (Custom Endpoint) ở server-side, từ chối địa chỉ nội bộ/private IP trước khi Test/gọi thật
-- Billing qua ZeroInvoice: fail-closed (khác tracking — fail-open), webhook có xác minh chữ ký, xử lý idempotent tránh cộng dồn subscription
+- Billing qua **Zero Tracking** (tên mới của ZeroInvoice): API key đọc từ env (fail-closed — KHÔNG hardcode key trong source; nếu `ZEROINVOICE_WEBHOOK_SECRET` đã set thì webhook bắt buộc xác minh chữ ký HMAC-SHA256 — signature sai → từ chối 401; khi CHƯA set secret thì fail-open để không chặn luồng tích hợp). Xử lý idempotent tránh cộng dồn subscription
+- **Zero Tracking (VietQR)**: tạo bill bằng `POST /api/bills` (chỉ cần `amount`), nhận `qr_data` → **render QR client-side bằng `qrcode.react`** (EMVCo VietQR payload: acqId + accountNo + amount + addInfo). amount + addInfo bị **LOCKED** bởi Zero Tracking, bill hết hạn sau **30 phút**. Check trạng thái bằng `GET /api/bills/:id` (polling) hoặc webhook `{event:"bill.paid", data:{bill_id, amount, paid_at}}` (header `x-webhook-signature`). Luồng chính của app: polling `/api/billing/check-status`; webhook `/api/billing/webhook` là kênh phụ
 - Phân quyền admin qua trường `role` trong DB, kiểm tra server-side ở mọi route — không chỉ ẩn UI. Admin email cấu hình 1 nơi `ADMIN_EMAIL` trong `.env.local`
 - Tự động xoá file gốc sau N ngày (giữ lại note), giảm chi phí lưu trữ + rủi ro riêng tư
 - **JWT fail-closed**: thiếu `ZERO_JWT_SECRET` → crash runtime, không fallback yếu
+
+### 3.4 Công cụ phát triển — Chrome Remote Debugging (Windows)
+
+Dùng cho **Hermes `browser_exec`** để điều khiển Chrome thật (đọc trang client-rendered, kiểm tra giao diện, kiểm tra luồng thanh toán). Khi browser-harness báo *"opened chrome://inspect/#remote-debugging — ask the user to click Allow"*, nghĩa là Chrome chưa chạy với cờ remote-debugging và/hoặc chưa bấm Allow.
+
+**Bước 1 — Đóng hết Chrome:**
+- Task Manager (`Ctrl+Shift+Esc`) → tab Processes → chọn từng `chrome.exe` → **End task** cho hết.
+
+**Bước 2 — Khởi động Chrome có cờ remote-debugging:**
+```bash
+"C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222 --remote-debugging-address=0.0.0.0 --user-data-dir="C:\chrome-debug-profile"
+```
+> Mẹo: tạo shortcut Desktop rồi thêm các cờ này vào ô **Target** (Properties) để 1-click mở lần sau — không ảnh hưởng hồ sơ Chrome bình thường vì dùng `--user-data-dir` riêng.
+
+**Bước 3 — Xác nhận đã bật:** mở `http://localhost:9222/json/version` → thấy JSON có `webSocketDebuggerUrl` là OK.
+
+**Bước 4 — Bấm Allow:** lần đầu Hermes kết nối, Chrome hiện popup **"Allow remote debugging?"** (góc trên phải) — tick checkbox + bấm **Allow**. Lần đầu có thể có **2 popup Allow** (một cho kết nối đầu tiên, một mỗi lần connection mới) — bấm Allow hết. Sau đó Hermes điều khiển được Chrome.
 
 ---
 
@@ -535,6 +553,7 @@ sang Tuần 1-2: nối schema Neon (mục 6) + JWT auth thật vào nền UI đ�
 
 | Ngày | Nội dung |
 |---|---|
+| 2026-08-18 | **Đồng bộ Zero Tracking mới** (ZeroInvoice đổi tên): QR thanh toán render client-side bằng `qrcode.react` (EMVCo VietQR payload từ `qr_data`, amount/addInfo locked, bỏ `img.vietqr.io`); sửa `checkZeroInvoiceBillStatus` parse nested `data.bill`; webhook hỗ trợ event `bill.paid` + `data` payload; bỏ hardcode Zero Tracking API key (đọc từ env, fail-closed), webhook fail-open khi chưa set secret. Thêm mục 3.4 hướng dẫn Chrome Remote Debugging cho Hermes `browser_exec`. |
 | 2026-08-18 | **Chuẩn hóa bảng giá 3 gói Free/Pro/Ultra; phân cấp Preview (Raw/Markdown/Static HTML/Interactive HTML); phân cấp Xuất file kèm Checkbox Multi-Export cho Ultra; mở rộng hệ thống 17 templates học thuật; bỏ tính năng TTS và Auto-Sync để tối ưu hóa vibe coding; đổi tên BYOK thành Tự kết nối AI.** |
 | 2026-08-18 | **Hợp nhất 2 file PRD** (`PRD-Zero-AI-Note.md` + `PRD_Zero_AI_Note.md`) thành 1 file duy nhất. Cập nhật theo hiện trạng triển khai: Neon database chính + Cloudflare R2 backup, JWT auth thay Neon Auth, 3 gói giá chốt con số cụ thể (3h/50h/200h, file 30'/2h/4h — sau đó được thay bằng "không giới hạn thời lượng"), đơn vị tiền tệ theo ngôn ngữ (đ/$) |
 | 2026-08-17 | Bổ sung bối cảnh Đồ án Chuyên ngành (deadline Tuần 10 & 15), quyết định storage Neon chính + R2 backup |
