@@ -18,8 +18,7 @@
 8. [Bối cảnh Đồ án Chuyên ngành](#8-bối-cảnh-đồ-án-chuyên-ngành)
 9. [Roadmap](#9-roadmap)
 10. [Cần chốt trước khi build](#10-cần-chốt-trước-khi-build)
-11. [Kickoff prompt cho Hermes Agent](#11-kickoff-prompt-cho-hermes-agent)
-12. [Lịch sử thay đổi](#12-lịch-sử-thay-đổi)
+11. [Lịch sử thay đổi](#11-lịch-sử-thay-đổi)
 
 ---
 
@@ -554,63 +553,11 @@ Tiêu chí chấm điểm không đòi hỏi billing thật/"Tự kết nối AI
 
 ---
 
-## 11. Kickoff prompt cho Hermes Agent
-
-```
-Bắt đầu xây dựng Zero AI Note theo đúng PRD Zero AI Note.md đính kèm.
-LƯU Ý: dự án này vừa là sản phẩm thương mại vừa là đồ án môn học có
-deadline thật (mục 8) — ưu tiên đúng phạm vi rút gọn ở mục 8.5 trước,
-không chạy theo roadmap dài hạn mục 9 nếu deadline đồ án gần kề.
-
-Bước 1 — Xác nhận trước khi code:
-- Đọc kỹ mục 10 (Cần chốt trước khi build). Các điểm đã chốt 2026-08-18
-  phải tuân thủ nghiêm: bảng giá 3 gói, hạn mức 20/50/∞ notes, hệ thống
-  templates 3/9/17, phân cấp Preview & Xuất file, KHÔNG có TTS, KHÔNG có
-  Auto-Sync model free.
-
-Bước 2 — Clone repo GitHub (Zero sẽ cung cấp link) chứa code UI đã xuất
-từ Google AI Studio. Đọc kỹ mục 7.1 và 7.4 trước khi động vào code:
-- Audit toàn bộ codebase theo đúng danh sách lỗi đã biết ở mục 7.4 (màu
-  hardcode, pre-select sai, icon thao tác thiếu, dropdown model không
-  đồng bộ provider) — xác nhận đã sửa hết trước khi build tiếp lên nền này
-- Đóng gói code React hiện có vào cấu trúc Next.js (`app/` router, tách
-  API routes) — KHÔNG suy luận kiến trúc backend/database từ cách code
-  AI Studio tổ chức dữ liệu mock, chỉ lấy phần hiển thị
-
-Bước 3 — Khởi tạo backend theo đúng thứ tự roadmap (mục 9), ưu tiên
-theo mốc đồ án ở mục 8.5, không nhảy cóc sang giai đoạn sau khi giai
-đoạn trước chưa chạy được thật.
-
-Bước 4 — Tuân thủ nghiêm các nguyên tắc kỹ thuật đã chốt trong mục 3:
-- content_structured là nguồn DUY NHẤT để sinh Preview và mọi định dạng
-  tải — không parse ngược từ HTML
-- Billing luôn fail-closed, mọi cuộc gọi ra ZeroInvoice qua server-side
-- Tự kết nối AI: validate SSRF trước khi gọi Endpoint URL tùy ý, mã hoá
-  API key; chỉ có nút Test Connection + Discover Models (`/v1/models`),
-  KHÔNG có Import/Sync free models, KHÔNG có provider_free_models_cache
-- Giới hạn note/custom template kiểm tra server-side trước khi insert
-  (Free <20/<5, Pro <50/<25, Ultra ∞/∞)
-- Không dùng Google Cloud Run, không dùng Rust cho phần lõi
-- Neon database là lưu trữ CHÍNH cho Text, Metadata, JSON, Profile, Notes; Cloudflare R2 là nơi lưu file media (Video/Audio/PDF/Docx/ppt...) thông qua Presigned URL.
-- ✅ **Upload file lớn**: Presigned URL (client đẩy thẳng R2, tránh 4.5MB Vercel); bóc tách audio client-side (Web Audio API/FFmpeg.wasm); YouTube chỉ audio stream/captions
-- ✅ **Job nền + Polling**: KHÔNG stream SSE/WebSocket — Polling `/api/notes/status/:jobId` 2–3s + Stepper 3 bước
-- ✅ **Gemini key concurrency**: key dùng chung max 1–2 job AI song song (Inngest queue), user Tự kết nối AI chạy luồng riêng
-- ✅ **Chống lộ Gemini key**: env `GEMINI_API_KEY` (KHÔNG `NEXT_PUBLIC_`), 100% gọi AI qua server route/worker
-- ✅ **Auto Template gating**: Auto chỉ chọn template trong phạm vi gói user (Free→3, Pro→9, Ultra→17)
-- ✅ **Block-based content_structured**: Block JSON chuẩn (heading/paragraph/cue_box/table/card_grid/callout...), Export Engine DUY NHẤT render DOCX/PDF/HTML
-- ✅ **Interactive HTML Ultra**: HTML Template tĩnh mẫu + inject `window.__NOTE_DATA__`, KHÔNG AI tự viết JS
-- ✅ **Subscription schema**: bảng `subscriptions` (bill_id, plan, amount, status, qr_data, coupon_code, paid_at, renews_at)
-
-Bắt đầu từ việc audit + đóng gói code AI Studio (Bước 2), sau đó mới
-sang Tuần 1-2: nối schema Neon (mục 6) + JWT auth thật vào nền UI đã có.
-```
-
----
-
-## 12. Lịch sử thay đổi
+## 11. Lịch sử thay đổi
 
 | Ngày | Nội dung |
 |---|---|
+| 2026-08-18 | **Loại bỏ mục Kickoff prompt cho Hermes Agent** (đã qua giai đoạn bắt đầu dự án từ lâu). Đánh số lại: mục 12 "Lịch sử thay đổi" → thành mục 11. Chốt chiến lược kinh doanh: lấy **khả năng upload + xử lý file không giới hạn** làm lợi thế cạnh tranh trực tiếp so với các AI Chatbot (Gemini/ChatGPT/Claude) vốn bị giới hạn upload file — dùng cho marketing, SEO và định vị thị trường. |
 | 2026-08-18 | **Bịt 5 điểm nghẽn kỹ thuật + 5 điểm cấn ngầm (Edge Cases & Architectural Traps) trước khi code**: (1) Presigned URL upload + bóc tách audio client-side (Web Audio API/FFmpeg.wasm) + YouTube chỉ audio/captions — tránh giới hạn 4.5MB Vercel; (2) giới hạn AI job song song 1–2 trên key dùng chung (Inngest queue) tránh `429 Resource Exhausted`; (3) bổ sung auth fields (email/password_hash/google_id) vào `profiles` + thêm bảng `subscriptions` (bill_id, plan, amount, status, qr_data, paid_at, renews_at); (4) Block-based `content_structured` chuẩn (heading/paragraph/cue_box/table/card_grid/callout) + Export Engine DUY NHẤT — tránh 17×3=51 converter; (5) Interactive Single-file HTML dùng template tĩnh mẫu + inject `window.__NOTE_DATA__` — không AI tự viết JS. Kèm: Auto Template gating theo gói (chống tier bypass), Polling 2–3s thay vì stream SSE/WebSocket, chống lộ Gemini key (`GEMINI_API_KEY` không `NEXT_PUBLIC_`), luồng thanh toán VietQR production chi tiết (create-bill → render QR qrcode.react → countdown 30 phút → polling 3s + webhook HMAC idempotent). |
 | 2026-08-18 | **Đồng bộ Zero Tracking mới** (ZeroInvoice đổi tên): QR thanh toán render client-side bằng `qrcode.react` (EMVCo VietQR payload từ `qr_data`, amount/addInfo locked, bỏ `img.vietqr.io`); sửa `checkZeroInvoiceBillStatus` parse nested `data.bill`; webhook hỗ trợ event `bill.paid` + `data` payload; bỏ hardcode Zero Tracking API key (đọc từ env, fail-closed), webhook fail-open khi chưa set secret. Thêm mục 3.4 hướng dẫn Chrome Remote Debugging cho Hermes `browser_exec`. |
 | 2026-08-18 | **Chuẩn hóa bảng giá 3 gói Free/Pro/Ultra; phân cấp Preview (Raw/Markdown/Static HTML/Interactive HTML); phân cấp Xuất file kèm Checkbox Multi-Export cho Ultra; mở rộng hệ thống 17 templates học thuật; bỏ tính năng TTS và Auto-Sync để tối ưu hóa vibe coding; đổi tên BYOK thành Tự kết nối AI.** |
