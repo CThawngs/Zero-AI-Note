@@ -172,7 +172,7 @@ export const LibraryScreen: React.FC = () => {
           <button
             id="btn-library-new-note"
             onClick={() => startNewChatNote()}
-            className="self-start sm:self-auto flex items-center gap-2 px-3.5 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-white rounded-xl text-xs font-semibold shadow-md shadow-[var(--accent-primary)]/25 active:scale-95 transition-all cursor-pointer"
+            className="self-start sm:self-auto flex items-center gap-2 px-3.5 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-[var(--accent-text)] rounded-xl text-xs font-semibold shadow-md shadow-[var(--accent-primary)]/25 active:scale-95 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>{t('newNote')}</span>
@@ -376,7 +376,7 @@ export const LibraryScreen: React.FC = () => {
                 setLibrarySearchQuery('');
                 setLibraryFilter('all');
               }}
-              className="mt-4 px-4 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer active:scale-95"
+              className="mt-4 px-4 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-[var(--accent-text)] text-xs font-semibold rounded-xl transition-colors cursor-pointer active:scale-95"
             >
               {language === 'vi' ? 'Đặt lại bộ lọc' : 'Reset filters'}
             </button>
@@ -609,7 +609,7 @@ export const LibraryScreen: React.FC = () => {
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-white text-xs font-semibold cursor-pointer shadow-md shadow-[var(--accent-primary)]/25 active:scale-95"
+                className="px-4 py-2 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-[var(--accent-text)] text-xs font-semibold cursor-pointer shadow-md shadow-[var(--accent-primary)]/25 active:scale-95"
               >
                 {t('save')}
               </button>

@@ -235,7 +235,7 @@ export const ChatScreen: React.FC = () => {
                 className={`flex gap-2.5 sm:gap-3.5 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 {msg.sender === 'ai' && (
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-tr from-[var(--accent-primary)] to-[var(--accent-hover)] flex items-center justify-center shrink-0 shadow-md shadow-[var(--accent-primary)]/20 text-white">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-tr from-[var(--accent-primary)] to-[var(--accent-hover)] flex items-center justify-center shrink-0 shadow-md shadow-[var(--accent-primary)]/20 text-[var(--accent-text)]">
                     <Sparkles className="w-4 h-4" />
                   </div>
                 )}

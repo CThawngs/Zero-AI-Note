@@ -82,7 +82,7 @@ export const NoteDetailScreen: React.FC = () => {
         <p className="text-sm">{language === 'vi' ? 'Không tìm thấy ghi chú' : 'Note not found'}</p>
         <button
           onClick={() => setCurrentScreen('library')}
-          className="mt-4 px-4 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] active:scale-95 text-white text-xs font-semibold rounded-xl cursor-pointer transition-all"
+          className="mt-4 px-4 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] active:scale-95 text-[var(--accent-text)] text-xs font-semibold rounded-xl cursor-pointer transition-all"
         >
           {t('backToLibrary')}
         </button>
@@ -165,7 +165,7 @@ export const NoteDetailScreen: React.FC = () => {
                   addToast(t('audioSummary'), language === 'vi' ? 'Giọng đọc AI tự nhiên đang đọc tóm tắt ghi chú.' : 'AI natural voice is reading the note summary.');
                 }
               }}
-              className="p-1 rounded-full bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-white transition-all cursor-pointer active:scale-90"
+              className="p-1 rounded-full bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-[var(--accent-text)] transition-all cursor-pointer active:scale-90"
             >
               {isPlayingAudio ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3 fill-current" />}
             </button>
@@ -222,7 +222,7 @@ export const NoteDetailScreen: React.FC = () => {
           onClick={() => setMobileTab('content')}
           className={`flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-95 ${
             mobileTab === 'content'
-              ? 'bg-[var(--accent-primary)] text-white shadow-xs'
+              ? 'bg-[var(--accent-primary)] text-[var(--accent-text)] shadow-xs'
               : isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'
           }`}
         >
@@ -233,7 +233,7 @@ export const NoteDetailScreen: React.FC = () => {
           onClick={() => setMobileTab('ask')}
           className={`flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-95 ${
             mobileTab === 'ask'
-              ? 'bg-[var(--accent-primary)] text-white shadow-xs'
+              ? 'bg-[var(--accent-primary)] text-[var(--accent-text)] shadow-xs'
               : isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'
           }`}
         >
@@ -469,7 +469,7 @@ export const NoteDetailScreen: React.FC = () => {
               <div key={idx} className="space-y-2">
                 {/* User Q */}
                 <div className="flex justify-end">
-                  <div className="p-3 rounded-xl bg-[var(--accent-primary)] text-white text-xs max-w-[90%] rounded-br-sm shadow-xs">
+                  <div className="p-3 rounded-xl bg-[var(--accent-primary)] text-[var(--accent-text)] text-xs max-w-[90%] rounded-br-sm shadow-xs">
                     {item.q}
                   </div>
                 </div>
@@ -526,7 +526,7 @@ export const NoteDetailScreen: React.FC = () => {
                 type="submit"
                 id="btn-submit-ask-note"
                 disabled={!askInput.trim() || isAsking}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-white disabled:opacity-40 transition-all cursor-pointer active:scale-95"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-[var(--accent-text)] disabled:opacity-40 transition-all cursor-pointer active:scale-95"
               >
                 <Send className="w-3.5 h-3.5" />
               </button>

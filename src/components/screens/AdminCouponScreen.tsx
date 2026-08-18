@@ -287,7 +287,7 @@ export const AdminCouponScreen: React.FC = () => {
               <button
                 id="btn-open-create-coupon"
                 onClick={openCreateModal}
-                className="self-start sm:self-auto flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary)] hover:from-[var(--accent-primary)] hover:to-[var(--accent-primary)] text-white rounded-xl text-xs font-bold shadow-md shadow-[var(--accent-primary)]/25 transition-all cursor-pointer active:scale-95"
+                className="self-start sm:self-auto flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary)] hover:from-[var(--accent-primary)] hover:to-[var(--accent-primary)] text-[var(--accent-text)] rounded-xl text-xs font-bold shadow-md shadow-[var(--accent-primary)]/25 transition-all cursor-pointer active:scale-95"
               >
                 <Plus className="w-4 h-4" />
                 <span>{language === 'vi' ? '+ Tạo Coupon mới' : '+ Create New Coupon'}</span>
@@ -598,7 +598,7 @@ export const AdminCouponScreen: React.FC = () => {
               <button
                 type="submit"
                 id="btn-save-coupon-submit"
-                className="px-5 py-2 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-white text-xs font-bold shadow-md shadow-[var(--accent-primary)]/25 cursor-pointer active:scale-95"
+                className="px-5 py-2 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-[var(--accent-text)] text-xs font-bold shadow-md shadow-[var(--accent-primary)]/25 cursor-pointer active:scale-95"
               >
                 {editingCoupon ? (language === 'vi' ? 'Lưu Thay Đổi' : 'Save Changes') : (language === 'vi' ? 'Tạo Coupon' : 'Create Coupon')}
               </button>

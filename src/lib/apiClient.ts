@@ -33,7 +33,7 @@ export async function getArchivedNotes(_userId?: string): Promise<any[]> {
 }
 
 export async function createNote(input: {
-  user_id: string;
+  user_id?: string;
   title: string;
   method: string;
   output_language: string;
@@ -104,7 +104,7 @@ export async function getSources(_userId?: string): Promise<any[]> {
 }
 
 export async function createSource(input: {
-  user_id: string;
+  user_id?: string;
   type: string;
   file_name: string;
   size_bytes: number;
@@ -201,11 +201,11 @@ export async function getUserProfile(_userId?: string): Promise<any | null> {
   return data.profile ?? null;
 }
 
-export async function applyCouponToUser(userId: string, code: string): Promise<any> {
+export async function applyCouponToUser(code: string): Promise<any> {
   const res = await fetch('/api/coupons/apply', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId, code }),
+    body: JSON.stringify({ code }),
   });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));

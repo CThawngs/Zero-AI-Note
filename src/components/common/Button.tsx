@@ -33,7 +33,7 @@ export const Button: React.FC<ButtonProps> = ({
 
   // Warm amber / terracotta theme styling
   const variantClasses: Record<ButtonVariant, string> = {
-    primary: 'bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] active:bg-[var(--accent-primary)] text-white shadow-md shadow-[var(--accent-primary)]/20 border border-[var(--accent-primary)]/30',
+    primary: 'bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] active:bg-[var(--accent-primary)] text-[var(--accent-text)] shadow-md shadow-[var(--accent-primary)]/20 border border-[var(--accent-primary)]/30',
     secondary: isDark 
       ? 'bg-[var(--bg-hover)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border border-[var(--border-color)]' 
       : 'bg-[var(--bg-hover)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] border border-[var(--border-color)] shadow-2xs',

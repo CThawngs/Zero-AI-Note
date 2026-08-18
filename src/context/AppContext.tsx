@@ -708,7 +708,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addSourceFile = async (name: string, size: string, type: 'pdf' | 'video' | 'audio' | 'image' | 'doc') => {
       try {
         await createSource({
-          user_id: user.id,
           type,
           file_name: name,
           size_bytes: parseInt(size) || 0
@@ -867,10 +866,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const applyCouponCode = async (code: string): Promise<{ success: boolean; message: string; discountPercent?: number }> => {
     try {
-      const coupon = await applyCouponToUser(user.id, code);
+      const coupon = await applyCouponToUser(code);
       
       // Update user profile
-      const profile = await getUserProfile(user.id);
+      const profile = await getUserProfile();
       if (profile) {
         setUser(prev => ({
           ...prev,
@@ -903,7 +902,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const removeAppliedCoupon = async () => {
     try {
       // In a real app, you would call an API to remove the coupon
-      const profile = await getUserProfile(user.id);
+      const profile = await getUserProfile();
       if (profile) {
         setUser(prev => ({
           ...prev,
