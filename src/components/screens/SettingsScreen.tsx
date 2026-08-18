@@ -258,7 +258,7 @@ export const SettingsScreen: React.FC = () => {
                     <button
                       id="btn-upgrade-from-settings"
                       onClick={() => setCurrentScreen('pricing')}
-                      className="px-4 py-2 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary)] hover:from-[var(--accent-primary)] hover:to-[var(--accent-primary)] text-white text-xs font-bold rounded-xl shadow-md shadow-[var(--accent-primary)]/20 transition-all cursor-pointer active:scale-95"
+                      className="px-4 py-2 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary)] hover:from-[var(--accent-primary)] hover:to-[var(--accent-primary)] text-[var(--accent-text)] text-xs font-bold rounded-xl shadow-md shadow-[var(--accent-primary)]/20 transition-all cursor-pointer active:scale-95"
                     >
                       {t('upgradePro')}
                     </button>
@@ -328,7 +328,7 @@ export const SettingsScreen: React.FC = () => {
                       type="submit"
                       id="btn-apply-settings-coupon"
                       disabled={!couponInput.trim() || isApplyingCoupon}
-                      className="px-4 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-white text-xs font-semibold rounded-xl shadow-xs transition-all disabled:opacity-40 cursor-pointer flex items-center gap-1.5 active:scale-95"
+                      className="px-4 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-[var(--accent-text)] text-xs font-semibold rounded-xl shadow-xs transition-all disabled:opacity-40 cursor-pointer flex items-center gap-1.5 active:scale-95"
                     >
                       {isApplyingCoupon && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                       <span>{t('apply')}</span>
@@ -540,7 +540,7 @@ export const SettingsScreen: React.FC = () => {
                 <button
                   id="btn-open-add-provider"
                   onClick={() => setIsAddProviderModalOpen(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-white rounded-xl text-xs font-semibold shadow-md shadow-[var(--accent-primary)]/20 cursor-pointer active:scale-95 transition-all"
+                  className="flex items-center gap-2 px-4 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-[var(--accent-text)] rounded-xl text-xs font-semibold shadow-md shadow-[var(--accent-primary)]/20 cursor-pointer active:scale-95 transition-all"
                 >
                   <Plus className="w-4 h-4" />
                   <span>{t('addProvider')}</span>
@@ -568,7 +568,7 @@ export const SettingsScreen: React.FC = () => {
                   </div>
                   <button
                     onClick={() => setIsAddProviderModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-white rounded-xl text-xs font-semibold shadow-xs cursor-pointer active:scale-95 transition-all"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-[var(--accent-text)] rounded-xl text-xs font-semibold shadow-xs cursor-pointer active:scale-95 transition-all"
                   >
                     <Plus className="w-4 h-4" />
                     <span>{t('addProvider')}</span>
@@ -816,7 +816,7 @@ export const SettingsScreen: React.FC = () => {
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-white text-xs font-semibold cursor-pointer shadow-md shadow-[var(--accent-primary)]/20 active:scale-95 transition-all"
+                className="px-4 py-2 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-[var(--accent-text)] text-xs font-semibold cursor-pointer shadow-md shadow-[var(--accent-primary)]/20 active:scale-95 transition-all"
               >
                 {t('save')}
               </button>

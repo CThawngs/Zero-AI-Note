@@ -22,7 +22,7 @@ export const AddProviderModal: React.FC<AddProviderModalProps> = ({ isOpen, onCl
   const [autoDiscoverModels, setAutoDiscoverModels] = useState(true);
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; latency: number; error?: string } | null>(null);
-  const [discoveredModels, setDiscoveredModels] = useState<{ id: string; name: string; desc: string }[]>(
+  const [discoveredModels, setDiscoveredModels] = useState<{ id: string; name: string; descVi: string; descEn: string }[]>(
     BYOK_PROVIDER_PRESETS[0].models
   );
 
@@ -208,7 +208,7 @@ export const AddProviderModal: React.FC<AddProviderModalProps> = ({ isOpen, onCl
               >
                 <option value="">{language === 'vi' ? '— Chọn model có sẵn —' : '— Select preset model —'}</option>
                 {discoveredModels.map((m) => (
-                  <option key={m.id} value={m.id}>{m.name} ({m.desc})</option>
+                  <option key={m.id} value={m.id}>{m.name} ({language === 'en' ? m.descEn : m.descVi})</option>
                 ))}
               </select>
             </div>

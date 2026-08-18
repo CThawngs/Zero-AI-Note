@@ -14,8 +14,6 @@ import {
   PlusCircle,
   Zap,
   Search,
-  Sparkles,
-  ShieldCheck,
   Server,
   Trash2,
   BellOff,
@@ -56,6 +54,8 @@ export const Header: React.FC = () => {
   const [showAllNotifications, setShowAllNotifications] = useState(false);
   const [modelSearchQuery, setModelSearchQuery] = useState('');
 
+  const isEn = language === 'en';
+
   // Custom models derived from user's configured BYOK providers
   const customModels: ModelCatalogItem[] = useMemo(() => {
     return aiProviders.map(p => ({
@@ -63,12 +63,12 @@ export const Header: React.FC = () => {
       name: p.defaultModel,
       provider: p.name,
       providerId: p.providerId,
-      description: `Endpoint: ${p.endpointUrl}`,
-      badge: p.status === 'active' ? `${p.latencyMs}ms` : (language === 'vi' ? 'Tạm tắt' : 'Disabled'),
+      descVi: `Endpoint: ${p.endpointUrl}`,
+      descEn: `Endpoint: ${p.endpointUrl}`,
       isSystem: false,
       status: p.status,
     }));
-  }, [aiProviders, language]);
+  }, [aiProviders]);
 
   // All combined available models
   const allModels: ModelCatalogItem[] = useMemo(() => {
@@ -85,7 +85,12 @@ export const Header: React.FC = () => {
   const filteredSystemModels = useMemo(() => {
     if (!modelSearchQuery.trim()) return SYSTEM_GEMINI_MODELS;
     const q = modelSearchQuery.toLowerCase();
-    return SYSTEM_GEMINI_MODELS.filter(m => m.name.toLowerCase().includes(q) || m.id.toLowerCase().includes(q) || m.description.toLowerCase().includes(q));
+    return SYSTEM_GEMINI_MODELS.filter(m => 
+      m.name.toLowerCase().includes(q) || 
+      m.id.toLowerCase().includes(q) || 
+      m.descVi.toLowerCase().includes(q) || 
+      m.descEn.toLowerCase().includes(q)
+    );
   }, [modelSearchQuery]);
 
   const filteredCustomModels = useMemo(() => {
@@ -138,11 +143,8 @@ export const Header: React.FC = () => {
             className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl border text-xs font-medium transition-all cursor-pointer active:scale-[0.98] bg-[var(--bg-app)] border-[var(--border-color)] hover:border-[var(--accent-primary)]/60 text-[var(--text-primary)] shadow-2xs"
           >
             <Zap className="w-3.5 h-3.5 shrink-0 text-[var(--accent-primary)]" />
-            <span className="max-w-[130px] sm:max-w-[210px] truncate font-semibold">
+            <span className="max-w-[150px] sm:max-w-[240px] truncate font-semibold">
               {currentModel.name}
-            </span>
-            <span className="hidden sm:inline-block text-[10px] px-1.5 py-0.2 rounded bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-bold">
-              {currentModel.badge}
             </span>
             <ChevronDown className={`w-3 h-3 transition-transform ${isModelDropdownOpen ? 'rotate-180' : ''} text-[var(--text-muted)]`} />
           </button>
@@ -167,7 +169,7 @@ export const Header: React.FC = () => {
                   <div className="px-1 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] flex items-center justify-between">
                     <span>{t('modelSelectorLabel')}</span>
                     <span className="text-[11px] font-normal text-[var(--text-muted)]">
-                      {allModels.length} {language === 'vi' ? 'mô hình LLM' : 'LLM models'}
+                      {allModels.length} {isEn ? 'LLM models' : 'mô hình LLM'}
                     </span>
                   </div>
 
@@ -178,7 +180,7 @@ export const Header: React.FC = () => {
                       type="text"
                       value={modelSearchQuery}
                       onChange={(e) => setModelSearchQuery(e.target.value)}
-                      placeholder={language === 'vi' ? 'Tìm kiếm mô hình Gemini, GPT, Claude, Llama...' : 'Search Gemini, GPT, Claude, Llama...'}
+                      placeholder={isEn ? 'Search Gemini, GPT, Claude, Llama...' : 'Tìm kiếm mô hình Gemini, GPT, Claude, Llama...'}
                       className="w-full pl-8.5 pr-3 py-1.5 rounded-xl border text-xs focus:outline-none focus:border-[var(--accent-primary)] transition-colors bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)]"
                       autoFocus
                     />
@@ -204,25 +206,20 @@ export const Header: React.FC = () => {
                                 setSelectedModel(m.id);
                                 setIsModelDropdownOpen(false);
                               }}
-                              className={`w-full flex items-start justify-between p-2 rounded-xl text-xs transition-colors cursor-pointer text-left ${
+                              className={`w-full flex items-center justify-between p-2.5 rounded-xl text-xs transition-colors cursor-pointer text-left ${
                                 isSelected
                                   ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] border border-[var(--accent-primary)]/40 font-semibold' 
                                   : 'text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
                               }`}
                             >
                               <div className="text-left min-w-0 pr-2">
-                                <div className="flex items-center gap-1.5">
-                                  <p className="font-semibold truncate">{m.name}</p>
-                                </div>
+                                <p className="font-semibold truncate">{m.name}</p>
                                 <p className="text-[10px] text-[var(--text-muted)] leading-tight mt-0.5 line-clamp-1">
-                                  {m.description}
+                                  {isEn ? m.descEn : m.descVi}
                                 </p>
                               </div>
-                              <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
-                                <span className="text-[10px] px-1.5 py-0.5 rounded font-bold bg-[var(--bg-hover)] text-[var(--accent-primary)]">
-                                  {m.badge}
-                                </span>
-                                {isSelected && <Check className="w-3.5 h-3.5 text-[var(--status-success)]" />}
+                              <div className="flex items-center shrink-0">
+                                {isSelected && <Check className="w-4 h-4 text-[var(--status-success)]" />}
                               </div>
                             </button>
                           );
@@ -235,7 +232,7 @@ export const Header: React.FC = () => {
                       <div className="space-y-1 pt-1.5 border-t border-[var(--border-color)]">
                         <div className="flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
                           <Server className="w-3 h-3 text-[var(--accent-primary)]" />
-                          <span>{language === 'vi' ? 'Nhà cung cấp riêng của bạn (BYOK)' : 'Your BYOK Providers'}</span>
+                          <span>{isEn ? 'Your BYOK Providers' : 'Nhà cung cấp riêng của bạn (BYOK)'}</span>
                         </div>
 
                         {filteredCustomModels.map((m) => {
@@ -248,7 +245,7 @@ export const Header: React.FC = () => {
                                 setSelectedModel(m.name);
                                 setIsModelDropdownOpen(false);
                               }}
-                              className={`w-full flex items-center justify-between p-2 rounded-xl text-xs transition-colors cursor-pointer text-left ${
+                              className={`w-full flex items-center justify-between p-2.5 rounded-xl text-xs transition-colors cursor-pointer text-left ${
                                 isSelected
                                   ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] border border-[var(--accent-primary)]/40 font-semibold' 
                                   : 'text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
@@ -258,11 +255,8 @@ export const Header: React.FC = () => {
                                 <p className="font-semibold truncate">{m.name}</p>
                                 <p className="text-[10px] text-[var(--text-muted)] truncate">{m.provider}</p>
                               </div>
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-[var(--bg-hover)] text-[var(--text-secondary)]">
-                                  {m.badge}
-                                </span>
-                                {isSelected && <Check className="w-3.5 h-3.5 text-[var(--status-success)]" />}
+                              <div className="flex items-center shrink-0">
+                                {isSelected && <Check className="w-4 h-4 text-[var(--status-success)]" />}
                               </div>
                             </button>
                           );
@@ -283,7 +277,7 @@ export const Header: React.FC = () => {
                       className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-[var(--accent-text)] text-xs font-bold shadow-xs cursor-pointer active:scale-95 transition-all"
                     >
                       <PlusCircle className="w-3.5 h-3.5" />
-                      <span>{language === 'vi' ? '+ Thêm Provider Riêng (BYOK)' : '+ Add Custom BYOK Key'}</span>
+                      <span>{isEn ? '+ Add Custom BYOK Key' : '+ Thêm Provider Riêng (BYOK)'}</span>
                     </button>
                   </div>
                 </motion.div>
@@ -303,7 +297,7 @@ export const Header: React.FC = () => {
                 : 'bg-[var(--bg-app)] border-[var(--border-color)] hover:border-[var(--accent-primary)]/60 text-[var(--text-primary)] hover:text-[var(--accent-primary)] shadow-2xs'
             }`}
           >
-            <span>{language === 'vi' ? '🇻🇳 VI' : '🇺🇸 EN'}</span>
+            <span>{isEn ? '🇺🇸 EN' : '🇻🇳 VI'}</span>
             <ChevronDown className={`w-3 h-3 transition-transform ${isLangDropdownOpen ? 'rotate-180' : ''} text-[var(--text-muted)]`} />
           </button>
 
@@ -324,7 +318,7 @@ export const Header: React.FC = () => {
                   }`}
                 >
                   <div className="px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
-                    {language === 'vi' ? 'Ngôn ngữ' : 'Language'}
+                    {isEn ? 'Language' : 'Ngôn ngữ'}
                   </div>
                   {availableLanguages.map((l) => {
                     const isSelected = language === l.code;
@@ -360,7 +354,7 @@ export const Header: React.FC = () => {
         <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl border border-[var(--border-color)] bg-[var(--bg-app)] text-xs text-[var(--text-secondary)] shadow-2xs">
           <span className="w-2 h-2 rounded-full bg-[var(--status-success)] animate-pulse" />
           <span className="font-medium text-[var(--text-primary)]">
-            {language === 'vi' ? 'Sẵn sàng xử lý' : 'Ready to process'}
+            {isEn ? 'Ready to process' : 'Sẵn sàng xử lý'}
           </span>
         </div>
       </div>
@@ -393,7 +387,7 @@ export const Header: React.FC = () => {
             }`}
           >
             <Crown className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-            <span className="hidden md:inline">{language === 'vi' ? 'Nâng cấp Pro' : 'Upgrade to Pro'}</span>
+            <span className="hidden md:inline">{isEn ? 'Upgrade to Pro' : 'Nâng cấp Pro'}</span>
             <span className="md:hidden">Pro</span>
           </button>
         )}
@@ -441,7 +435,7 @@ export const Header: React.FC = () => {
                   <div className="flex items-center justify-between px-1 pb-2 border-b border-[var(--border-color)]">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-primary)]">
-                        {language === 'vi' ? 'Thông báo' : 'Notifications'}
+                        {isEn ? 'Notifications' : 'Thông báo'}
                       </span>
                       {notifications.length > 0 && (
                         <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-bold">
@@ -456,7 +450,7 @@ export const Header: React.FC = () => {
                         className="text-[11px] text-[var(--status-error)] hover:underline flex items-center gap-1 cursor-pointer transition-colors"
                       >
                         <Trash2 className="w-3 h-3" />
-                        <span>{language === 'vi' ? 'Xóa tất cả' : 'Clear all'}</span>
+                        <span>{isEn ? 'Clear all' : 'Xóa tất cả'}</span>
                       </button>
                     )}
                   </div>
@@ -468,10 +462,10 @@ export const Header: React.FC = () => {
                         <BellOff className="w-5 h-5" />
                       </div>
                       <p className="text-xs font-semibold text-[var(--text-primary)]">
-                        {language === 'vi' ? 'Không có thông báo nào' : 'No notifications'}
+                        {isEn ? 'No notifications' : 'Không có thông báo nào'}
                       </p>
                       <p className="text-[11px] text-[var(--text-muted)] max-w-xs mx-auto">
-                        {language === 'vi' ? 'Các cảnh báo hệ thống hoặc cập nhật tài khoản sẽ xuất hiện tại đây.' : 'System alerts and account updates will appear here.'}
+                        {isEn ? 'System alerts and account updates will appear here.' : 'Các cảnh báo hệ thống hoặc cập nhật tài khoản sẽ xuất hiện tại đây.'}
                       </p>
                     </div>
                   ) : (
@@ -503,7 +497,7 @@ export const Header: React.FC = () => {
                                   type="button"
                                   onClick={() => deleteNotification(n.id)}
                                   className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 text-[var(--text-muted)] hover:text-[var(--status-error)] transition-all cursor-pointer"
-                                  title={language === 'vi' ? 'Xóa' : 'Delete'}
+                                  title={isEn ? 'Delete' : 'Xóa'}
                                 >
                                   <X className="w-3 h-3" />
                                 </button>
@@ -524,14 +518,14 @@ export const Header: React.FC = () => {
                         className="text-xs font-semibold text-[var(--accent-primary)] hover:underline py-1 cursor-pointer"
                       >
                         {showAllNotifications 
-                          ? (language === 'vi' ? 'Thu gọn' : 'Collapse') 
-                          : (language === 'vi' ? `Xem tất cả (${notifications.length})` : `View all (${notifications.length})`)}
+                          ? (isEn ? 'Collapse' : 'Thu gọn') 
+                          : (isEn ? `View all (${notifications.length})` : `Xem tất cả (${notifications.length})`)}
                       </button>
                       <button 
                         onClick={clearAllNotifications}
                         className="text-xs text-[var(--text-muted)] hover:text-[var(--status-error)] hover:underline py-1 cursor-pointer"
                       >
-                        {language === 'vi' ? 'Xóa hết' : 'Clear all'}
+                        {isEn ? 'Clear all' : 'Xóa hết'}
                       </button>
                     </div>
                   )}
@@ -553,7 +547,7 @@ export const Header: React.FC = () => {
           title="Share workspace"
         >
           <Share2 className="w-3.5 h-3.5 text-[var(--text-muted)]" />
-          <span className="hidden sm:inline">{language === 'vi' ? 'Chia sẻ' : 'Share'}</span>
+          <span className="hidden sm:inline">{isEn ? 'Share' : 'Chia sẻ'}</span>
         </button>
       </div>
     </header>
