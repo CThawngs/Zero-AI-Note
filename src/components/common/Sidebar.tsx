@@ -25,6 +25,9 @@ export const Sidebar: React.FC = () => {
     setCurrentScreen, 
     user, 
     notes, 
+    chatSessions,
+    activeSessionId,
+    resumeChatSession,
     openNoteDetail, 
     startNewChatNote, 
     setLibrarySearchQuery,
@@ -37,7 +40,7 @@ export const Sidebar: React.FC = () => {
   } = useApp();
 
   const navItems = [
-    { id: 'library', label: t('navNotes'), icon: FileText, screen: 'library' as ScreenType },
+    { id: 'library', label: t('navHistory'), icon: Clock, screen: 'library' as ScreenType },
     { 
       id: 'search', 
       label: t('navSearch'), 
@@ -66,7 +69,7 @@ export const Sidebar: React.FC = () => {
   const isNavActive = (item: typeof navItems[0]) => {
     if (item.id === 'search') return false;
     if (item.screen === currentScreen) return true;
-    if (item.id === 'library' && currentScreen === 'note-detail') return true;
+    if (item.id === 'library' && (currentScreen === 'library' || currentScreen === 'note-detail')) return true;
     return false;
   };
 
@@ -118,7 +121,7 @@ export const Sidebar: React.FC = () => {
           </button>
         </div>
 
-        {/* Primary "+ Note mới" button */}
+        {/* Primary "+ Cuộc trò chuyện & Note mới" button */}
         <motion.button
           id="btn-new-note"
           whileHover={{ scale: 1.02, y: -1 }}
@@ -130,11 +133,11 @@ export const Sidebar: React.FC = () => {
           className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md bg-[var(--accent-primary)] hover:opacity-90 active:opacity-100 text-[var(--accent-text)] shadow-[var(--accent-primary)]/20"
         >
           <Plus className="w-4 h-4 stroke-[2.5]" />
-          <span>{t('newNote')}</span>
+          <span>{t('newChatNote') || '+ Cuộc trò chuyện & Note mới'}</span>
         </motion.button>
       </div>
 
-      {/* Middle Scrollable Section: Search + Navigation + Note History */}
+      {/* Middle Scrollable Section: Search + Navigation + Session History */}
       <div className="flex-1 overflow-y-auto p-3 space-y-4 custom-scrollbar min-h-0">
         {/* Quick Search */}
         <div className="relative">
@@ -151,32 +154,26 @@ export const Sidebar: React.FC = () => {
           />
         </div>
 
-        {/* Navigation list */}
+        {/* Main Navigation Items */}
         <nav className="space-y-1">
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isNavActive(item);
+
             return (
               <motion.button
                 key={item.id}
                 id={`sidebar-nav-${item.id}`}
                 whileHover={{ x: 3 }}
-                whileTap={{ scale: 0.98 }}
+                whileTap={{ scale: 0.97 }}
                 onClick={() => handleNavClick(item)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium transition-all relative cursor-pointer ${
-                  active
-                    ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-semibold border border-[var(--accent-primary)]/25'
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  active 
+                    ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] shadow-2xs font-extrabold' 
                     : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
                 }`}
               >
-                {active && (
-                  <motion.span
-                    layoutId="active-sidebar-nav-pill"
-                    className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full bg-[var(--accent-primary)]"
-                    transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-                  />
-                )}
-                <Icon className={`w-4 h-4 ${
+                <Icon className={`w-4 h-4 shrink-0 stroke-[2] ${
                   active ? 'text-[var(--accent-primary)]' : 'text-[var(--text-muted)]'
                 }`} />
                 <span className="truncate">{item.label}</span>
@@ -185,39 +182,55 @@ export const Sidebar: React.FC = () => {
           })}
         </nav>
 
-        {/* Recent Notes History (Scrollable) */}
+        {/* Recent Chat Sessions & Notes History (Scrollable) */}
         <div className="pt-3 border-t border-[var(--border-color)]">
           <div className="flex items-center justify-between px-2 mb-2">
             <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
-              {t('recentNotes')}
+              {t('recentSessions') || 'Hội thoại gần đây'}
             </span>
             <span className="text-[11px] font-mono font-medium px-1.5 py-0.5 rounded bg-[var(--bg-hover)] text-[var(--text-muted)]">
-              {notes.length}
+              {chatSessions.length}
             </span>
           </div>
 
           <div className="space-y-1">
-            {notes.map((note) => (
-              <motion.button
-                key={note.id}
-                id={`recent-note-${note.id}`}
-                whileHover={{ x: 2 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => {
-                  openNoteDetail(note);
-                  setIsMobileSidebarOpen(false);
-                }}
-                className={`w-full text-left px-3 py-2 rounded-lg text-xs truncate flex items-center gap-2 transition-colors cursor-pointer group ${
-                  currentScreen === 'note-detail' && note.id === notes[0]?.id
-                    ? 'bg-[var(--bg-hover)] text-[var(--text-primary)] font-semibold'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]/70'
-                }`}
-                title={note.title}
-              >
-                <span className="w-1.5 h-1.5 rounded-full shrink-0 group-hover:scale-125 transition-transform bg-[var(--accent-primary)]" />
-                <span className="truncate flex-1">{note.title}</span>
-              </motion.button>
-            ))}
+            {chatSessions.length === 0 ? (
+              <p className="px-3 py-2 text-[11px] text-[var(--text-muted)] italic">
+                Chưa có hội thoại nào
+              </p>
+            ) : (
+              chatSessions.slice(0, 8).map((session) => {
+                const isActive = currentScreen === 'chat' && session.id === activeSessionId;
+                return (
+                  <motion.button
+                    key={session.id}
+                    id={`recent-session-${session.id}`}
+                    whileHover={{ x: 2 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      resumeChatSession(session.id);
+                      setIsMobileSidebarOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-xs truncate flex items-center gap-2 transition-colors cursor-pointer group ${
+                      isActive
+                        ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-bold'
+                        : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]/70'
+                    }`}
+                    title={session.title}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 group-hover:scale-125 transition-transform ${
+                      session.note ? 'bg-[var(--accent-primary)]' : 'bg-blue-400'
+                    }`} />
+                    <span className="truncate flex-1">{session.title}</span>
+                    {session.note && (
+                      <span className="text-[9px] px-1 py-0.2 rounded font-mono font-bold uppercase bg-[var(--bg-hover)] text-[var(--text-muted)]">
+                        Note
+                      </span>
+                    )}
+                  </motion.button>
+                );
+              })
+            )}
           </div>
         </div>
       </div>

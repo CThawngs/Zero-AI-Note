@@ -40,21 +40,31 @@ const i18n = {
     heroSub: 'Hướng dẫn đầy đủ về cách sử dụng, kiến trúc kỹ thuật và tích hợp API của Zero AI Note.',
     cta: 'Bắt đầu miễn phí',
     ctaReady: 'Sẵn sàng dùng thử?',
-    sections: ['Giới thiệu', 'Bắt đầu nhanh', 'Phương pháp ghi chú', 'Kiến trúc kỹ thuật', 'Bảo mật', 'Routing', 'API Endpoints', 'Liên kết'],
+    sections: ['Giới thiệu', 'Bắt đầu nhanh', 'Lịch sử & Ghi chú', 'Phương pháp ghi chú', 'Kiến trúc kỹ thuật', 'Bảo mật', 'Routing', 'API Endpoints', 'Liên kết'],
     intro: {
       title: 'Giới thiệu',
-      p1: 'Zero AI Note là công cụ ghi chú AI nguồn mở, chuyển đổi video, audio, PDF, YouTube thành ghi chú cấu trúc cao theo các phương pháp học thuật.',
-      p2: 'Dự án sử dụng Neon Postgres cho database (lưu trữ chính), JWT cho authentication, và Cloudflare R2 làm backup file storage khi Neon database đầy.',
+      p1: 'Zero AI Note là công cụ ghi chú AI nguồn mở, chuyển đổi video, audio, PDF, YouTube thành các phiên hội thoại tương tác và ghi chú cấu trúc cao theo các phương pháp học thuật chuẩn quốc tế.',
+      p2: 'Dự án sử dụng Neon Postgres cho database (lưu trữ chính), JWT cho authentication, Cloudflare R2 làm backup storage, và hệ thống quản lý Lịch sử Hội thoại & Ghi chú toàn diện với đầy đủ quyền CRUD.',
     },
     quickstart: {
       title: 'Bắt đầu nhanh',
       steps: [
         { text: 'Đăng ký tài khoản miễn phí', sub: 'Không cần thẻ tín dụng', linkText: 'Tạo tài khoản' },
         { text: 'Kéo thả file hoặc dán link YouTube vào khung chat', sub: 'Hỗ trợ video, audio, PDF, DOCX' },
-        { text: 'Chọn phương pháp ghi chú', sub: 'Cornell, Outline, Q&A, Flashcard, Tóm tắt nhanh' },
-        { text: 'Xem kết quả trong Artifact Panel', sub: 'Bên phải màn hình, cập nhật realtime' },
-        { text: 'Xuất bản note hoàn chỉnh', sub: 'Định dạng Markdown, DOCX, PDF, HTML' },
+        { text: 'Chọn phương pháp ghi chú', sub: 'Cornell, Outline, Q&A, Flashcard, Feynman, Tóm tắt nhanh' },
+        { text: 'Tương tác & Xem kết quả trong Artifact Panel', sub: 'Bên phải màn hình, cập nhật realtime' },
+        { text: 'Quản lý toàn bộ phiên trong Lịch sử (History)', sub: 'Tiếp tục chat, xem nhanh, đổi tên, ghim, chia sẻ, lưu trữ' },
       ],
+    },
+    history: {
+      title: 'Lịch sử Hội thoại & Ghi chú',
+      desc: 'Zero AI Note hợp nhất lịch sử chat với file Note được tạo ra thành các Chat Sessions. Người dùng có toàn quyền CRUD:',
+      items: [
+        { title: 'Tạo mới (Create)', desc: 'Bắt đầu cuộc trò chuyện mới hoặc note mới với một click.' },
+        { title: 'Xem & Tiếp tục (Read & Resume)', desc: 'Mở lại toàn bộ ngữ cảnh hội thoại cũ và tự động tải Note Artifact kèm chế độ Xem nhanh (Quick Preview).' },
+        { title: 'Cập nhật (Update)', desc: 'Đổi tên phiên làm việc, ghim các phiên quan trọng lên đầu danh sách.' },
+        { title: 'Xóa & Lưu trữ (Delete & Archive)', desc: 'Chuyển vào Thùng rác với cơ chế lưu trữ 30 ngày tự động dọn dẹp để tối ưu dung lượng.' }
+      ]
     },
     methods: {
       title: 'Phương pháp ghi chú',
@@ -63,18 +73,19 @@ const i18n = {
         { name: 'Outline',        icon: 'format_list_bulleted', desc: 'Cấu trúc cây phân cấp, lý tưởng cho sách giáo trình và tài liệu nghiên cứu chuyên sâu.' },
         { name: 'Q&A',            icon: 'quiz',                 desc: 'Chuyển đổi bài học thành định dạng Hỏi - Đáp, tự động trắc nghiệm năng lực ghi nhớ.' },
         { name: 'Flashcard',      icon: 'style',                desc: 'Tạo bộ thẻ ghi nhớ với hai mặt câu hỏi và đáp án, tối ưu cho ôn tập từ vựng và thuật ngữ.' },
+        { name: 'Feynman',        icon: 'psychology',           desc: 'Giải thích khái niệm phức tạp bằng ngôn ngữ đơn giản như đang dạy lại cho người khác.' },
         { name: 'Tóm tắt nhanh', icon: 'bolt',                 desc: 'Phiên bản cô đọng nhất, đọc hiểu chỉ trong 60 giây.' },
       ],
     },
     tech: {
       title: 'Kiến trúc kỹ thuật',
       rows: [
-        { label: 'Frontend',  value: 'Next.js 16, React 19, Tailwind CSS 4' },
-        { label: 'Database',  value: 'Neon Postgres serverless với RLS (Row-Level Security)' },
+        { label: 'Frontend',  value: 'Next.js 16, React 19, Tailwind CSS 4, Framer Motion' },
+        { label: 'Database',  value: 'Neon Postgres serverless với RLS (Row-Level Security) & Drizzle ORM' },
         { label: 'Auth',      value: 'JWT (HS256) qua cookie HttpOnly, bcryptjs cho password hashing' },
         { label: 'Storage',   value: 'Cloudflare R2 (S3-compatible) — backup khi Neon database đầy' },
-        { label: 'ORM',       value: 'Drizzle ORM' },
-        { label: 'AI',        value: 'Google GenAI, BYOK (Bring Your Own Key) cho OpenAI/Anthropic' },
+        { label: 'AI Engine', value: 'Google GenAI (Gemini 2.5 Flash), Tự kết nối AI (BYOK cho OpenAI/Anthropic)' },
+        { label: 'Billing',   value: 'ZeroInvoice API, Hệ thống Coupon chiết khấu phần trăm (%) tự động' },
       ],
     },
     security: {
@@ -123,21 +134,31 @@ const i18n = {
     heroSub: 'Complete guide to using Zero AI Note — API integration, technical architecture, and more.',
     cta: 'Get started free',
     ctaReady: 'Ready to try it?',
-    sections: ['Introduction', 'Quick Start', 'Note Methods', 'Tech Architecture', 'Security', 'Routing', 'API Endpoints', 'Links'],
+    sections: ['Introduction', 'Quick Start', 'Chat & Notes History', 'Note Methods', 'Tech Architecture', 'Security', 'Routing', 'API Endpoints', 'Links'],
     intro: {
       title: 'Introduction',
-      p1: 'Zero AI Note is an open-source AI note-taking tool that converts video, audio, PDF, and YouTube into high-structure notes using academic methods.',
-      p2: 'The project uses Neon Postgres for database (primary storage), JWT for authentication, and Cloudflare R2 as backup file storage when the Neon database fills up.',
+      p1: 'Zero AI Note is an open-source AI note-taking platform that transforms video, audio, PDF, and YouTube into interactive chat sessions and highly structured academic notes.',
+      p2: 'Built on Neon Postgres serverless database (primary storage), JWT authentication, Cloudflare R2 backup storage, and a complete Chat & Notes History management suite with full CRUD operations.',
     },
     quickstart: {
       title: 'Quick Start',
       steps: [
         { text: 'Create a free account', sub: 'No credit card required', linkText: 'Sign up' },
         { text: 'Drag & drop files or paste a YouTube link', sub: 'Supports video, audio, PDF, DOCX' },
-        { text: 'Choose a note-taking method', sub: 'Cornell, Outline, Q&A, Flashcard, Quick Summary' },
-        { text: 'View results in the Artifact Panel', sub: 'On the right side, updates in realtime' },
-        { text: 'Export your complete note', sub: 'As Markdown, DOCX, PDF, or HTML' },
+        { text: 'Choose a note-taking method', sub: 'Cornell, Outline, Q&A, Flashcard, Feynman, Quick Summary' },
+        { text: 'Interact & View results in Artifact Panel', sub: 'On the right side, updates in realtime' },
+        { text: 'Manage all sessions in History', sub: 'Resume chat, quick preview, rename, pin, share, archive' },
       ],
+    },
+    history: {
+      title: 'Chat & Notes History',
+      desc: 'Zero AI Note unifies conversation history with generated Note artifacts into cohesive Chat Sessions with full CRUD control:',
+      items: [
+        { title: 'Create', desc: 'Start a clean chat session and note artifact with one click.' },
+        { title: 'Read & Resume', desc: 'Resume any previous discussion context with linked notes automatically loaded in the Artifact Panel, plus instant modal Quick Preview.' },
+        { title: 'Update', desc: 'Rename sessions, pin critical research threads to the top of your list.' },
+        { title: 'Delete & Archive', desc: 'Move to Trash with 30-day retention countdown or purge permanently to manage storage.' }
+      ]
     },
     methods: {
       title: 'Note-taking Methods',
@@ -146,18 +167,19 @@ const i18n = {
         { name: 'Outline',       icon: 'format_list_bulleted', desc: 'Hierarchical tree structure, ideal for textbooks and in-depth research documents.' },
         { name: 'Q&A',           icon: 'quiz',                 desc: 'Converts lessons into Question & Answer format, automatically testing recall ability.' },
         { name: 'Flashcard',     icon: 'style',                desc: 'Creates two-sided flashcards with questions and answers, optimized for vocabulary and terminology.' },
+        { name: 'Feynman',       icon: 'psychology',           desc: 'Explains complex concepts in simple terms as if teaching someone else.' },
         { name: 'Quick Summary', icon: 'bolt',                 desc: 'The most condensed version — readable in just 60 seconds.' },
       ],
     },
     tech: {
       title: 'Tech Architecture',
       rows: [
-        { label: 'Frontend',  value: 'Next.js 16, React 19, Tailwind CSS 4' },
-        { label: 'Database',  value: 'Neon Postgres serverless with RLS (Row-Level Security)' },
+        { label: 'Frontend',  value: 'Next.js 16, React 19, Tailwind CSS 4, Framer Motion' },
+        { label: 'Database',  value: 'Neon Postgres serverless with RLS (Row-Level Security) & Drizzle ORM' },
         { label: 'Auth',      value: 'JWT (HS256) via HttpOnly cookie, bcryptjs for password hashing' },
         { label: 'Storage',   value: 'Cloudflare R2 (S3-compatible) — backup when Neon database is full' },
-        { label: 'ORM',       value: 'Drizzle ORM' },
-        { label: 'AI',        value: 'Google GenAI, BYOK (Bring Your Own Key) for OpenAI/Anthropic' },
+        { label: 'AI Engine', value: 'Google GenAI (Gemini 2.5 Flash), BYOK (OpenAI/Anthropic keys)' },
+        { label: 'Billing',   value: 'ZeroInvoice API, Percentage-only (%) dynamic coupon system' },
       ],
     },
     security: {

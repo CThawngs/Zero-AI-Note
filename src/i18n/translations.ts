@@ -44,16 +44,21 @@ export const translations = {
     freePlan: 'GÓI MIỄN PHÍ',
     
     // Sidebar
-    navNotes: 'Ghi chú',
+    navNotes: 'Lịch sử',
+    navHistory: 'Lịch sử',
     navSearch: 'Tìm kiếm',
     navFiles: 'Tệp nguồn',
     navTemplates: 'Mẫu Note',
     navArchives: 'Thùng rác & Lưu trữ',
     navAccount: 'Tài khoản',
     navAdminArea: 'Khu vực Admin',
-    recentNotes: 'Gần đây',
+    recentNotes: 'Hội thoại gần đây',
+    recentSessions: 'Hội thoại gần đây',
     collapseSidebar: 'Thu gọn sidebar',
     expandSidebar: 'Mở rộng sidebar',
+    newChatNote: '+ Cuộc trò chuyện & Note mới',
+    historyTitle: 'Lịch sử Hội thoại & Ghi chú',
+    historySubtitle: 'Lưu trữ phiên tương tác với AI cùng file Note đã tổng hợp',
 
     // Header
     modelSelectorLabel: 'Mô hình AI xử lý',
@@ -322,16 +327,21 @@ export const translations = {
     freePlan: 'FREE PLAN',
 
     // Sidebar
-    navNotes: 'Notes',
+    navNotes: 'History',
+    navHistory: 'History',
     navSearch: 'Search',
     navFiles: 'Files',
     navTemplates: 'Templates',
     navArchives: 'Trash & Archives',
     navAccount: 'Account',
     navAdminArea: 'Admin Portal',
-    recentNotes: 'Recent',
+    recentNotes: 'Recent Chats',
+    recentSessions: 'Recent Chats',
     collapseSidebar: 'Collapse sidebar',
     expandSidebar: 'Expand sidebar',
+    newChatNote: '+ New Chat & Note',
+    historyTitle: 'Chat & Notes History',
+    historySubtitle: 'Stored AI conversations with attached structured notes',
 
     // Header
     modelSelectorLabel: 'AI Engine Model',

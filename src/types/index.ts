@@ -214,6 +214,29 @@ export interface ChatMessage {
   noteResultId?: string;
 }
 
+export interface ChatSessionItem {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  model: string;
+  method: NoteMethod;
+  category: string;
+  keywords?: string[];
+  messages: ChatMessage[];
+  note?: NoteItem;
+  sources?: {
+    type: 'pdf' | 'youtube' | 'audio' | 'doc' | 'image';
+    name: string;
+    size?: string;
+    url?: string;
+  }[];
+  isPinned?: boolean;
+  isArchived?: boolean;
+  archiveDaysLeft?: number;
+  isShared?: boolean;
+}
+
 export interface AppNotification {
   id: string;
   title: string;

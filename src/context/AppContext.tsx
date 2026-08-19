@@ -14,6 +14,7 @@ import {
   ToastMessage, 
   NoteMethod, 
   ChatMessage,
+  ChatSessionItem,
   ColorPalette,
   AppNotification
 } from '../types';
@@ -92,6 +93,20 @@ interface AppContextType {
   upgradeToUltra: () => void;
   downgradePlan: () => void;
   
+  // Chat Sessions & History (Unified Sessions + Note Artifacts)
+  chatSessions: ChatSessionItem[];
+  setChatSessions: React.Dispatch<React.SetStateAction<ChatSessionItem[]>>;
+  archivedChatSessions: ChatSessionItem[];
+  setArchivedChatSessions: React.Dispatch<React.SetStateAction<ChatSessionItem[]>>;
+  activeSessionId: string | null;
+  setActiveSessionId: (id: string | null) => void;
+  resumeChatSession: (sessionId: string) => void;
+  renameChatSession: (sessionId: string, newTitle: string) => void;
+  pinChatSession: (sessionId: string) => void;
+  archiveChatSession: (sessionId: string) => Promise<void>;
+  restoreChatSession: (sessionId: string) => Promise<void>;
+  deleteChatSessionPermanently: (sessionId: string) => Promise<void>;
+
   // Notes
   notes: NoteItem[];
   archivedNotes: NoteItem[];
@@ -141,7 +156,7 @@ interface AppContextType {
     addCoupon: (coupon: Omit<CouponItem, 'id' | 'usage_count'>) => void;
   updateCoupon: (couponId: string, data: Partial<CouponItem>) => void;
   deleteCoupon: (couponId: string) => void;
-  applyCouponCode: (code: string) => Promise<{ success: boolean; message: string; discountPercent?: number; baseAmount?: number; finalAmount?: number }>;
+  applyCouponCode: (code: string) => Promise<{ success: boolean; message: string; discountPercent?: number; discountValue?: number; discountType?: 'percent' | 'fixed'; baseAmount?: number; finalAmount?: number }>;
   removeAppliedCoupon: () => void;
 
   // Payments
@@ -331,6 +346,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [user.id]);
   const [notes, setNotes] = useState<NoteItem[]>(EMPTY_NOTES);
   const [archivedNotes, setArchivedNotes] = useState<NoteItem[]>(EMPTY_ARCHIVED_NOTES);
+  const [chatSessions, setChatSessions] = useState<ChatSessionItem[]>([]);
+  const [archivedChatSessions, setArchivedChatSessions] = useState<ChatSessionItem[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [activeNote, setActiveNote] = useState<NoteItem | null>(null);
   const [templates, setTemplates] = useState<TemplateItem[]>(initialTemplates);
   const [files, setFiles] = useState<SourceFileItem[]>(EMPTY_FILES);
@@ -529,19 +547,60 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
     };
 
+    // Map NoteItem to rich ChatSessionItem
+    const mapNoteToSession = (note: NoteItem): ChatSessionItem => {
+      const ts = note.updatedAt || new Date().toISOString();
+      return {
+        id: note.id,
+        title: note.title,
+        createdAt: ts,
+        updatedAt: ts,
+        model: 'Gemini 2.5 Flash',
+        method: note.method || 'cornell',
+        category: note.category || 'Học thuật',
+        keywords: note.keywords || [],
+        messages: [
+          {
+            id: `msg_user_${note.id}`,
+            sender: 'user',
+            text: `Tổng hợp và cấu trúc ghi chú theo phương pháp ${(note.method || 'cornell').toUpperCase()} cho chủ đề: ${note.title}`,
+            timestamp: ts,
+            attachments: note.sources?.map(s => ({ type: s.type as any, name: s.name }))
+          },
+          {
+            id: `msg_ai_${note.id}`,
+            sender: 'ai',
+            text: `Tôi đã hoàn thành cấu trúc ghi chú theo phương pháp ${(note.method || 'cornell').toUpperCase()} cho chủ đề "${note.title}"! Bạn có thể xem và tải về ở Artifact Panel bên phải.`,
+            timestamp: ts,
+            noteResultId: note.id
+          }
+        ],
+        note: note,
+        sources: note.sources?.map(s => ({ type: s.type as any, name: s.name })),
+        isPinned: false,
+        isArchived: note.isArchived,
+        archiveDaysLeft: note.archiveDaysLeft,
+        isShared: note.isShared
+      };
+    };
+
   // Load data when user logs in
     useEffect(() => {
       if (!user.id) return;
 
       const loadData = async () => {
         try {
-          // Load notes
+          // Load notes & sessions
           const userNotes = await getNotes();
-          setNotes(userNotes.map(mapNoteRow));
+          const mappedNotes = userNotes.map(mapNoteRow);
+          setNotes(mappedNotes);
+          setChatSessions(mappedNotes.map(mapNoteToSession));
         
-          // Load archived notes
+          // Load archived notes & sessions
           const userArchivedNotes = await getArchivedNotes();
-          setArchivedNotes(userArchivedNotes.map(mapNoteRow));
+          const mappedArchived = userArchivedNotes.map(mapNoteRow);
+          setArchivedNotes(mappedArchived);
+          setArchivedChatSessions(mappedArchived.map(mapNoteToSession));
         
           // Load files
           const userFiles = await getSources();
@@ -597,7 +656,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCurrentScreen('note-detail');
   };
 
+  const resumeChatSession = (sessionId: string) => {
+    const session = chatSessions.find(s => s.id === sessionId);
+    if (!session) return;
+
+    setActiveSessionId(session.id);
+    setChatMessages(session.messages && session.messages.length > 0 ? session.messages : [
+      {
+        id: 'msg_welcome_' + Date.now(),
+        sender: 'ai',
+        text: `Phiên hội thoại "${session.title}" đã được nạp lại.`,
+        timestamp: 'Vừa xong'
+      }
+    ]);
+
+    if (session.note) {
+      setActiveNote(session.note);
+      setActiveArtifactNote(session.note);
+      setIsArtifactOpen(true);
+    } else {
+      setActiveArtifactNote(null);
+      setIsArtifactOpen(false);
+    }
+
+    if (session.method) {
+      setSelectedMethod(session.method);
+    }
+
+    setCurrentScreen('chat');
+  };
+
   const startNewChatNote = (customPrompt?: string) => {
+    const newSessionId = 'session_' + Date.now();
+    setActiveSessionId(newSessionId);
+
     const welcomeTxt = language === 'vi' 
       ? 'Xin chào. Kéo thả file PDF, link bài viết hoặc video vào đây để tôi tạo ghi chú cấu trúc cao cho bạn.'
       : 'Hello. Drag & drop PDF files, article links, or YouTube videos here to create high-structure notes.';
@@ -612,6 +704,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     ]);
     setIsProcessingChat(false);
     setProcessingStep(0);
+    setActiveArtifactNote(null);
     setIsArtifactOpen(false);
     setCurrentScreen('chat');
 
@@ -619,6 +712,117 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setTimeout(() => {
         sendChatMessage(customPrompt);
       }, 300);
+    }
+  };
+
+  const renameChatSession = async (sessionId: string, newTitle: string) => {
+    if (!newTitle.trim()) return;
+
+    setChatSessions(prev => prev.map(s => {
+      if (s.id === sessionId) {
+        return {
+          ...s,
+          title: newTitle.trim(),
+          note: s.note ? { ...s.note, title: newTitle.trim() } : undefined,
+          updatedAt: new Date().toISOString()
+        };
+      }
+      return s;
+    }));
+
+    const session = chatSessions.find(s => s.id === sessionId);
+    if (session?.note) {
+      try {
+        await updateNote(session.note.id, { title: newTitle.trim() });
+        setNotes(prev => prev.map(n => n.id === session.note!.id ? { ...n, title: newTitle.trim() } : n));
+      } catch (e) {
+        console.warn('Could not sync note rename to backend:', e);
+      }
+    }
+
+    addToast(
+      language === 'vi' ? 'Đã đổi tên' : 'Renamed',
+      language === 'vi' ? `Phiên hội thoại đã đổi thành "${newTitle}".` : `Session renamed to "${newTitle}".`,
+      'success'
+    );
+  };
+
+  const pinChatSession = (sessionId: string) => {
+    setChatSessions(prev => prev.map(s => {
+      if (s.id === sessionId) {
+        const nextPinned = !s.isPinned;
+        addToast(
+          nextPinned ? (language === 'vi' ? 'Đã ghim hội thoại' : 'Pinned session') : (language === 'vi' ? 'Đã bỏ ghim' : 'Unpinned session'),
+          s.title,
+          'info'
+        );
+        return { ...s, isPinned: nextPinned };
+      }
+      return s;
+    }));
+  };
+
+  const archiveChatSession = async (sessionId: string) => {
+    const session = chatSessions.find(s => s.id === sessionId);
+    if (!session) return;
+
+    const archivedItem: ChatSessionItem = {
+      ...session,
+      isArchived: true,
+      archiveDaysLeft: 30,
+      updatedAt: new Date().toISOString()
+    };
+
+    setChatSessions(prev => prev.filter(s => s.id !== sessionId));
+    setArchivedChatSessions(prev => [archivedItem, ...prev.filter(s => s.id !== sessionId)]);
+
+    if (session.note) {
+      await archiveNote(session.note.id);
+    } else {
+      addToast(
+        language === 'vi' ? 'Đã chuyển vào Thùng rác' : 'Moved to Trash',
+        language === 'vi' ? 'Phiên hội thoại sẽ tự động xóa sau 30 ngày.' : 'Session will be permanently deleted after 30 days.'
+      );
+    }
+  };
+
+  const restoreChatSession = async (sessionId: string) => {
+    const session = archivedChatSessions.find(s => s.id === sessionId);
+    if (!session) return;
+
+    const restoredItem: ChatSessionItem = {
+      ...session,
+      isArchived: false,
+      archiveDaysLeft: undefined,
+      updatedAt: new Date().toISOString()
+    };
+
+    setArchivedChatSessions(prev => prev.filter(s => s.id !== sessionId));
+    setChatSessions(prev => [restoredItem, ...prev.filter(s => s.id !== sessionId)]);
+
+    if (session.note) {
+      await restoreNote(session.note.id);
+    } else {
+      addToast(
+        language === 'vi' ? 'Khôi phục thành công' : 'Restored successfully',
+        language === 'vi' ? 'Phiên hội thoại đã trở lại danh sách Lịch sử.' : 'Session restored to History.'
+      );
+    }
+  };
+
+  const deleteChatSessionPermanently = async (sessionId: string) => {
+    const session = archivedChatSessions.find(s => s.id === sessionId) || chatSessions.find(s => s.id === sessionId);
+    setArchivedChatSessions(prev => prev.filter(s => s.id !== sessionId));
+    setChatSessions(prev => prev.filter(s => s.id !== sessionId));
+
+    if (session?.note) {
+      await deleteNotePermanently(session.note.id);
+    } else {
+      addToast(
+        language === 'vi' ? 'Đã xoá vĩnh viễn' : 'Permanently Deleted',
+        language === 'vi' ? 'Phiên hội thoại đã được xoá hoàn toàn.' : 'Session has been permanently removed.',
+        'info'
+      );
     }
   };
 
@@ -959,7 +1163,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const applyCouponCode = async (code: string): Promise<{ success: boolean; message: string; discountPercent?: number; baseAmount?: number; finalAmount?: number }> => {
+  const applyCouponCode = async (code: string): Promise<{ success: boolean; message: string; discountPercent?: number; discountValue?: number; discountType?: 'percent' | 'fixed'; baseAmount?: number; finalAmount?: number }> => {
     try {
       // Read-only validation against the backend. The coupon is NOT redeemed here —
       // usage_count is incremented only when a real bill is created in /api/billing/create-invoice.
@@ -987,6 +1191,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           ? `Áp dụng thành công mã ${coupon.code} (giảm ${data.discount_amount.toLocaleString('vi-VN')}đ)`
           : `Applied coupon ${coupon.code} (save ${data.discount_amount.toLocaleString('en-US')}đ)`,
         discountPercent: discountVal,
+        discountValue: coupon.discount_value,
+        discountType: coupon.discount_type,
         baseAmount: data.base_amount,
         finalAmount: data.final_amount,
       };
@@ -1210,22 +1416,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setIsArtifactOpen(true);
       setProcessingStep(4);
 
-      setChatMessages(prev => [
-        ...prev,
-        {
-          id: 'msg_ai_done_' + Date.now(),
-          sender: 'ai',
-          text: isEn 
-            ? (isAuto 
-                ? `AI analyzed your source and auto-selected ${generatedNote.method.toUpperCase()} method as the optimal structure! You can view and export it in the Artifact Panel on the right.`
-                : `I have completed structuring the note with ${generatedNote.method.toUpperCase()} method! You can view and export it in the Artifact Panel on the right.`)
-            : (isAuto
-                ? `AI đã phân tích nội dung và tự động chọn phương pháp ${generatedNote.method.toUpperCase()} phù hợp nhất! Bạn có thể xem và tải về ở Artifact Panel bên phải.`
-                : `Tôi đã hoàn thành cấu trúc ghi chú theo phương pháp ${generatedNote.method.toUpperCase()}! Bạn có thể xem và tải về ở Artifact Panel bên phải.`),
-          timestamp: nowTime,
-          noteResultId: generatedNote.id
-        }
-      ]);
+      const aiDoneMsg: ChatMessage = {
+        id: 'msg_ai_done_' + Date.now(),
+        sender: 'ai',
+        text: isEn 
+          ? (isAuto 
+              ? `AI analyzed your source and auto-selected ${generatedNote.method.toUpperCase()} method as the optimal structure! You can view and export it in the Artifact Panel on the right.`
+              : `I have completed structuring the note with ${generatedNote.method.toUpperCase()} method! You can view and export it in the Artifact Panel on the right.`)
+          : (isAuto
+              ? `AI đã phân tích nội dung và tự động chọn phương pháp ${generatedNote.method.toUpperCase()} phù hợp nhất! Bạn có thể xem và tải về ở Artifact Panel bên phải.`
+              : `Tôi đã hoàn thành cấu trúc ghi chú theo phương pháp ${generatedNote.method.toUpperCase()}! Bạn có thể xem và tải về ở Artifact Panel bên phải.`),
+        timestamp: nowTime,
+        noteResultId: generatedNote.id
+      };
+
+      const updatedHistory = [...chatMessages, newUserMsg, aiDoneMsg];
+      setChatMessages(updatedHistory);
+
+      // Create / Update ChatSessionItem
+      const currentSessionId = activeSessionId || generatedNote.id;
+      setActiveSessionId(currentSessionId);
+      
+      const newSessionItem: ChatSessionItem = {
+        id: currentSessionId,
+        title: generatedNote.title,
+        createdAt: generatedNote.updatedAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        model: selectedModel || 'Gemini 2.5 Flash',
+        method: generatedNote.method,
+        category: generatedNote.category,
+        keywords: generatedNote.keywords,
+        messages: updatedHistory,
+        note: generatedNote,
+        sources: attachedSources?.map(s => ({ type: s.type as any, name: s.name })),
+        isPinned: false
+      };
+
+      setChatSessions(prev => [newSessionItem, ...prev.filter(s => s.id !== currentSessionId)]);
 
       addToast(
         isEn ? 'Note Generated' : 'Tạo ghi chú thành công', 
@@ -1279,6 +1506,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       upgradeToPro,
       upgradeToUltra,
       downgradePlan,
+      chatSessions,
+      setChatSessions,
+      archivedChatSessions,
+      setArchivedChatSessions,
+      activeSessionId,
+      setActiveSessionId,
+      resumeChatSession,
+      renameChatSession,
+      pinChatSession,
+      archiveChatSession,
+      restoreChatSession,
+      deleteChatSessionPermanently,
       notes,
       archivedNotes,
       activeNote,
@@ -1313,10 +1552,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       deleteAIProvider,
       updateAIProvider,
       coupons,
-            setCoupons,
-            addCoupon,
-            updateCoupon,
-            deleteCoupon,
+      setCoupons,
+      addCoupon,
+      updateCoupon,
+      deleteCoupon,
       applyCouponCode,
       removeAppliedCoupon,
       paymentHistory,

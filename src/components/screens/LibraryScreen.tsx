@@ -19,20 +19,32 @@ import {
   Clock, 
   Tag,
   ExternalLink,
-  Plus
+  Plus,
+  Pin,
+  MessageSquare,
+  ArrowRight,
+  Eye,
+  Check,
+  Calendar,
+  Layers,
+  Bot
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { NoteItem } from '../../types';
+import { ChatSessionItem, NoteItem } from '../../types';
 import { NoteCardSkeleton } from '../common/SkeletonLoader';
 import { Modal } from '../common/Modal';
+import { ShareNoteModal } from '../modals/ShareNoteModal';
 
 export const LibraryScreen: React.FC = () => {
   const { 
+    chatSessions,
     notes, 
+    resumeChatSession,
     openNoteDetail, 
-    archiveNote, 
-    renameNote,
-    startNewChatNote, 
+    startNewChatNote,
+    renameChatSession,
+    pinChatSession,
+    archiveChatSession,
     libraryFilter, 
     setLibraryFilter, 
     librarySort, 
@@ -41,8 +53,6 @@ export const LibraryScreen: React.FC = () => {
     setLibrarySearchQuery, 
     libraryViewMode, 
     setLibraryViewMode, 
-    libraryActiveTab, 
-    setLibraryActiveTab,
     focusSearchInput,
     setFocusSearchInput,
     isLoadingScreen,
@@ -55,9 +65,13 @@ export const LibraryScreen: React.FC = () => {
   } = useApp();
 
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const [openMenuNoteId, setOpenMenuNoteId] = useState<string | null>(null);
-  const [renameModalNote, setRenameModalNote] = useState<NoteItem | null>(null);
+  const [activeHistoryTab, setActiveHistoryTab] = useState<'all' | 'pinned' | 'with-notes' | 'shared'>('all');
+  const [openMenuSessionId, setOpenMenuSessionId] = useState<string | null>(null);
+  const [renameModalSession, setRenameModalSession] = useState<ChatSessionItem | null>(null);
   const [renameTitleInput, setRenameTitleInput] = useState('');
+  const [deleteConfirmSession, setDeleteConfirmSession] = useState<ChatSessionItem | null>(null);
+  const [previewNote, setPreviewNote] = useState<NoteItem | null>(null);
+  const [sharingNote, setSharingNote] = useState<NoteItem | null>(null);
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
 
@@ -68,65 +82,117 @@ export const LibraryScreen: React.FC = () => {
     }
   }, [focusSearchInput, setFocusSearchInput]);
 
-  const handleOpenRename = (note: NoteItem) => {
-    setRenameModalNote(note);
-    setRenameTitleInput(note.title);
-    setOpenMenuNoteId(null);
+  const handleOpenRename = (session: ChatSessionItem) => {
+    setRenameModalSession(session);
+    setRenameTitleInput(session.title);
+    setOpenMenuSessionId(null);
   };
 
   const handleSaveRename = (e: React.FormEvent) => {
     e.preventDefault();
-    if (renameModalNote && renameTitleInput.trim()) {
-      renameNote(renameModalNote.id, renameTitleInput.trim());
-      setRenameModalNote(null);
+    if (renameModalSession && renameTitleInput.trim()) {
+      renameChatSession(renameModalSession.id, renameTitleInput.trim());
+      setRenameModalSession(null);
     }
   };
 
-  const handleShareNote = (note: NoteItem) => {
-    setOpenMenuNoteId(null);
-    navigator.clipboard?.writeText(`${window.location.origin}/notes/${note.id}`);
-    addToast(t('copied'), t('toastCopied'));
+  const handleConfirmDelete = async () => {
+    if (deleteConfirmSession) {
+      await archiveChatSession(deleteConfirmSession.id);
+      setDeleteConfirmSession(null);
+    }
   };
 
   const isDark = theme === 'dark';
 
-  // Filter and sort logic
-  let filteredNotes = notes.filter(n => {
-    if (libraryActiveTab === 'shared' && !n.isShared) return false;
+  // Base list: use chatSessions or fallback to notes mapped as sessions
+  const baseSessions: ChatSessionItem[] = chatSessions.length > 0 
+    ? chatSessions 
+    : notes.map(n => ({
+        id: n.id,
+        title: n.title,
+        createdAt: n.date || n.updatedAt || '',
+        updatedAt: n.updatedAt || n.date || '',
+        model: 'Gemini 2.5 Flash',
+        method: n.method || 'cornell',
+        category: n.category || 'Học thuật',
+        keywords: n.keywords || [],
+        messages: [
+          {
+            id: `msg_${n.id}`,
+            sender: 'user',
+            text: n.title,
+            timestamp: n.date || 'Vừa xong'
+          },
+          {
+            id: `msg_ai_${n.id}`,
+            sender: 'ai',
+            text: n.summary || 'Ghi chú đã được AI cấu trúc sẵn sàng.',
+            timestamp: n.date || 'Vừa xong',
+            noteResultId: n.id
+          }
+        ],
+        note: n,
+        sources: n.sources?.map(s => ({ type: s.type as any, name: s.name })),
+        isPinned: false,
+        isArchived: n.isArchived,
+        isShared: n.isShared
+      }));
+
+  // Counts for tabs
+  const totalCount = baseSessions.length;
+  const pinnedCount = baseSessions.filter(s => s.isPinned).length;
+  const withNotesCount = baseSessions.filter(s => !!s.note).length;
+  const sharedCount = baseSessions.filter(s => !!s.isShared).length;
+
+  // Filter logic
+  let filteredSessions = baseSessions.filter(s => {
+    if (activeHistoryTab === 'pinned' && !s.isPinned) return false;
+    if (activeHistoryTab === 'with-notes' && !s.note) return false;
+    if (activeHistoryTab === 'shared' && !s.isShared) return false;
+
     if (libraryFilter !== 'all') {
-      if (libraryFilter === 'khoa-hoc') return n.category === 'Khoa học' || n.category === 'Science';
-      if (libraryFilter === 'du-an') return n.category === 'Dự án Alpha' || n.category === 'Project Alpha';
-      if (libraryFilter === 'ca-nhan') return n.category === 'Cá nhân' || n.category === 'Personal';
-      if (libraryFilter === 'ngon-ngu') return n.category === 'Học ngôn ngữ' || n.category === 'Language Learning';
-      if (n.method === libraryFilter) return true;
-      if (n.category?.toLowerCase() === libraryFilter.toLowerCase()) return true;
+      if (libraryFilter === 'khoa-hoc') return s.category === 'Khoa học' || s.category === 'Science';
+      if (libraryFilter === 'du-an') return s.category === 'Dự án Alpha' || s.category === 'Project Alpha';
+      if (libraryFilter === 'ca-nhan') return s.category === 'Cá nhân' || s.category === 'Personal';
+      if (libraryFilter === 'ngon-ngu') return s.category === 'Học ngôn ngữ' || s.category === 'Language Learning';
+      if (s.method === libraryFilter) return true;
+      if (s.category?.toLowerCase() === libraryFilter.toLowerCase()) return true;
       return false;
     }
+
     if (librarySearchQuery.trim()) {
       const q = librarySearchQuery.toLowerCase().trim();
-      return (
-        n.title?.toLowerCase().includes(q) ||
-        n.summary?.toLowerCase().includes(q) ||
-        n.category?.toLowerCase().includes(q) ||
-        n.method?.toLowerCase().includes(q) ||
-        n.keywords?.some(kw => kw.toLowerCase().includes(q)) ||
-        n.sources?.some(s => s.name?.toLowerCase().includes(q)) ||
-        n.coreQuestions?.some(cq => cq.toLowerCase().includes(q))
-      );
+      const matchTitle = s.title?.toLowerCase().includes(q);
+      const matchCategory = s.category?.toLowerCase().includes(q);
+      const matchMethod = s.method?.toLowerCase().includes(q);
+      const matchModel = s.model?.toLowerCase().includes(q);
+      const matchKeywords = s.keywords?.some(kw => kw.toLowerCase().includes(q));
+      const matchSources = s.sources?.some(src => src.name?.toLowerCase().includes(q));
+      const matchMessages = s.messages?.some(m => m.text?.toLowerCase().includes(q));
+      const matchNote = s.note && (s.note.title?.toLowerCase().includes(q) || s.note.summary?.toLowerCase().includes(q));
+
+      return matchTitle || matchCategory || matchMethod || matchModel || matchKeywords || matchSources || matchMessages || matchNote;
     }
+
     return true;
   });
 
-  // Sort
-  filteredNotes = [...filteredNotes].sort((a, b) => {
+  // Sort logic
+  filteredSessions = [...filteredSessions].sort((a, b) => {
+    if (a.isPinned && !b.isPinned) return -1;
+    if (!a.isPinned && b.isPinned) return 1;
+
     if (librarySort === 'az') return a.title.localeCompare(b.title);
     if (librarySort === 'za') return b.title.localeCompare(a.title);
+    if (librarySort === 'messages') {
+      return (b.messages?.length || 0) - (a.messages?.length || 0);
+    }
     if (librarySort === 'oldest') {
       const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
       const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
       return timeA - timeB;
     }
-    // Default 'recent'
     const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
     const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
     return timeB - timeA;
@@ -134,50 +200,81 @@ export const LibraryScreen: React.FC = () => {
 
   const getSourceIcon = (type: string) => {
     switch (type) {
-      case 'youtube': return <Youtube className="w-3.5 h-3.5 text-[var(--status-error)]" />;
-      case 'audio': return <Headphones className="w-3.5 h-3.5 text-[var(--status-success)]" />;
-      case 'image': return <ImageIcon className="w-3.5 h-3.5 text-[var(--status-info)]" />;
-      default: return <FileText className="w-3.5 h-3.5 text-[var(--status-info)]" />;
+      case 'youtube': return <Youtube className="w-3.5 h-3.5 text-red-500" />;
+      case 'audio': return <Headphones className="w-3.5 h-3.5 text-emerald-500" />;
+      case 'image': return <ImageIcon className="w-3.5 h-3.5 text-blue-500" />;
+      default: return <FileText className="w-3.5 h-3.5 text-amber-500" />;
     }
   };
 
+  const isUltra = user.plan === 'ultra' || user.role === 'admin';
+  const noteLimit = isUltra ? Infinity : (user.plan === 'pro' ? 50 : 20);
+
   return (
-    <div className={`flex-1 flex flex-col h-full overflow-hidden transition-colors ${
-      isDark ? 'bg-[var(--bg-app)] text-[var(--text-primary)]' : 'bg-[var(--bg-app)] text-[var(--text-primary)]'
-    }`}>
+    <div className="flex-1 flex flex-col h-full overflow-hidden transition-colors bg-[var(--bg-app)] text-[var(--text-primary)]">
       {/* Top Controls Bar */}
-      <div className={`p-4 sm:p-6 pb-4 border-b space-y-4 transition-colors ${
-        isDark ? 'border-[var(--border-color)] bg-[var(--bg-card)]/80' : 'border-[var(--border-color)] bg-white'
-      }`}>
+      <div className="p-4 sm:p-6 pb-4 border-b space-y-4 border-[var(--border-color)] bg-[var(--bg-card)]/90 backdrop-blur-md">
         {/* Title & Tabs row */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
           <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-            <h2 className={`text-lg sm:text-xl font-bold tracking-tight ${'text-[var(--text-primary)]'}`}>
-              {t('libraryTitle')}
-            </h2>
+            <div>
+              <div className="flex items-center gap-2">
+                <Clock className="w-5 h-5 text-[var(--accent-primary)]" />
+                <h1 className="text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
+                  {t('historyTitle') || 'Lịch sử Hội thoại & Ghi chú'}
+                </h1>
+              </div>
+              <p className="text-[11px] text-[var(--text-secondary)] mt-0.5 hidden sm:block">
+                {t('historySubtitle') || 'Lưu trữ các phiên chat nghiên cứu với AI kèm file Note cấu trúc cao'}
+              </p>
+            </div>
             
             {/* Tabs */}
-            <div className={`flex p-0.5 rounded-xl border ${
-              isDark ? 'bg-[var(--bg-app)] border-[var(--border-color)]' : 'bg-[var(--bg-hover)] border-[var(--border-color)]'
-            }`}>
+            <div className="flex p-0.5 rounded-xl border bg-[var(--bg-app)] border-[var(--border-color)]">
               <button
-                id="library-tab-my-notes"
-                onClick={() => setLibraryActiveTab('my-notes')}
-                className={`px-3 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer active:scale-95 ${
-                  libraryActiveTab === 'my-notes'
-                    ? isDark ? 'bg-[var(--bg-hover)] text-[var(--text-primary)] shadow-xs' : 'bg-white text-[var(--text-primary)] shadow-xs'
-                    : isDark ? 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                id="tab-all-history"
+                onClick={() => setActiveHistoryTab('all')}
+                className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                  activeHistoryTab === 'all'
+                    ? 'bg-[var(--bg-card)] text-[var(--text-primary)] shadow-xs font-bold'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 }`}
               >
-                {t('tabMyNotes')} ({notes.length})
+                {language === 'vi' ? 'Tất cả' : 'All'} ({totalCount})
               </button>
               <button
-                id="library-tab-shared"
-                onClick={() => setLibraryActiveTab('shared')}
-                className={`px-3 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer active:scale-95 ${
-                  libraryActiveTab === 'shared'
-                    ? isDark ? 'bg-[var(--bg-hover)] text-[var(--text-primary)] shadow-xs' : 'bg-white text-[var(--text-primary)] shadow-xs'
-                    : isDark ? 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                id="tab-pinned-history"
+                onClick={() => setActiveHistoryTab('pinned')}
+                className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                  activeHistoryTab === 'pinned'
+                    ? 'bg-[var(--bg-card)] text-amber-500 shadow-xs font-bold'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                }`}
+              >
+                <Pin className="w-3 h-3" />
+                <span>{language === 'vi' ? 'Đã ghim' : 'Pinned'}</span>
+                {pinnedCount > 0 && <span className="font-mono text-[10px] opacity-80">({pinnedCount})</span>}
+              </button>
+              <button
+                id="tab-with-notes-history"
+                onClick={() => setActiveHistoryTab('with-notes')}
+                className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                  activeHistoryTab === 'with-notes'
+                    ? 'bg-[var(--bg-card)] text-[var(--accent-primary)] shadow-xs font-bold'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                }`}
+              >
+                <FileText className="w-3 h-3" />
+                <span>{language === 'vi' ? 'Có Note AI' : 'With Notes'}</span>
+                {withNotesCount > 0 && <span className="font-mono text-[10px] opacity-80">({withNotesCount})</span>}
+              </button>
+              <button
+                id="tab-shared-history"
+                onClick={() => setActiveHistoryTab('shared')}
+                className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                  activeHistoryTab === 'shared'
+                    ? 'bg-[var(--bg-card)] text-[var(--text-primary)] shadow-xs font-bold'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 }`}
               >
                 {t('tabShared')}
@@ -186,18 +283,18 @@ export const LibraryScreen: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Note quota badge */}
+            {/* Storage Quota */}
             <div className="flex items-center gap-2">
               <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-xl border ${
-                notes.length >= (user.plan === 'ultra' || user.role === 'admin' ? Infinity : user.plan === 'pro' ? 50 : 20)
+                baseSessions.length >= noteLimit
                   ? 'bg-red-500/15 border-red-500/30 text-red-600 dark:text-red-400'
                   : 'bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-secondary)]'
               }`}>
                 {language === 'vi' 
-                  ? `Lưu trữ: ${notes.length}/${user.plan === 'ultra' || user.role === 'admin' ? '∞' : user.plan === 'pro' ? '50' : '20'} Notes` 
-                  : `Storage: ${notes.length}/${user.plan === 'ultra' || user.role === 'admin' ? '∞' : user.plan === 'pro' ? '50' : '20'} Notes`}
+                  ? `Lưu trữ: ${baseSessions.length}/${isUltra ? '∞' : noteLimit} Phiên` 
+                  : `Storage: ${baseSessions.length}/${isUltra ? '∞' : noteLimit} Sessions`}
               </span>
-              {user.plan !== 'ultra' && user.role !== 'admin' && notes.length >= (user.plan === 'pro' ? 40 : 15) && (
+              {!isUltra && baseSessions.length >= (user.plan === 'pro' ? 40 : 15) && (
                 <button
                   onClick={() => setCurrentScreen('pricing')}
                   className="text-[11px] font-bold text-[var(--accent-primary)] hover:underline cursor-pointer"
@@ -207,14 +304,17 @@ export const LibraryScreen: React.FC = () => {
               )}
             </div>
 
-            <button
+            {/* New Chat & Note Button */}
+            <motion.button
               id="btn-library-new-note"
+              whileHover={{ scale: 1.04, y: -1 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => startNewChatNote()}
-              className="flex items-center gap-2 px-3.5 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-[var(--accent-text)] rounded-xl text-xs font-semibold shadow-md shadow-[var(--accent-primary)]/25 active:scale-95 transition-all cursor-pointer"
+              className="flex items-center gap-2 px-3.5 py-2 bg-[var(--accent-primary)] hover:opacity-90 text-[var(--accent-text)] rounded-xl text-xs font-bold shadow-md shadow-[var(--accent-primary)]/20 transition-all cursor-pointer"
             >
-              <Plus className="w-4 h-4" />
-              <span>{t('newNote')}</span>
-            </button>
+              <Plus className="w-4 h-4 stroke-[2.5]" />
+              <span>{t('newChatNote') || '+ Cuộc trò chuyện & Note mới'}</span>
+            </motion.button>
           </div>
         </div>
 
@@ -222,21 +322,15 @@ export const LibraryScreen: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           {/* Search bar */}
           <div className="relative w-full sm:flex-1 sm:max-w-md">
-            <Search className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 ${
-              isDark ? 'text-[var(--text-muted)]' : 'text-[var(--text-muted)]'
-            }`} />
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
             <input
               ref={searchInputRef}
               id="library-search-input"
               type="text"
               value={librarySearchQuery}
               onChange={(e) => setLibrarySearchQuery(e.target.value)}
-              placeholder={t('searchNotesPlaceholder')}
-              className={`w-full rounded-xl pl-10 pr-8 py-2.5 sm:py-2 text-sm sm:text-xs transition-colors border ${
-                isDark 
-                  ? 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--accent-primary)]' 
-                  : 'bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:border-[var(--accent-primary)] shadow-2xs'
-              }`}
+              placeholder={language === 'vi' ? 'Tìm theo chủ đề, nội dung chat, tệp đính kèm, tag...' : 'Search by topic, messages, sources, tags...'}
+              className="w-full rounded-xl pl-10 pr-8 py-2 text-xs transition-colors border bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)]"
             />
             {librarySearchQuery && (
               <button
@@ -255,11 +349,7 @@ export const LibraryScreen: React.FC = () => {
               <button
                 id="library-filter-btn"
                 onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-medium transition-colors cursor-pointer whitespace-nowrap active:scale-95 ${
-                  isDark 
-                    ? 'bg-[var(--bg-card)] border-[var(--border-color)] hover:border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]' 
-                    : 'bg-white border-[var(--border-color)] hover:border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-2xs'
-                }`}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap bg-[var(--bg-app)] border-[var(--border-color)] hover:border-[var(--accent-primary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               >
                 <Filter className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
                 <span>{t('filter')}: {libraryFilter === 'all' ? t('all') : libraryFilter}</span>
@@ -272,16 +362,19 @@ export const LibraryScreen: React.FC = () => {
                       initial={{ opacity: 0, scale: 0.96, y: 4 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.96, y: 4 }}
-                      className={`absolute right-0 mt-1.5 w-48 rounded-xl shadow-2xl p-1.5 z-30 space-y-1 text-xs border ${
-                        isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)]' : 'bg-white border-[var(--border-color)]'
-                      }`}
+                      className="absolute right-0 mt-1.5 w-48 rounded-xl shadow-2xl p-1.5 z-30 space-y-1 text-xs border bg-[var(--bg-card)] border-[var(--border-color)]"
                     >
                       {[
                         { id: 'all', label: t('catAll') },
                         { id: 'khoa-hoc', label: t('catScience') },
                         { id: 'du-an', label: t('catProject') },
                         { id: 'ca-nhan', label: t('catPersonal') },
-                        { id: 'ngon-ngu', label: t('catLanguage') }
+                        { id: 'ngon-ngu', label: t('catLanguage') },
+                        { id: 'cornell', label: 'Cornell Method' },
+                        { id: 'outline', label: 'Outline Framework' },
+                        { id: 'feynman', label: 'Feynman Technique' },
+                        { id: 'flashcard', label: 'Flashcards' },
+                        { id: 'qa', label: 'Q&A Knowledge' }
                       ].map(f => (
                         <button
                           key={f.id}
@@ -290,10 +383,10 @@ export const LibraryScreen: React.FC = () => {
                             setLibraryFilter(f.id);
                             setIsFilterDropdownOpen(false);
                           }}
-                          className={`w-full text-left px-2.5 py-2 sm:py-1.5 rounded-lg transition-colors cursor-pointer ${
+                          className={`w-full text-left px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
                             libraryFilter === f.id 
-                              ? isDark ? 'bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] font-semibold' : 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-semibold'
-                              : isDark ? 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-app)]'
+                              ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-bold'
+                              : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
                           }`}
                         >
                           {f.label}
@@ -310,14 +403,18 @@ export const LibraryScreen: React.FC = () => {
               <button
                 id="library-sort-btn"
                 onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-medium transition-colors cursor-pointer whitespace-nowrap active:scale-95 ${
-                  isDark 
-                    ? 'bg-[var(--bg-card)] border-[var(--border-color)] hover:border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]' 
-                    : 'bg-white border-[var(--border-color)] hover:border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-2xs'
-                }`}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap bg-[var(--bg-app)] border-[var(--border-color)] hover:border-[var(--accent-primary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               >
                 <ArrowUpDown className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
-                <span>{librarySort === 'recent' ? t('recent') : librarySort === 'az' ? t('nameAsc') : t('createdDate')}</span>
+                <span>
+                  {librarySort === 'recent' 
+                    ? t('recent') 
+                    : librarySort === 'az' 
+                      ? t('nameAsc') 
+                      : librarySort === 'messages' 
+                        ? (language === 'vi' ? 'Nhiều tin nhắn' : 'Most Messages') 
+                        : (language === 'vi' ? 'Cũ nhất' : 'Oldest')}
+                </span>
               </button>
               <AnimatePresence>
                 {isSortDropdownOpen && (
@@ -327,12 +424,11 @@ export const LibraryScreen: React.FC = () => {
                       initial={{ opacity: 0, scale: 0.96, y: 4 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.96, y: 4 }}
-                      className={`absolute right-0 mt-1.5 w-40 rounded-xl shadow-2xl p-1.5 z-30 space-y-1 text-xs border ${
-                        isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)]' : 'bg-white border-[var(--border-color)]'
-                      }`}
+                      className="absolute right-0 mt-1.5 w-44 rounded-xl shadow-2xl p-1.5 z-30 space-y-1 text-xs border bg-[var(--bg-card)] border-[var(--border-color)]"
                     >
                       {[
                         { id: 'recent', label: t('recent') },
+                        { id: 'messages', label: language === 'vi' ? 'Nhiều tin nhắn nhất' : 'Most messages' },
                         { id: 'az', label: language === 'vi' ? 'Tên A → Z' : 'Name A → Z' },
                         { id: 'za', label: language === 'vi' ? 'Tên Z → A' : 'Name Z → A' },
                         { id: 'oldest', label: language === 'vi' ? 'Cũ nhất trước' : 'Oldest first' }
@@ -344,10 +440,10 @@ export const LibraryScreen: React.FC = () => {
                             setLibrarySort(s.id);
                             setIsSortDropdownOpen(false);
                           }}
-                          className={`w-full text-left px-2.5 py-2 sm:py-1.5 rounded-lg transition-colors cursor-pointer ${
+                          className={`w-full text-left px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
                             librarySort === s.id 
-                              ? isDark ? 'bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] font-semibold' : 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-semibold'
-                              : isDark ? 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-app)]'
+                              ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-bold'
+                              : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
                           }`}
                         >
                           {s.label}
@@ -360,16 +456,14 @@ export const LibraryScreen: React.FC = () => {
             </div>
 
             {/* View Mode Toggle */}
-            <div className={`flex p-1 rounded-xl border shrink-0 ${
-              isDark ? 'bg-[var(--bg-app)] border-[var(--border-color)]' : 'bg-[var(--bg-hover)] border-[var(--border-color)]'
-            }`}>
+            <div className="flex p-1 rounded-xl border shrink-0 bg-[var(--bg-app)] border-[var(--border-color)]">
               <button
                 id="btn-view-grid"
                 onClick={() => setLibraryViewMode('grid')}
-                className={`p-1.5 rounded-lg transition-colors cursor-pointer active:scale-95 ${
+                className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                   libraryViewMode === 'grid' 
-                    ? isDark ? 'bg-[var(--bg-hover)] text-[var(--text-primary)]' : 'bg-white text-[var(--text-primary)] shadow-2xs' 
-                    : isDark ? 'text-[var(--text-muted)] hover:text-[var(--text-primary)]' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                    ? 'bg-[var(--bg-card)] text-[var(--accent-primary)] shadow-2xs font-bold' 
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                 }`}
                 title={t('grid')}
               >
@@ -378,10 +472,10 @@ export const LibraryScreen: React.FC = () => {
               <button
                 id="btn-view-list"
                 onClick={() => setLibraryViewMode('list')}
-                className={`p-1.5 rounded-lg transition-colors cursor-pointer active:scale-95 ${
+                className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                   libraryViewMode === 'list' 
-                    ? isDark ? 'bg-[var(--bg-hover)] text-[var(--text-primary)]' : 'bg-white text-[var(--text-primary)] shadow-2xs' 
-                    : isDark ? 'text-[var(--text-muted)] hover:text-[var(--text-primary)]' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                    ? 'bg-[var(--bg-card)] text-[var(--accent-primary)] shadow-2xs font-bold' 
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                 }`}
                 title={t('list')}
               >
@@ -400,262 +494,500 @@ export const LibraryScreen: React.FC = () => {
               <NoteCardSkeleton key={i} />
             ))}
           </div>
-        ) : filteredNotes.length === 0 ? (
-          <div className={`h-64 flex flex-col items-center justify-center text-center p-6 border border-dashed rounded-2xl ${
-            isDark ? 'border-[var(--border-color)] bg-[var(--bg-card)]' : 'border-[var(--border-color)] bg-white'
-          }`}>
-            <FileText className="w-10 h-10 text-[var(--text-muted)] mb-3" />
-            <h3 className={`text-sm font-semibold ${'text-[var(--text-primary)]'}`}>
-              {language === 'vi' ? 'Không tìm thấy ghi chú nào' : 'No notes found'}
+        ) : filteredSessions.length === 0 ? (
+          <div className="h-64 flex flex-col items-center justify-center text-center p-6 border border-dashed rounded-3xl border-[var(--border-color)] bg-[var(--bg-card)]">
+            <Clock className="w-10 h-10 text-[var(--text-muted)] mb-3 opacity-60" />
+            <h3 className="text-sm font-bold text-[var(--text-primary)]">
+              {language === 'vi' ? 'Không tìm thấy phiên hội thoại nào' : 'No chat history found'}
             </h3>
-            <p className={`text-xs mt-1 max-w-sm ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
-              {language === 'vi' ? 'Thử tìm kiếm với từ khóa khác hoặc tạo một ghi chú mới bằng AI.' : 'Try adjusting your search terms or create a new note with AI.'}
+            <p className="text-xs mt-1 max-w-sm text-[var(--text-secondary)]">
+              {language === 'vi' 
+                ? 'Thử điều chỉnh từ khóa tìm kiếm hoặc tạo một cuộc trò chuyện mới để AI tổng hợp ghi chú.' 
+                : 'Try adjusting your search terms or start a new AI chat note.'}
             </p>
-            <button
-              onClick={() => {
-                setLibrarySearchQuery('');
-                setLibraryFilter('all');
-              }}
-              className="mt-4 px-4 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-[var(--accent-text)] text-xs font-semibold rounded-xl transition-colors cursor-pointer active:scale-95"
-            >
-              {language === 'vi' ? 'Đặt lại bộ lọc' : 'Reset filters'}
-            </button>
+            <div className="flex items-center gap-3 mt-4">
+              <button
+                onClick={() => {
+                  setLibrarySearchQuery('');
+                  setLibraryFilter('all');
+                  setActiveHistoryTab('all');
+                }}
+                className="px-4 py-2 bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+              >
+                {language === 'vi' ? 'Đặt lại bộ lọc' : 'Reset filters'}
+              </button>
+              <button
+                onClick={() => startNewChatNote()}
+                className="px-4 py-2 bg-[var(--accent-primary)] text-[var(--accent-text)] text-xs font-bold rounded-xl shadow-md cursor-pointer hover:opacity-90 active:scale-95"
+              >
+                {t('newChatNote') || '+ Bắt đầu ngay'}
+              </button>
+            </div>
           </div>
         ) : libraryViewMode === 'grid' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-            {filteredNotes.map((note) => (
-              <motion.div
-                key={note.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2 }}
-                onClick={() => openNoteDetail(note)}
-                className={`group relative p-5 rounded-2xl border transition-all flex flex-col justify-between cursor-pointer min-h-[220px] active:scale-[0.98] ${
-                  isDark 
-                    ? 'bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] border-[var(--border-color)] hover:border-[var(--accent-primary)]/40 hover:shadow-xl hover:shadow-[var(--accent-primary)]/5 hover:-translate-y-0.5' 
-                    : 'bg-white hover:bg-[var(--bg-app)] border-[var(--border-color)] hover:border-[var(--accent-primary)] hover:shadow-lg hover:shadow-[var(--accent-primary)]/5 hover:-translate-y-0.5'
-                }`}
-              >
-                <div>
-                  {/* Card Header badges & 3-dots */}
-                  <div className="flex items-center justify-between mb-2.5">
-                    <div className="flex items-center gap-1.5">
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-lg border ${
-                        isDark ? 'bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border-color)]' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)] border-[var(--border-color)]'
-                      }`}>
-                        {note.category}
-                      </span>
-                      <span className="text-xs font-bold px-2 py-0.5 rounded-lg bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] uppercase">
-                        {note.method}
-                      </span>
-                    </div>
+            {filteredSessions.map((session) => {
+              const lastMsg = session.messages && session.messages.length > 0 
+                ? session.messages[session.messages.length - 1] 
+                : null;
+              
+              const isPinned = !!session.isPinned;
 
-                    {/* 3-dots menu button */}
-                    <div className="relative" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        id={`note-menu-btn-${note.id}`}
-                        onClick={() => setOpenMenuNoteId(openMenuNoteId === note.id ? null : note.id)}
-                        className={`p-1 rounded-lg transition-colors cursor-pointer ${
-                          isDark ? 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
-                        }`}
-                      >
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
-
-                      <AnimatePresence>
-                        {openMenuNoteId === note.id && (
-                          <>
-                            <div className="fixed inset-0 z-30" onClick={() => setOpenMenuNoteId(null)} />
-                            <motion.div 
-                              initial={{ opacity: 0, scale: 0.95 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              exit={{ opacity: 0, scale: 0.95 }}
-                              className={`absolute right-0 mt-1 w-44 rounded-xl shadow-2xl p-1.5 z-40 space-y-0.5 text-xs border ${
-                                isDark ? 'bg-[var(--bg-hover)] border-[var(--border-color)]' : 'bg-white border-[var(--border-color)]'
-                              }`}
-                            >
-                              <button
-                                onClick={() => {
-                                  setOpenMenuNoteId(null);
-                                  openNoteDetail(note);
-                                }}
-                                className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                                  isDark ? 'text-[var(--text-primary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-app)]'
-                                }`}
-                              >
-                                <ExternalLink className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
-                                <span>{language === 'vi' ? 'Mở chi tiết' : 'Open details'}</span>
-                              </button>
-                              <button
-                                onClick={() => handleOpenRename(note)}
-                                className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                                  isDark ? 'text-[var(--text-primary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-app)]'
-                                }`}
-                              >
-                                <Edit3 className="w-3.5 h-3.5 text-[var(--status-success)]" />
-                                <span>{t('rename')}</span>
-                              </button>
-                              <button
-                                onClick={() => handleShareNote(note)}
-                                className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                                  isDark ? 'text-[var(--text-primary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-app)]'
-                                }`}
-                              >
-                                <Share2 className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
-                                <span>{t('share')}</span>
-                              </button>
-                              <div className={`border-t my-1 ${isDark ? 'border-[var(--border-color)]' : 'border-[var(--border-subtle)]'}`} />
-                              <button
-                                onClick={() => {
-                                  setOpenMenuNoteId(null);
-                                  archiveNote(note.id);
-                                }}
-                                className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[var(--status-error)] hover:bg-[var(--status-error)]/10 cursor-pointer"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                <span>{t('delete')}</span>
-                              </button>
-                            </motion.div>
-                          </>
+              return (
+                <motion.div
+                  key={session.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className={`group relative p-5 rounded-3xl border transition-all flex flex-col justify-between min-h-[260px] bg-[var(--bg-card)] border-[var(--border-color)] hover:border-[var(--accent-primary)]/50 hover:shadow-xl hover:shadow-[var(--accent-primary)]/5 hover:-translate-y-1 ${
+                    isPinned ? 'ring-1 ring-amber-500/40 border-amber-500/30' : ''
+                  }`}
+                >
+                  <div>
+                    {/* Card Header: Badges & Actions */}
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {/* Pinned badge */}
+                        {isPinned && (
+                          <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-500 border border-amber-500/30">
+                            <Pin className="w-3 h-3 fill-amber-500" />
+                            <span>Ghim</span>
+                          </span>
                         )}
-                      </AnimatePresence>
+
+                        {/* Category */}
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg border bg-[var(--bg-app)] text-[var(--text-secondary)] border-[var(--border-color)]">
+                          {session.category}
+                        </span>
+
+                        {/* Method badge */}
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-[var(--accent-subtle)] text-[var(--accent-primary)] uppercase">
+                          {session.method}
+                        </span>
+                      </div>
+
+                      {/* 3-Dots Dropdown menu */}
+                      <div className="relative">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenMenuSessionId(openMenuSessionId === session.id ? null : session.id);
+                          }}
+                          className="p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] cursor-pointer"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+
+                        <AnimatePresence>
+                          {openMenuSessionId === session.id && (
+                            <>
+                              <div className="fixed inset-0 z-20" onClick={() => setOpenMenuSessionId(null)} />
+                              <motion.div
+                                initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                                className="absolute right-0 mt-1 w-44 rounded-xl shadow-2xl p-1.5 z-30 space-y-1 text-xs border bg-[var(--bg-card)] border-[var(--border-color)]"
+                              >
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenRename(session);
+                                  }}
+                                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--bg-hover)] text-[var(--text-primary)] text-left cursor-pointer"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5 text-blue-500" />
+                                  <span>{language === 'vi' ? 'Đổi tên' : 'Rename'}</span>
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    pinChatSession(session.id);
+                                    setOpenMenuSessionId(null);
+                                  }}
+                                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--bg-hover)] text-[var(--text-primary)] text-left cursor-pointer"
+                                >
+                                  <Pin className="w-3.5 h-3.5 text-amber-500" />
+                                  <span>{isPinned ? (language === 'vi' ? 'Bỏ ghim' : 'Unpin') : (language === 'vi' ? 'Ghim lên đầu' : 'Pin to Top')}</span>
+                                </button>
+                                {session.note && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSharingNote(session.note!);
+                                      setOpenMenuSessionId(null);
+                                    }}
+                                    className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--bg-hover)] text-[var(--text-primary)] text-left cursor-pointer"
+                                  >
+                                    <Share2 className="w-3.5 h-3.5 text-emerald-500" />
+                                    <span>{language === 'vi' ? 'Chia sẻ Note' : 'Share Note'}</span>
+                                  </button>
+                                )}
+                                <div className="border-t my-1 border-[var(--border-color)]" />
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setDeleteConfirmSession(session);
+                                    setOpenMenuSessionId(null);
+                                  }}
+                                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-red-500/10 text-red-500 text-left cursor-pointer"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <span>{language === 'vi' ? 'Xóa vào Thùng rác' : 'Move to Trash'}</span>
+                                </button>
+                              </motion.div>
+                            </>
+                          )}
+                        </AnimatePresence>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Title & Preview */}
-                  <h3 className={`text-sm font-bold transition-colors line-clamp-1 mb-1.5 ${
-                    'text-[var(--text-primary)] group-hover:text-[var(--accent-primary)]'
-                  }`}>
-                    {note.title}
-                  </h3>
-                  <p className={`text-xs line-clamp-3 leading-relaxed ${
-                    isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'
-                  }`}>
-                    {note.summary}
-                  </p>
-                </div>
+                    {/* Session Title (Click to resume chat) */}
+                    <h3 
+                      onClick={() => resumeChatSession(session.id)}
+                      className="text-sm sm:text-base font-extrabold tracking-tight line-clamp-2 text-[var(--text-primary)] hover:text-[var(--accent-primary)] transition-colors cursor-pointer mb-2"
+                    >
+                      {session.title}
+                    </h3>
 
-                {/* Card Footer: Sources & Timestamp */}
-                <div className={`flex items-center justify-between pt-3 border-t text-xs ${
-                  isDark ? 'border-[var(--border-color)] text-[var(--text-muted)]' : 'border-[var(--border-subtle)] text-[var(--text-muted)]'
-                }`}>
-                  <div className="flex items-center gap-1.5">
-                    {note.sources.slice(0, 3).map((s, idx) => (
-                      <span key={idx} title={s.name}>
-                        {getSourceIcon(s.type)}
-                      </span>
-                    ))}
-                    {note.sources.length > 3 && (
-                      <span className="text-xs font-mono">+{note.sources.length - 3}</span>
+                    {/* Message Preview Snippet */}
+                    <p className="text-xs text-[var(--text-secondary)] line-clamp-2 leading-relaxed mb-3">
+                      {lastMsg?.text || (session.note?.summary) || (language === 'vi' ? 'Phiên làm việc nghiên cứu cùng AI...' : 'AI research session...')}
+                    </p>
+
+                    {/* Sources attached */}
+                    {session.sources && session.sources.length > 0 && (
+                      <div className="flex items-center gap-1.5 flex-wrap mb-3">
+                        {session.sources.slice(0, 3).map((src, sIdx) => (
+                          <div 
+                            key={sIdx} 
+                            className="flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] font-medium bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-secondary)] max-w-[140px] truncate"
+                            title={src.name}
+                          >
+                            {getSourceIcon(src.type)}
+                            <span className="truncate">{src.name}</span>
+                          </div>
+                        ))}
+                        {session.sources.length > 3 && (
+                          <span className="text-[10px] text-[var(--text-muted)] font-mono">
+                            +{session.sources.length - 3}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Note Artifact Link Banner */}
+                    {session.note && (
+                      <div 
+                        onClick={() => openNoteDetail(session.note!)}
+                        className="flex items-center justify-between p-2 rounded-xl border transition-all cursor-pointer bg-[var(--accent-subtle)]/40 border-[var(--accent-primary)]/30 hover:border-[var(--accent-primary)] group/note mb-3"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <FileText className="w-3.5 h-3.5 text-[var(--accent-primary)] shrink-0" />
+                          <div className="min-w-0">
+                            <span className="text-[11px] font-bold text-[var(--text-primary)] truncate block group-hover/note:text-[var(--accent-primary)]">
+                              {session.note.title}
+                            </span>
+                            <span className="text-[9px] text-[var(--text-muted)]">
+                              98% AI Precision • {session.note.content?.sections?.length || 3} mục nội dung
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPreviewNote(session.note!);
+                          }}
+                          className="p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--accent-primary)] hover:bg-[var(--bg-card)] cursor-pointer"
+                          title="Xem nhanh Note"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     )}
                   </div>
-                  <span className="text-xs">{note.updatedAt}</span>
-                </div>
-              </motion.div>
-            ))}
+
+                  {/* Card Footer: Metadata & Direct Action Buttons */}
+                  <div className="pt-3 border-t flex items-center justify-between border-[var(--border-color)]">
+                    <div className="flex items-center gap-2 text-[11px] text-[var(--text-muted)] font-medium">
+                      <span className="flex items-center gap-1 font-mono">
+                        <MessageSquare className="w-3 h-3 text-[var(--accent-primary)]" />
+                        {session.messages?.length || 1}
+                      </span>
+                      <span>•</span>
+                      <span>{session.createdAt ? new Date(session.createdAt).toLocaleDateString('vi-VN') : 'Vừa xong'}</span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      {session.note && (
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => openNoteDetail(session.note!)}
+                          className="px-2.5 py-1.5 rounded-xl border text-[11px] font-bold transition-all bg-[var(--bg-app)] border-[var(--border-color)] hover:border-[var(--accent-primary)] text-[var(--text-primary)] cursor-pointer"
+                        >
+                          {language === 'vi' ? 'Xem Note' : 'View Note'}
+                        </motion.button>
+                      )}
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => resumeChatSession(session.id)}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-bold shadow-xs bg-[var(--accent-primary)] hover:opacity-90 text-[var(--accent-text)] cursor-pointer"
+                      >
+                        <span>{language === 'vi' ? 'Tiếp tục' : 'Resume'}</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </motion.button>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         ) : (
-          /* List View */
-          <div className="space-y-2">
-            {filteredNotes.map((note) => (
-              <div
-                key={note.id}
-                onClick={() => openNoteDetail(note)}
-                className={`flex items-center justify-between p-4 rounded-xl border transition-all cursor-pointer group active:scale-[0.99] ${
-                  isDark 
-                    ? 'bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] border-[var(--border-color)] hover:border-[var(--accent-primary)]/40' 
-                    : 'bg-white hover:bg-[var(--bg-app)] border-[var(--border-color)] hover:border-[var(--accent-primary)] shadow-2xs'
-                }`}
-              >
-                <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
-                  <div className="w-8 h-8 rounded-xl bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] flex items-center justify-center shrink-0">
-                    <FileText className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className={`text-xs sm:text-sm font-semibold truncate transition-colors ${
-                        'text-[var(--text-primary)] group-hover:text-[var(--accent-primary)]'
-                      }`}>
-                        {note.title}
-                      </h3>
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-lg shrink-0 ${
-                        isDark ? 'bg-[var(--bg-hover)] text-[var(--text-secondary)]' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)]'
-                      }`}>
-                        {note.category}
-                      </span>
-                    </div>
-                    <p className={`text-xs truncate mt-0.5 ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
-                      {note.summary}
-                    </p>
-                  </div>
-                </div>
+          /* LIST VIEW */
+          <div className="rounded-3xl border overflow-hidden shadow-xs border-[var(--border-color)] bg-[var(--bg-card)]">
+            <div className="overflow-x-auto custom-scrollbar">
+              <table className="w-full text-left text-xs min-w-[760px]">
+                <thead className="border-b font-bold uppercase text-xs tracking-wider bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-secondary)]">
+                  <tr>
+                    <th className="px-5 py-3.5">{language === 'vi' ? 'Chủ Đề Phiên Hội Thoại' : 'Session Topic'}</th>
+                    <th className="px-4 py-3.5">{language === 'vi' ? 'Mô Hình & Phương Pháp' : 'AI Model & Method'}</th>
+                    <th className="px-4 py-3.5">{language === 'vi' ? 'File Note Kèm Theo' : 'Attached Note'}</th>
+                    <th className="px-4 py-3.5">{language === 'vi' ? 'Tin Nhắn' : 'Messages'}</th>
+                    <th className="px-4 py-3.5">{language === 'vi' ? 'Thời Gian' : 'Date'}</th>
+                    <th className="px-4 py-3.5 text-right">{language === 'vi' ? 'Thao Tác' : 'Actions'}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--border-color)] text-[var(--text-secondary)]">
+                  {filteredSessions.map((session) => {
+                    const isPinned = !!session.isPinned;
+                    return (
+                      <tr 
+                        key={session.id} 
+                        className={`hover:bg-[var(--bg-hover)] transition-colors ${
+                          isPinned ? 'bg-amber-500/5' : ''
+                        }`}
+                      >
+                        {/* Title */}
+                        <td className="px-5 py-3.5 max-w-xs">
+                          <div className="flex items-center gap-2">
+                            {isPinned && <Pin className="w-3.5 h-3.5 text-amber-500 shrink-0 fill-amber-500" />}
+                            <span 
+                              onClick={() => resumeChatSession(session.id)}
+                              className="font-bold text-sm text-[var(--text-primary)] hover:text-[var(--accent-primary)] transition-colors cursor-pointer truncate"
+                              title={session.title}
+                            >
+                              {session.title}
+                            </span>
+                          </div>
+                        </td>
 
-                <div className="flex items-center gap-4 sm:gap-6 text-xs text-[var(--text-muted)] shrink-0 ml-3 sm:ml-4">
-                  <div className="hidden sm:flex items-center gap-1.5">
-                    {note.sources.map((s, idx) => (
-                      <span key={idx}>{getSourceIcon(s.type)}</span>
-                    ))}
-                  </div>
-                  <span className="text-xs hidden md:inline">{note.updatedAt}</span>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      archiveNote(note.id);
-                    }}
-                    className="p-1 text-[var(--text-muted)] hover:text-[var(--status-error)] rounded transition-colors cursor-pointer"
-                    title={t('delete')}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
+                        {/* Model & Method */}
+                        <td className="px-4 py-3.5 whitespace-nowrap">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md uppercase bg-[var(--accent-subtle)] text-[var(--accent-primary)]">
+                              {session.method}
+                            </span>
+                            <span className="text-[10px] text-[var(--text-muted)] font-mono">
+                              {session.model}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Note Link */}
+                        <td className="px-4 py-3.5 whitespace-nowrap">
+                          {session.note ? (
+                            <button
+                              onClick={() => openNoteDetail(session.note!)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--bg-app)] border border-[var(--border-color)] hover:border-[var(--accent-primary)] text-[var(--accent-primary)] cursor-pointer"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                              <span className="truncate max-w-[150px]">{session.note.title}</span>
+                            </button>
+                          ) : (
+                            <span className="text-[11px] text-[var(--text-muted)] italic">
+                              {language === 'vi' ? 'Chưa tạo' : 'None'}
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Message Count */}
+                        <td className="px-4 py-3.5 font-mono text-xs whitespace-nowrap">
+                          <span className="font-bold text-[var(--text-primary)]">{session.messages?.length || 1}</span>
+                        </td>
+
+                        {/* Timestamp */}
+                        <td className="px-4 py-3.5 text-[var(--text-muted)] whitespace-nowrap text-[11px]">
+                          {session.createdAt ? new Date(session.createdAt).toLocaleDateString('vi-VN') : '—'}
+                        </td>
+
+                        {/* Action buttons */}
+                        <td className="px-4 py-3.5 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => resumeChatSession(session.id)}
+                              className="px-3 py-1 rounded-lg text-xs font-bold bg-[var(--accent-primary)] text-[var(--accent-text)] cursor-pointer hover:opacity-90 active:scale-95"
+                            >
+                              {language === 'vi' ? 'Mở Chat' : 'Resume'}
+                            </button>
+                            <button
+                              onClick={() => handleOpenRename(session)}
+                              className="p-1.5 rounded-lg border border-[var(--border-color)] hover:border-[var(--accent-primary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
+                              title="Đổi tên"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => setDeleteConfirmSession(session)}
+                              className="p-1.5 rounded-lg border border-red-500/20 text-red-500 hover:bg-red-500/10 cursor-pointer"
+                              title="Xóa"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Rename Modal */}
-      {renameModalNote && (
+      {/* RENAME SESSION MODAL */}
+      {renameModalSession && (
         <Modal
           isOpen={true}
-          onClose={() => setRenameModalNote(null)}
-          title={t('renameModalTitle')}
+          onClose={() => setRenameModalSession(null)}
+          title={language === 'vi' ? 'Đổi Tên Cuộc Trò Chuyện & Ghi Chú' : 'Rename Session & Note'}
+          subtitle={language === 'vi' ? 'Cập nhật tiêu đề hiển thị trong lịch sử' : 'Update the display title in history'}
           maxWidth="max-w-md"
         >
           <form onSubmit={handleSaveRename} className="space-y-4">
             <div>
-              <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-[var(--text-primary)]' : 'text-[var(--text-primary)]'}`}>
-                {t('renameInputLabel')}
+              <label className="block text-xs font-semibold mb-1 text-[var(--text-primary)]">
+                {language === 'vi' ? 'Tiêu đề mới' : 'New Title'} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 required
                 value={renameTitleInput}
                 onChange={(e) => setRenameTitleInput(e.target.value)}
-                className={`w-full rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-[var(--accent-primary)] border ${
-                  isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-primary)]' : 'bg-white border-[var(--border-color)] text-[var(--text-primary)]'
-                }`}
+                placeholder="VD: Kinh Tế Vĩ Mô: Lạm Phát & CPI"
+                className="w-full rounded-xl px-3.5 py-2.5 text-xs font-bold border bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
               />
             </div>
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
-                onClick={() => setRenameModalNote(null)}
-                className={`px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer active:scale-95 ${
-                  isDark ? 'bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:bg-[var(--border-color)]'
-                }`}
+                onClick={() => setRenameModalSession(null)}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
               >
                 {t('cancel')}
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-primary)] text-[var(--accent-text)] text-xs font-semibold cursor-pointer shadow-md shadow-[var(--accent-primary)]/25 active:scale-95"
+                className="px-5 py-2 rounded-xl bg-[var(--accent-primary)] text-[var(--accent-text)] text-xs font-bold shadow-md cursor-pointer hover:opacity-90 active:scale-95"
               >
                 {t('save')}
               </button>
             </div>
           </form>
         </Modal>
+      )}
+
+      {/* DELETE / ARCHIVE CONFIRMATION MODAL */}
+      {deleteConfirmSession && (
+        <Modal
+          isOpen={true}
+          onClose={() => setDeleteConfirmSession(null)}
+          title={language === 'vi' ? 'Xác Nhận Chuyển Vào Thùng Rác' : 'Move to Trash'}
+          subtitle={language === 'vi' ? 'Ghi chú và phiên hội thoại sẽ được lưu trong 30 ngày trước khi tự động xóa vĩnh viễn' : 'Session and note will be kept for 30 days before permanent deletion'}
+          maxWidth="max-w-md"
+        >
+          <div className="space-y-4">
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+              {language === 'vi' 
+                ? `Bạn có chắc muốn chuyển phiên hội thoại "${deleteConfirmSession.title}" vào mục Thùng rác & Lưu trữ? Bạn có thể khôi phục lại bất kỳ lúc nào trong vòng 30 ngày.`
+                : `Are you sure you want to move "${deleteConfirmSession.title}" to Trash & Archives? You can restore it anytime within 30 days.`}
+            </p>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmSession(null)}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
+              >
+                {t('cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow-md cursor-pointer active:scale-95"
+              >
+                {language === 'vi' ? 'Chuyển vào Thùng rác' : 'Move to Trash'}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* QUICK PREVIEW NOTE MODAL */}
+      {previewNote && (
+        <Modal
+          isOpen={true}
+          onClose={() => setPreviewNote(null)}
+          title={previewNote.title}
+          subtitle={`${previewNote.method.toUpperCase()} • ${previewNote.category} • 98% AI Precision`}
+          maxWidth="max-w-3xl"
+        >
+          <div className="max-h-[60vh] overflow-y-auto space-y-4 pr-1 custom-scrollbar">
+            {previewNote.summary && (
+              <div className="p-3.5 rounded-2xl bg-[var(--accent-subtle)] border border-[var(--accent-primary)]/30">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--accent-primary)] block mb-1">
+                  {language === 'vi' ? 'Tóm Tắt Cốt Lõi' : 'Core Summary'}
+                </span>
+                <p className="text-xs leading-relaxed text-[var(--text-primary)] font-medium">
+                  {previewNote.summary}
+                </p>
+              </div>
+            )}
+
+            <div className="prose prose-sm dark:prose-invert max-w-none text-xs leading-relaxed">
+              <pre className="p-4 rounded-2xl bg-[var(--bg-app)] text-[var(--text-primary)] overflow-x-auto font-mono text-[11px] whitespace-pre-wrap">
+                {previewNote.rawMarkdown || JSON.stringify(previewNote.content, null, 2)}
+              </pre>
+            </div>
+
+            <div className="flex justify-between items-center pt-3 border-t border-[var(--border-color)]">
+              <button
+                onClick={() => {
+                  openNoteDetail(previewNote);
+                  setPreviewNote(null);
+                }}
+                className="px-4 py-2 rounded-xl bg-[var(--accent-primary)] text-[var(--accent-text)] text-xs font-bold cursor-pointer hover:opacity-90"
+              >
+                {language === 'vi' ? 'Mở Chi Tiết Đầy Đủ' : 'Open Full Detail'}
+              </button>
+              <button
+                onClick={() => setPreviewNote(null)}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
+              >
+                {t('cancel')}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* SHARE NOTE MODAL */}
+      {sharingNote && (
+        <ShareNoteModal
+          isOpen={true}
+          onClose={() => setSharingNote(null)}
+          note={sharingNote}
+        />
       )}
     </div>
   );

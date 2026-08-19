@@ -17,13 +17,34 @@ import { NoteItem } from '../../types';
 import { Modal } from '../common/Modal';
 
 export const ArchivesScreen: React.FC = () => {
-  const { archivedNotes, restoreNote, deleteNotePermanently, emptyTrash, theme, language, t } = useApp();
+  const { 
+    archivedNotes, 
+    archivedChatSessions,
+    restoreNote, 
+    deleteNotePermanently, 
+    restoreChatSession,
+    deleteChatSessionPermanently,
+    emptyTrash, 
+    theme, 
+    language, 
+    t 
+  } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOption, setFilterOption] = useState<'all' | 'urgent' | 'safe'>('all');
   const [sortOption, setSortOption] = useState<'recent' | 'oldest' | 'name' | 'expiring'>('recent');
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
   const [confirmDeleteNote, setConfirmDeleteNote] = useState<NoteItem | null>(null);
   const [isConfirmEmptyTrashOpen, setIsConfirmEmptyTrashOpen] = useState(false);
+
+  const handleRestoreItem = async (id: string) => {
+    await restoreNote(id);
+    await restoreChatSession(id);
+  };
+
+  const handleDeleteItemPermanently = async (id: string) => {
+    await deleteNotePermanently(id);
+    await deleteChatSessionPermanently(id);
+  };
 
   const isDark = theme === 'dark';
 
@@ -273,7 +294,7 @@ export const ArchivesScreen: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <button
                         id={`btn-restore-${note.id}`}
-                        onClick={() => restoreNote(note.id)}
+                        onClick={() => handleRestoreItem(note.id)}
                         className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[var(--accent-primary)]/15 hover:bg-[var(--accent-primary)]/25 text-[var(--accent-primary)] text-xs font-semibold border border-[var(--accent-primary)]/30 transition-colors cursor-pointer active:scale-95"
                       >
                         <RotateCcw className="w-3.5 h-3.5" />
@@ -335,7 +356,7 @@ export const ArchivesScreen: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
-                  deleteNotePermanently(confirmDeleteNote.id);
+                  handleDeleteItemPermanently(confirmDeleteNote.id);
                   setConfirmDeleteNote(null);
                 }}
                 className="px-4 py-2 rounded-xl bg-[var(--status-error)] hover:bg-[var(--status-error)] text-white text-xs font-semibold cursor-pointer shadow-md shadow-[var(--status-error)]/20 active:scale-95"

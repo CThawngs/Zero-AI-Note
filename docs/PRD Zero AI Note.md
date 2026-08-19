@@ -433,18 +433,18 @@ Google Stitch (Ideate + nhiều vòng Direct Edit) → export sang Google AI Stu
 
 ### 7.2 Danh sách 11 màn hình
 
-Dark mode mặc định (theme "Giấy"), brand "Zero AI Note" + tagline "AI-Powered Research", nav chuẩn: Notes / Search / Files / Account / Templates / Archives (dưới 1024px chuyển thành sidebar off-canvas).
+Dark mode mặc định (theme "Giấy"), brand "Zero AI Note" + tagline "AI-Powered Research", nav chuẩn: Lịch sử (History) / Search / Files / Account / Templates / Archives (dưới 1024px chuyển thành sidebar off-canvas).
 
 1. **Màn chính** (chat + Artifact Panel) — hoàn chỉnh, gồm pill phương pháp (có "Auto" mặc định), modal Đính kèm nguồn, stepper xử lý 3 giai đoạn
-2. **Thư viện** — grid/list toggle, tự phân loại file gộp, tab "Của tôi/Được chia sẻ"
+2. **Lịch sử Hội thoại & Ghi chú (History)** — hợp nhất toàn bộ phiên chat AI kèm file Note sinh ra, hỗ trợ đầy đủ quyền CRUD (Tạo mới, Đọc & Tiếp tục Chat / Xem nhanh Note, Cập nhật Đổi tên & Ghim phiên lên đầu, Xóa vào Thùng rác 30 ngày), grid/list toggle, tabs phân loại (Tất cả / Đã ghim / Có Note / Chia sẻ)
 3. **Cài đặt — Tài khoản & Billing**
 4. **Cài đặt — Tự kết nối AI / Nhà cung cấp AI** — form Custom Endpoint (Tên Provider, Endpoint URL, API Key), nút **Test Connection** + nút **Discover Models**, dropdown model tự động đồng bộ đúng provider đã thêm
-5. **Pricing** — 3 cột Free/Pro/Ultra theo đúng Master Pricing Matrix, ô coupon, FAQ
-6. **Admin — Quản lý Coupon**
+5. **Pricing** — 3 cột Free/Pro/Ultra theo đúng Master Pricing Matrix, ô coupon (chiết khấu % tự động), FAQ
+6. **Admin — Quản lý Coupon & Hệ thống** — Full CRUD backend/frontend, chiết khấu phần trăm (%), hạn sử dụng và lượt dùng
 7. **Đăng nhập/Đăng ký** — email/password + Google OAuth
 8. **Chi tiết 1 note đã lưu** — 2 cột (nội dung + chat hỏi thêm)
 9. **Templates** — quản lý phương pháp ghi chú có sẵn (3/9/17 theo gói) + tự tạo (5/25/∞ theo gói)
-10. **Archives** — note lưu trữ/xoá mềm, đếm ngược 30 ngày
+10. **Archives (Thùng rác & Lưu trữ)** — phiên hội thoại & note lưu trữ/xoá mềm, đếm ngược 30 ngày trước khi purge
 11. **Files** — danh sách file nguồn đã tải
 
 ### 7.3 Design System
