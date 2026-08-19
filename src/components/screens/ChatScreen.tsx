@@ -137,7 +137,7 @@ export const ChatScreen: React.FC = () => {
       isDark ? 'bg-[var(--bg-app)] text-[var(--text-primary)]' : 'bg-[var(--bg-app)] text-[var(--text-primary)]'
     }`}>
       {/* Left / Center: Chat Area */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
+      <div className={`flex-1 flex flex-col h-full overflow-hidden min-w-0 ${isArtifactOpen ? 'hidden md:flex' : 'flex'}`}>
         {/* Chat Header */}
         <div className={`h-11 px-4 sm:px-6 flex items-center justify-between border-b shrink-0 ${
           isDark ? 'bg-[var(--bg-card)]/90 border-[var(--border-color)]' : 'bg-[var(--bg-surface)]/95 border-[var(--border-color)]'

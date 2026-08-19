@@ -775,6 +775,10 @@ export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ note, isOpen, onCl
                     <div className="grid grid-cols-1 gap-3">
                       {note.coreQuestions.map((q, qIdx) => {
                         const isFlipped = !!flippedCards[qIdx];
+                        const parts = typeof q === 'string' ? q.split('?') : [String(q)];
+                        const questionText = parts.length > 1 ? `${parts[0]}?` : String(q);
+                        const answerText = parts.length > 1 ? parts.slice(1).join('?').trim() : (note.content?.sections?.[qIdx]?.text || note.summary);
+
                         return (
                           <div
                             key={qIdx}
@@ -787,7 +791,7 @@ export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ note, isOpen, onCl
                           >
                             <div className="flex items-start justify-between gap-3">
                               <p className="text-xs sm:text-sm font-bold text-[var(--text-primary)]">
-                                ❓ {q.question || `Câu hỏi ${qIdx + 1}`}
+                                ❓ {questionText}
                               </p>
                               <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[var(--bg-card)] border border-[var(--border-color)] shrink-0">
                                 {isFlipped ? (language === 'vi' ? 'Ẩn' : 'Hide') : (language === 'vi' ? 'Xem lời giải' : 'Reveal')}
@@ -800,8 +804,8 @@ export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ note, isOpen, onCl
                                 animate={{ opacity: 1, height: 'auto' }}
                                 className="mt-3 pt-3 border-t border-[var(--accent-primary)]/20 text-xs sm:text-sm text-[var(--text-primary)] leading-relaxed"
                               >
-                                <span className="font-bold text-emerald-600 dark:text-emerald-400">✓ Lời giải chi tiết: </span>
-                                {q.answer || 'Đáp án đang được trích xuất từ tài liệu.'}
+                                <span className="font-bold text-emerald-600 dark:text-emerald-400">✓ Lời giải / Điểm mấu chốt: </span>
+                                {answerText || (language === 'vi' ? 'Xem chi tiết trong các phân mục bên dưới.' : 'Refer to detailed sections below.')}
                               </motion.div>
                             )}
                           </div>

@@ -363,6 +363,17 @@ export const NoteDetailScreen: React.FC = () => {
 
         {/* Right Actions */}
         <div className="flex items-center gap-2">
+          {/* Share Note Button */}
+          <button
+            id="btn-share-note-detail"
+            onClick={() => setIsShareModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer active:scale-95 bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] shadow-2xs"
+            title={language === 'vi' ? 'Chia sẻ bài ghi chú này' : 'Share this note'}
+          >
+            <Share2 className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
+            <span className="hidden sm:inline">{language === 'vi' ? 'Chia sẻ' : 'Share'}</span>
+          </button>
+
           {/* Copy Button */}
           <button
             id="btn-copy-note-detail"
@@ -843,6 +854,13 @@ export const NoteDetailScreen: React.FC = () => {
           </motion.div>
         </div>
       )}
+
+      {/* Share Note Modal */}
+      <ShareNoteModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        note={activeNote}
+      />
     </div>
   );
 };
