@@ -383,11 +383,36 @@
 
 ---
 
-## 20. References
+## 20. BYOK AI Provider Security Locking & Multi-Server Custom Endpoints Architecture (2026-08-20)
+
+### Problem
+- Việc người dùng chỉnh sửa sai lệch Endpoint URL hoặc Provider ID của các nhà cung cấp chuẩn quốc tế (Google AI Studio, OpenAI, Anthropic Claude, OpenRouter, Groq, NVIDIA NIM, Local Ollama) dễ gây hỏng cấu hình kết nối.
+- Đồng thời, người dùng có nhu cầu lưu trữ nhiều máy chủ AI tùy chỉnh riêng (Private vLLM, LiteLLM, LM Studio) mà không bị giới hạn 1 endpoint hay bị đè dữ liệu.
+
+### Decision & Implementation
+1. **Khóa bảo vệ các Verified Providers**:
+   - `Provider ID` và `Endpoint URL` của các Preset đã xác minh được chuyển sang trạng thái **Disabled / Read-only** kèm biểu tượng khóa `Lock` và visual unactive, bảo vệ người dùng không bị nhập sai.
+2. **Hỗ trợ Custom Endpoints linh hoạt & Đa máy chủ**:
+   - Thêm tab **Custom Endpoint** cho phép nhập Endpoint URL tùy ý.
+   - `Provider ID` **không bắt buộc** — hệ thống tự động sinh slug/ID duy nhất dựa trên tên hiển thị (`custom_${slugify(name)}_${timestamp}`).
+   - Cho phép người dùng lưu nhiều Custom Endpoint độc lập trong cùng một tài khoản (miễn là khác tên hiển thị).
+3. **Model Mặc định Tùy chọn (Optional Default Model)**:
+   - Toàn bộ các Provider không bắt buộc người dùng phải gõ tên model.
+   - Hệ thống tự động nhận diện và gán model tối ưu chuẩn tương ứng (Google: `gemini-2.0-flash`, OpenAI: `gpt-4o-mini`, Anthropic: `claude-3-5-haiku-20241022`, Groq: `llama-3.3-70b-versatile`, OpenRouter: `deepseek/deepseek-r1`, NVIDIA: `meta/llama-3.1-70b-instruct`, Local: `llama3.3:latest`, Custom: `gpt-4o-mini`).
+4. **Validation Toàn diện & Xác thực Kết nối Thực**:
+   - Kiểm tra định dạng URL (`http://` hoặc `https://`), kiểm tra trùng tên và kiểm tra API Key bắt buộc cho Cloud providers.
+   - API `/api/providers/test` kiểm tra kết nối thực tế tới Endpoint và nạp toàn bộ các model đã test vào danh sách chọn Model trên `Header.tsx`.
+
+---
+
+## 21. References
 - [Neon Documentation](https://neon.tech/docs)
 - [Drizzle ORM](https://orm.drizzle.team)
 - [gitleaks](https://github.com/gitleaks/gitleaks)
 - [Cloudflare R2](https://developers.cloudflare.com/r2)
+- [Google GenAI SDK](https://github.com/google-gemini/generative-ai-js)
+- [Anthropic API](https://docs.anthropic.com)
+- [OpenAI API](https://platform.openai.com/docs)
 - [Next.js Middleware](https://nextjs.org/docs/middleware)
 - [JWT.io](https://jwt.io)
 - [Google Identity Services](https://developers.google.com/identity/gsi/web)

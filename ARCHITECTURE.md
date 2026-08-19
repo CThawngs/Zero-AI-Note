@@ -67,12 +67,21 @@
 - **Kiến trúc DB tách biệt (quan trọng):** Zero-AI-Note dùng **Neon Postgres + Cloudflare R2** (đúng PRD, đã migration từ Supabase 2026-08-16). **Zero Tracking là project riêng biệt**, dùng **Supabase** của nó. Hai project giao tiếp qua **HTTP REST API + api_key** (`POST /api/bills`), KHÔNG share DB, Zero-AI-Note không kết nối trực tiếp Supabase của Zero Tracking. Supabase chỉ là nơi Zero Tracking lưu bills/apps/payment_accounts nội bộ; QR được Zero-AI-Note nhận qua response JSON.
 - **Secrets:** `.env.local` được git-ignore; `ZEROINVOICE_API_KEY` (app key `zi_...`) chỉ nằm server-side, không lộ client. Không commit credential.
 
-### AI Provider & Model (BYOK) — 2026-08-19
-- `src/data/modelCatalog.ts`: `BYOK_PROVIDER_PRESETS` có 6 provider (google/openai/anthropic/openrouter/groq/nvidia/custom), mỗi preset có `logoUrl` (SVG brand thật từ website chính chủ, lưu local `public/assets/providers/*.svg`) + `logoEmoji` fallback. Render `<img>` avatar vuông bo góc, fallback emoji nếu load lỗi.
-- **AddProviderModal**: input API Key chuyển viền xanh (`var(--status-success)`) + nền xanh nhạt khi test thành công. **1 button duy nhất 2 trạng thái**: "⚡ Test Kết Nối" (khi chưa connected) → sau success chuyển thành "Lưu & Kích Hoạt" (màu xanh lá). Test gọi `POST /api/providers/test` (thực sự kết nối: Google models list / Anthropic messages / OpenAI-compatible chat/completions).
-- **Real-time notification (chuông):** mọi kết quả test (success/error) đẩy vào `addNotification` → hiện trong Bell (Header) kèm badge số chưa đọc (`hasUnreadNotifications`), real-time theo account (lưu localStorage theo `user.email`).
-- **Multi-model**: ngoài default model (bắt buộc test), user thêm nhiều model LLM khác — mỗi model có input + nút Test riêng, chỉ lưu (`prov.models`) khi test pass. SettingsScreen hiển thị logo brand + badge ACTIVE + danh sách model đã add.
-- `AIProviderItem` mở rộng: `models?`, `logoUrl?`, `logoEmoji?`.
+### AI Provider & Model (BYOK) — 2026-08-20
+- `src/data/modelCatalog.ts`: `BYOK_PROVIDER_PRESETS` hỗ trợ 8 nhà cung cấp (Google, OpenAI, Anthropic Claude, OpenRouter, Groq, NVIDIA NIM, Local Ollama, Custom Endpoint), mỗi preset có `logoUrl` (SVG brand thật từ website chính chủ, lưu local `public/assets/providers/*.svg`) + `logoEmoji` fallback.
+- **Khóa bảo vệ Verified Providers**: Đối với các nhà cung cấp chuẩn quốc tế đã xác minh (`isVerified: true`), `Provider ID` và `Endpoint URL` được đặt ở chế độ **Disabled / Read-only** (kèm icon `Lock`), tránh người dùng vô tình làm hỏng cấu hình kết nối chuẩn.
+- **Hỗ trợ Đa Máy Chủ Custom Endpoints**:
+  - Hỗ trợ lưu trữ **nhiều** Custom Endpoint khác nhau trong cùng một tài khoản người dùng (miễn là khác tên hiển thị).
+  - Cho phép người dùng nhập Endpoint URL tùy ý (`https://...` hoặc `http://localhost:...`).
+  - `Provider ID` không bắt buộc nhập — hệ thống tự động sinh slug an toàn dựa trên tên hiển thị (`custom_${slugify(name)}_${timestamp}`).
+- **Model Mặc định Tùy chọn (Optional Default Model)**:
+  - Trường `Default Model` là tùy chọn cho toàn bộ các Provider. Nếu để trống, hệ thống tự động gán model tối ưu chuẩn tương ứng.
+- **Validation Toàn diện**:
+  - Kiểm tra hợp lệ định dạng URL (`http://` hoặc `https://`), kiểm tra trùng lặp tên hiển thị và kiểm tra API Key bắt buộc cho Cloud providers với thông báo lỗi inline trực tiếp.
+- **AddProviderModal**: input API Key chuyển viền xanh (`var(--status-success)`) + nền xanh nhạt khi test thành công. **1 button duy nhất 2 trạng thái**: "⚡ Test Kết Nối" (khi chưa connected) → sau success chuyển thành "Lưu & Kích Hoạt" (màu xanh lá). Test gọi `POST /api/providers/test` (thực sự kết nối: Google models list / Anthropic messages / OpenAI-compatible chat/completions / models fallback discovery).
+- **Real-time notification (chuông):** mọi kết quả test (success/error) đẩy vào `addNotification` → hiện trong Bell (Header) kèm badge số chưa đọc (`hasUnreadNotifications`), real-time theo account.
+- **Multi-model & Model Selector Integration**: ngoài default model, user thêm nhiều model LLM khác — mỗi model có input + nút Test riêng, chỉ lưu (`prov.models`) khi test pass. Toàn bộ model này được tự động map vào dropdown chọn Model trên `Header.tsx`.
+- `AIProviderItem` mở rộng: `models?`, `logoUrl?`, `logoEmoji?`, `apiKey?`, `isCustomEndpoint?`. Cấu hình được tự động lưu trữ bền vững trong `localStorage`.
 
 ### Living Note Architecture & Thư viện Ghi chú (2026-08-19)
 - **Kiến trúc Living Note (1 Phiên = 1 Living Note):**

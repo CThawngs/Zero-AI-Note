@@ -42,7 +42,7 @@
 - [x] Coupon CRUD thật qua Admin (role server-side, 100% chiết khấu %, kích hoạt 0đ tức thì) ✅
 - [x] Ràng buộc 1 tài khoản = 1 mã coupon duy nhất (bảng `user_coupons` trên Neon) ✅
 - [x] Zero Tracking realtime payee switch: combobox đổi TK/Ví (bank/MoMo/ZaloPay) per-checkout ✅
-- [x] BYOK đầy đủ: Tự kết nối AI riêng (Google, OpenAI, Anthropic, OpenRouter, Groq, NVIDIA) kèm Test connection thực tế và thông báo chuông thời gian thực ✅
+- [x] BYOK & Custom Endpoints đầy đủ: Khóa bảo vệ Verified Providers, Hỗ trợ Đa máy chủ Custom Endpoint (Auto-slug), Optional Default Model, Test connection thực tế qua /api/providers/test và tích hợp Model Selector trên Header ✅
 
 ## Tuần 12+ — Khác biệt/nâng cao
 - [ ] Mind map, TTS, action item, đồng bộ Notion/Calendar, spaced repetition
