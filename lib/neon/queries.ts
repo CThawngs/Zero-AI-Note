@@ -333,6 +333,51 @@ export async function deleteCoupon(couponId: string): Promise<void> {
   await sql`delete from coupons where id = ${couponId}`;
 }
 
+/**
+ * Validate + fetch a coupon for a given plan (read-only — no mutation).
+ * Checks: exists, status=active, not expired, usage limit not reached,
+ * and plan eligibility (applies_to: 'all' | 'paid').
+ * Returns the coupon row or null.
+ */
+export async function validateCouponForPlan(
+  code: string,
+  plan: 'free' | 'pro' | 'ultra'
+): Promise<CouponItem | null> {
+  const sql = getSql();
+  const rows = (await sql`
+    select id, code, discount_type, discount_value, applies_to,
+           usage_limit, usage_count, expires_at, status, created_at
+    from coupons
+    where code = ${code.trim().toUpperCase()}
+  `) as CouponItem[];
+
+  const coupon = rows[0];
+  if (!coupon) return null;
+  if (coupon.status !== 'active') return null;
+  if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) return null;
+  if (
+    coupon.usage_limit !== null &&
+    coupon.usage_count !== null &&
+    coupon.usage_count >= coupon.usage_limit
+  ) {
+    return null;
+  }
+  // applies_to: 'paid' means pro/ultra only; 'all' always valid
+  if (coupon.applies_to === 'paid' && plan === 'free') return null;
+  return coupon;
+}
+
+/**
+ * Atomically increment a coupon's usage_count (idempotent-ish; caller
+ * should only call once per successful bill creation).
+ */
+export async function incrementCouponUsage(couponId: string): Promise<void> {
+  const sql = getSql();
+  await sql`
+    update coupons set usage_count = usage_count + 1 where id = ${couponId}
+  `;
+}
+
 // ============================================================
 // USER PROFILE
 // ============================================================

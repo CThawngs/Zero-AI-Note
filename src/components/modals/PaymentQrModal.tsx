@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, CheckCircle, QrCode, Copy, Check, Loader2, Sparkles, ShieldCheck } from 'lucide-react';
+import { X, CheckCircle, QrCode, Copy, Check, Loader2, Sparkles, ShieldCheck, Landmark } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { QRPay } from 'vietnam-qr-pay';
 import { Modal } from '../common/Modal';
@@ -24,10 +24,30 @@ interface PaymentQrModalProps {
       accountNo: string;
       accountName: string;
     };
+    /** Chosen payee confirmation from Zero Tracking (real-time switch) */
+    payee?: {
+      payment_account_id: string | null;
+      accountNo: string | null;
+      bankName: string | null;
+      accountName: string | null;
+    } | null;
   } | null;
+  /** Linked Zero Tracking accounts for the payee switch (optional) */
+  payAccounts?: any[];
+  /** Currently selected payee id ('' = app default) — for initial display */
+  selectedPayAccount?: string;
+  /** Called when the bill is re-created with a different payee (real-time switch) */
+  onBillChange?: (newBill: any) => void;
 }
 
-export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({ isOpen, onClose, billData }) => {
+export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({
+  isOpen,
+  onClose,
+  billData,
+  payAccounts = [],
+  selectedPayAccount: initialSelectedPayAccount = '',
+  onBillChange,
+}) => {
   const { user, setUser, addToast, theme, language } = useApp();
   const [isCopiedAccount, setIsCopiedAccount] = useState(false);
   const [isCopiedAmount, setIsCopiedAmount] = useState(false);
@@ -36,7 +56,26 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({ isOpen, onClose,
   const [isChecking, setIsChecking] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
 
+  // Payee switch state (real-time, before payment)
+  const [currentPayee, setCurrentPayee] = useState<string>(initialSelectedPayAccount);
+  const [isSwitching, setIsSwitching] = useState(false);
+
   const isDark = theme === 'dark';
+
+  // Reset payee selection when a new bill opens
+  useEffect(() => {
+    if (isOpen) {
+      setCurrentPayee(initialSelectedPayAccount);
+      setIsPaidSuccess(false);
+    }
+  }, [isOpen, initialSelectedPayAccount, billData?.bill_id]);
+
+  // The payee the QR currently routes to (from bill response, falling back to qr_data)
+  const activePayee = billData?.payee && billData.payee.accountNo
+    ? billData.payee
+    : (billData?.qr_data
+        ? { payment_account_id: null, accountNo: billData.qr_data.accountNo, bankName: billData.qr_data.bankName, accountName: billData.qr_data.accountName }
+        : null);
 
   // ============================================================
   // QR value — DỰNG payload EMVCo CHUẨN (vietnam-qr-pay, Napas spec 2022)
@@ -71,6 +110,47 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({ isOpen, onClose,
   const qrValue = billData?.qr_data ? buildVietQrString() : '';
   // Fallback (nếu có payment_url): QR redirect tới trang thanh toán
   const qrFallbackUrl = billData?.payment_url || '';
+
+  // Recreate the bill with a different payee (real-time switch before payment)
+  const switchPayee = async (newAccountId: string) => {
+    if (!billData || isSwitching) return;
+    setIsSwitching(true);
+    try {
+      const res = await fetch('/api/billing/create-invoice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          plan: billData.plan,
+          paymentAccountId: newAccountId || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.bill_id) {
+        setCurrentPayee(newAccountId);
+        if (onBillChange) onBillChange(data);
+        addToast(
+          language === 'vi' ? 'Đã chuyển tài khoản' : 'Account switched',
+          language === 'vi' ? 'QR Code mới đã nhận tiền đúng tài khoản bạn chọn.' : 'New QR now routes to your selected account.',
+          'success'
+        );
+      } else {
+        addToast(
+          language === 'vi' ? 'Không thể chuyển' : 'Switch failed',
+          data?.error || (language === 'vi' ? 'Vui lòng thử lại.' : 'Please try again.'),
+          'error'
+        );
+      }
+    } catch (err) {
+      console.error('switchPayee error:', err);
+      addToast(
+        language === 'vi' ? 'Lỗi kết nối' : 'Connection error',
+        language === 'vi' ? 'Không thể chuyển tài khoản lúc này.' : 'Unable to switch account right now.',
+        'error'
+      );
+    } finally {
+      setIsSwitching(false);
+    }
+  };
 
   // Xác nhận đã chuyển khoản — gọi server resolve bill qua Zero Tracking
   const handleConfirmPaid = async () => {
@@ -235,6 +315,49 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({ isOpen, onClose,
                 <span>{language === 'vi' ? 'Đang chờ thanh toán qua VietQR...' : 'Awaiting VietQR transfer...'}</span>
               </div>
             </div>
+
+            {/* Receiving account switch (real-time payee) */}
+            {!isPaidSuccess && payAccounts.length > 0 && (
+              <div className="p-3 rounded-2xl border bg-[var(--bg-card)] border-[var(--accent-primary)]/25 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] flex items-center gap-1.5">
+                    <Landmark className="w-3.5 h-3.5 text-emerald-500" />
+                    {language === 'vi' ? 'Tài khoản nhận tiền' : 'Receiving account'}
+                  </span>
+                  {activePayee?.accountNo && (
+                    <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                      <Check className="w-3 h-3" />
+                      {language === 'vi' ? 'QR đã đúng TK này' : 'QR routes here'}
+                    </span>
+                  )}
+                </div>
+                <select
+                  value={currentPayee}
+                  disabled={isSwitching}
+                  onChange={(e) => switchPayee(e.target.value)}
+                  className="w-full text-xs font-semibold px-3 py-2.5 rounded-xl border bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] outline-none focus:border-[var(--accent-primary)] cursor-pointer disabled:opacity-50"
+                >
+                  <option value="">{language === 'vi' ? '— Mặc định (tài khoản app) —' : '— App default account —'}</option>
+                  {payAccounts.filter((a) => a.type === 'bank').map((a) => (
+                    <option key={a.id} value={a.id}>🏦 {a.bank_name || 'Ngân hàng'} — {a.account_no}</option>
+                  ))}
+                  {payAccounts.filter((a) => a.type === 'momo').map((a) => (
+                    <option key={a.id} value={a.id}>🟣 MoMo — {a.account_no}</option>
+                  ))}
+                  {payAccounts.filter((a) => a.type === 'zalopay').map((a) => (
+                    <option key={a.id} value={a.id}>🔵 ZaloPay — {a.account_no}</option>
+                  ))}
+                </select>
+                {activePayee?.accountNo && (
+                  <p className="text-[11px] text-[var(--text-secondary)]">
+                    {language === 'vi' ? 'Đang nhận về: ' : 'Routing to: '}
+                    <span className="font-mono font-bold text-[var(--text-primary)]">
+                      {activePayee.bankName || activePayee.accountName || ''} — {activePayee.accountNo}
+                    </span>
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Transfer details */}
             <div className="space-y-2.5 text-xs">

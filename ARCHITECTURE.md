@@ -53,6 +53,16 @@
 - **Cloudflare R2**: backup file storage — dùng khi Neon database đầy, chứa media/file upload (S3-compatible)
 - Env cần: `R2_ENDPOINT`, `R2_ACCESS_KEY`, `R2_SECRET_KEY`, `R2_BUCKET`
 
+### Zero Tracking & Coupon (2026-08-19)
+- `lib/billing/zeroinvoice.ts` — lớp gọi Zero Tracking (fail-closed nếu thiếu `ZEROINVOICE_API_KEY`). Thêm `listZeroTrackingPaymentAccounts()` gọi `GET /api/partner/payment-accounts` (app API key `zi_...`).
+- `lib/billing/coupon.ts` — hàm tính giảm giá thuần (tách khỏi file `"use server"` queries để không vi phạm server-action async rule).
+- **Realtime payee switch:** App gửi `payment_account_id` trong body `POST /api/bills` của Zero Tracking → bill đó route đúng TK/Ví (bank/MoMo/ZaloPay) realtime. Zero-AI-Note:
+  - `GET /api/billing/payment-accounts` (server proxy, key không lộ client)
+  - `PricingScreen` + `PaymentQrModal` render combobox chọn TK nhận tiền; đổi trước khi thanh toán → gọi lại `create-invoice` tạo bill mới với `payment_account_id` → QR mới nhận đúng TK.
+  - Fallback chain: body override → `apps.payment_account_id` → TK default user → profile. Tenant isolation: account phải thuộc user sở hữu app.
+  - `subscriptions.payment_account_id` snapshot để trace (migration `docs/migrations/add_subscriptions_payment_account.sql`).
+- **Coupon backend (không còn chỉ frontend):** `validate-coupon` chỉ validate read-only (KHÔNG tăng `usage_count`). `create-invoice` validate → tính giảm giá → tạo bill → lưu `subscriptions` (`coupon_code` + `payment_account_id`) → tăng `usage_count` đúng 1 lần khi bill thành công. `applyCouponCode` (UI) gọi `validate-coupon` preview, không đổi plan, không redeem.
+
 ### Nguyên tắc bất biến
 1. `content_structured` (JSON) là nguồn DUY NHẤT cho Preview + mọi export (MD/DOCX/PDF/HTML)
 2. Billing fail-closed; tracking/analytics fail-open

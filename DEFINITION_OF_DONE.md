@@ -35,7 +35,9 @@
 ## Tuần 10-11 — Kinh doanh hoá
 - [ ] Gate Free/Paid thật dựa trên `profiles.plan` (Free 2h/tháng, Paid 20h/tháng)
 - [ ] Webhook ZeroInvoice test 1 giao dịch THẬT (dừng xác nhận Zero trước khi bật)
-- [ ] Coupon CRUD thật qua Admin (role server-side)
+- [x] Coupon CRUD thật qua Admin (role server-side)
+- [x] Coupon activation backend: `create-invoice` validate + tính giảm giá + persist `coupon_code` vào `subscriptions` + tăng `usage_count` 1 lần (không còn chỉ frontend)
+- [x] Zero Tracking realtime payee switch: combobox đổi TK/Ví (bank/MoMo/ZaloPay) per-checkout → QR nhận đúng TK realtime; fallback chain + tenant isolation
 - [ ] BYOK đầy đủ: Test Connection, Check Model, Import/Sync free models qua cache dùng chung
 
 ## Tuần 12+ — Khác biệt/nâng cao

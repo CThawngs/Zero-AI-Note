@@ -34,6 +34,7 @@ export interface ZeroInvoiceBillResponse {
 export async function createZeroInvoiceBill(params: {
   amount: number;
   description?: string;
+  payment_account_id?: string;
 }): Promise<ZeroInvoiceBillResponse> {
   const res = await fetch(`${ZEROINVOICE_BASE_URL}/api/bills`, {
     method: 'POST',
@@ -45,6 +46,7 @@ export async function createZeroInvoiceBill(params: {
     body: JSON.stringify({
       amount: Math.round(params.amount),
       payment_method: 'VietQR',
+      ...(params.payment_account_id ? { payment_account_id: params.payment_account_id } : {}),
     }),
   });
 
@@ -57,12 +59,16 @@ export async function createZeroInvoiceBill(params: {
   return json;
 }
 
+export function getZeroInvoiceBaseUrl(): string {
+  return process.env.ZEROINVOICE_BASE_URL || 'https://zeroinvoice-silk.vercel.app';
+}
+
 export async function checkZeroInvoiceBillStatus(billId: string): Promise<{
   bill_id: string;
   status: 'pending' | 'paid' | 'expired' | 'failed' | 'resolved';
   amount: number;
 }> {
-  const res = await fetch(`${ZEROINVOICE_BASE_URL}/api/bills/${billId}`, {
+  const res = await fetch(`${getZeroInvoiceBaseUrl()}/api/bills/${billId}`, {
     headers: {
       'Authorization': `Bearer ${ZEROINVOICE_API_KEY}`,
       'x-api-key': ZEROINVOICE_API_KEY,
@@ -100,4 +106,36 @@ export async function checkZeroInvoiceBillStatus(billId: string): Promise<{
     status: (bill.status || 'pending') as 'pending' | 'paid' | 'expired' | 'failed' | 'resolved',
     amount: bill.amount || 0,
   };
+}
+
+/**
+ * List the Zero Tracking payment accounts linked to THIS app's owner.
+ * Calls Zero Tracking's partner endpoint with the app API key (zi_...).
+ * Returns accounts the user can pick as the per-checkout payee.
+ */
+export interface ZeroTrackingPaymentAccount {
+  id: string;
+  type: 'bank' | 'momo' | 'zalopay';
+  bank_name: string | null;
+  acq_id: string | null;
+  account_no: string;
+  account_holder: string | null;
+  is_verified: boolean;
+}
+
+export async function listZeroTrackingPaymentAccounts(): Promise<ZeroTrackingPaymentAccount[]> {
+  const res = await fetch(`${getZeroInvoiceBaseUrl()}/api/partner/payment-accounts`, {
+    headers: {
+      'Authorization': `Bearer ${ZEROINVOICE_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`Zero Tracking list payment accounts failed (${res.status}): ${text}`);
+  }
+
+  const json = (await res.json()) as { data?: { accounts?: ZeroTrackingPaymentAccount[] }; accounts?: ZeroTrackingPaymentAccount[] };
+  return (json.data?.accounts || json.accounts || []) as ZeroTrackingPaymentAccount[];
 }

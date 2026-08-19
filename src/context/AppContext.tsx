@@ -35,7 +35,6 @@ import {
   updateCoupon as updateCouponQuery,
   deleteCoupon as deleteCouponQuery,
   getUserProfile,
-  applyCouponToUser
 } from '../lib/apiClient';
 import { initialTemplates } from '../data/mockData';
 import { translations, Language, Theme } from '../i18n/translations';
@@ -960,37 +959,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const applyCouponCode = async (code: string): Promise<{ success: boolean; message: string; discountPercent?: number }> => {
+  const applyCouponCode = async (code: string): Promise<{ success: boolean; message: string; discountPercent?: number; baseAmount?: number; finalAmount?: number }> => {
     try {
-      const coupon = await applyCouponToUser(code);
-      
-      // Update user profile
-      const profile = await getUserProfile();
-      if (profile) {
-        setUser(prev => ({
-          ...prev,
-          id: profile.id,
-          email: profile.email,
-          name: profile.display_name ?? prev.name,
-          role: (profile.role as 'user' | 'admin') ?? 'user',
-          plan: (profile.plan as 'free' | 'pro' | 'ultra') ?? 'free'
-        }));
+      // Read-only validation against the backend. The coupon is NOT redeemed here —
+      // usage_count is incremented only when a real bill is created in /api/billing/create-invoice.
+      const targetPlan = (user.plan === 'ultra' ? 'ultra' : 'pro') as 'pro' | 'ultra';
+      const res = await fetch('/api/billing/validate-coupon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ couponCode: code, plan: targetPlan }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.valid) {
+        return {
+          success: false,
+          message: data?.error
+            ? (language === 'vi' ? `Lỗi: ${data.error}` : `Error: ${data.error}`)
+            : (language === 'vi' ? 'Mã giảm giá không hợp lệ.' : 'Invalid coupon code.'),
+        };
       }
-      
-      const discountVal = coupon.discount_type === 'percent' ? coupon.discount_value : 50;
+
+      const coupon = data.coupon;
+      const discountVal = coupon.discount_type === 'percent' ? coupon.discount_value : Math.round((data.discount_amount / data.base_amount) * 100);
       return {
         success: true,
-        message: language === 'vi' 
-          ? `Áp dụng thành công mã ${coupon.code} (-${discountVal}%)`
-          : `Applied coupon ${coupon.code} (-${discountVal}%)`,
-        discountPercent: discountVal
+        message: language === 'vi'
+          ? `Áp dụng thành công mã ${coupon.code} (giảm ${data.discount_amount.toLocaleString('vi-VN')}đ)`
+          : `Applied coupon ${coupon.code} (save ${data.discount_amount.toLocaleString('en-US')}đ)`,
+        discountPercent: discountVal,
+        baseAmount: data.base_amount,
+        finalAmount: data.final_amount,
       };
     } catch (err) {
       return {
         success: false,
-        message: err instanceof Error 
+        message: err instanceof Error
           ? (language === 'vi' ? `Lỗi: ${err.message}` : `Error: ${err.message}`)
-          : (language === 'vi' ? 'Mã giảm giá không hợp lệ.' : 'Invalid coupon code.')
+          : (language === 'vi' ? 'Mã giảm giá không hợp lệ.' : 'Invalid coupon code.'),
       };
     }
   };

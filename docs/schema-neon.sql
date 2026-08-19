@@ -115,6 +115,7 @@ create table if not exists subscriptions (
   status text default 'pending' check (status in ('pending','paid','expired','canceled')),
   qr_data text,
   coupon_code text,
+  payment_account_id text,   -- Zero Tracking payee chosen at checkout (null = app default); snapshot for traceability
   paid_at timestamptz,
   renews_at timestamptz,
   created_at timestamptz default now()

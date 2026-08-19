@@ -2,9 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth/session';
 import { createZeroInvoiceBill } from '@/lib/billing/zeroinvoice';
 import { getSql } from '@/lib/db';
-import { CouponItem } from '@/src/types';
+import {
+  validateCouponForPlan,
+  incrementCouponUsage,
+} from '@/lib/neon/queries';
+import { applyCouponDiscount } from '@/lib/billing/coupon';
 
 export const runtime = 'nodejs';
+
+// Plan base prices (VND)
+const BASE_PRICE: Record<'pro' | 'ultra', number> = {
+  pro: 99000,
+  ultra: 199000,
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,81 +24,105 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { plan, couponCode, billingCycle = 'monthly' } = body as {
+    const { plan, couponCode, billingCycle = 'monthly', paymentAccountId } = body as {
       plan: 'pro' | 'ultra';
       couponCode?: string;
       billingCycle?: 'monthly' | 'yearly';
+      paymentAccountId?: string | null;
     };
 
     if (plan !== 'pro' && plan !== 'ultra') {
       return NextResponse.json({ error: 'Gói thanh toán không hợp lệ' }, { status: 400 });
     }
 
-    // Base price in VND
-    let baseAmount = plan === 'pro' ? 99000 : 199000;
+    // 1) Base price
+    let baseAmount = BASE_PRICE[plan];
     if (billingCycle === 'yearly') {
-      baseAmount = baseAmount * 12 * 0.8; // 20% discount for yearly
+      baseAmount = Math.round(baseAmount * 12 * 0.8); // 20% off yearly
     }
 
-    // Check coupon if provided
+    // 2) Coupon (read-only validate + compute; usage incremented only on success)
     let finalAmount = baseAmount;
-    let appliedCoupon: CouponItem | null = null;
-
+    let appliedCouponCode: string | null = null;
     if (couponCode && couponCode.trim()) {
-      try {
-        const sql = getSql();
-        const couponRows = (await sql`
-          select * from coupons
-          where code = ${couponCode.trim().toUpperCase()}
-            and status = 'active'
-            and (usage_limit is null or usage_count < usage_limit)
-            and (expires_at is null or expires_at > now())
-        `) as any[];
-        if (couponRows && couponRows.length > 0) {
-          appliedCoupon = couponRows[0] as unknown as CouponItem;
-          if (appliedCoupon.discount_type === 'percent') {
-            finalAmount = Math.max(0, finalAmount * (1 - appliedCoupon.discount_value / 100));
-          } else {
-            finalAmount = Math.max(0, finalAmount - appliedCoupon.discount_value);
-          }
-        }
-      } catch (err) {
-        console.warn('Coupon verification error:', err);
+      const coupon = await validateCouponForPlan(couponCode.trim(), plan);
+      if (coupon) {
+        finalAmount = applyCouponDiscount(baseAmount, coupon);
+        appliedCouponCode = coupon.code;
       }
     }
 
-    // Minimum amount is 1000 VND for banking
-    finalAmount = Math.max(1000, Math.round(finalAmount));
+    // 3) Payment account override (real-time switch on Zero Tracking).
+    //    null = use the app's default payee on Zero Tracking's side.
+    const payeeAccountId = paymentAccountId || undefined;
 
-    const planLabel = plan.toUpperCase();
-    const billResponse = await createZeroInvoiceBill({
-      amount: finalAmount,
-      description: `Nang cap Zero AI Note ${planLabel} (${session.email || session.sub})`,
-    });
+    // 4) Create bill on Zero Tracking
+    let billResponse;
+    try {
+      billResponse = await createZeroInvoiceBill({
+        amount: finalAmount,
+        description: `Nang cap Zero AI Note ${plan.toUpperCase()} (${session.email || session.sub})`,
+        payment_account_id: payeeAccountId,
+      });
+    } catch (ztErr) {
+      console.error('[create-invoice] Zero Tracking bill creation failed:', ztErr);
+      return NextResponse.json(
+        { error: ztErr instanceof Error ? ztErr.message : 'Zero Tracking unavailable' },
+        { status: 502 }
+      );
+    }
 
     if (billResponse.error || !billResponse.data) {
-      throw new Error(billResponse.error || 'Failed to create ZeroInvoice bill');
+      return NextResponse.json(
+        { error: billResponse.error || 'Failed to create ZeroInvoice bill' },
+        { status: 502 }
+      );
     }
 
     const bill = billResponse.data;
 
-    // Save pending subscription record (schema mới: bill_id — PRD mục 6)
+    // 5) Persist pending subscription (with coupon + chosen payee for traceability)
     try {
       const sql = getSql();
       await sql`
-        insert into subscriptions (user_id, bill_id, plan, amount, status, qr_data, coupon_code)
-        values (${session.sub}, ${bill.bill_id}, ${plan}, ${finalAmount}, 'pending', ${bill.qr_data ? JSON.stringify(bill.qr_data) : null}, ${couponCode || null})
+        insert into subscriptions (user_id, bill_id, plan, amount, status, qr_data, coupon_code, payment_account_id)
+        values (${session.sub}, ${bill.bill_id}, ${plan}, ${finalAmount}, 'pending',
+                ${bill.qr_data ? JSON.stringify(bill.qr_data) : null},
+                ${appliedCouponCode}, ${payeeAccountId ?? null})
       `;
     } catch (e) {
-      console.warn('Could not save pending subscription:', e);
+      console.warn('[create-invoice] Could not save pending subscription:', e);
+    }
+
+    // 6) Increment coupon usage ONCE (only when bill actually created)
+    if (appliedCouponCode) {
+      try {
+        const sql = getSql();
+        await sql`
+          update coupons set usage_count = usage_count + 1
+          where code = ${appliedCouponCode}
+        `;
+      } catch (e) {
+        console.warn('[create-invoice] Could not increment coupon usage:', e);
+      }
     }
 
     return NextResponse.json({
       bill_id: bill.bill_id,
       amount: bill.amount,
       plan,
+      billingCycle,
       payment_url: bill.payment_url,
       qr_data: bill.qr_data,
+      payee: {
+        payment_account_id: payeeAccountId ?? null,
+        accountNo: bill.qr_data?.accountNo ?? null,
+        bankName: bill.qr_data?.bankName ?? null,
+        accountName: bill.qr_data?.accountName ?? null,
+      },
+      coupon: appliedCouponCode
+        ? { code: appliedCouponCode, baseAmount, finalAmount }
+        : null,
       expires_at: bill.expires_at,
     });
   } catch (error) {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { 
   Check, 
@@ -13,7 +13,8 @@ import {
   ShieldCheck,
   Zap,
   Loader2,
-  FileCheck
+  FileCheck,
+  Landmark
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { PaymentQrModal } from '../modals/PaymentQrModal';
@@ -21,14 +22,38 @@ import { PaymentQrModal } from '../modals/PaymentQrModal';
 export const PricingScreen: React.FC = () => {
   const { user, applyCouponCode, addToast, theme, language, t } = useApp();
   const [couponCode, setCouponCode] = useState('');
-  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountPercent?: number; discountValue?: number } | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountPercent?: number; discountValue?: number; baseAmount?: number; finalAmount?: number } | null>(null);
   const [isApplying, setIsApplying] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
   const [isCreatingInvoice, setIsCreatingInvoice] = useState<string | null>(null);
   const [billData, setBillData] = useState<any>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
+  // Zero Tracking receiving accounts (real-time payee switch)
+  const [payAccounts, setPayAccounts] = useState<any[]>([]);
+  const [selectedPayAccount, setSelectedPayAccount] = useState<string>(''); // '' = app default
+  const [payAccountsLoaded, setPayAccountsLoaded] = useState(false);
+
   const isDark = theme === 'dark';
+
+  // Load linked payment accounts from Zero Tracking
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/billing/payment-accounts');
+        const j = await res.json();
+        if (!cancelled && j.accounts) {
+          setPayAccounts(j.accounts);
+        }
+      } catch {
+        // fail-open: keep empty list, checkout still works with app default
+      } finally {
+        if (!cancelled) setPayAccountsLoaded(true);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const plans = [
     {
@@ -140,6 +165,7 @@ export const PricingScreen: React.FC = () => {
         body: JSON.stringify({
           plan: planId,
           couponCode: appliedCoupon?.code || couponCode.trim() || undefined,
+          paymentAccountId: selectedPayAccount || undefined,
         }),
       });
 
@@ -288,6 +314,39 @@ export const PricingScreen: React.FC = () => {
         })}
       </div>
 
+      {/* Receiving account selector (Zero Tracking real-time payee switch) */}
+      {payAccountsLoaded && payAccounts.length > 0 && (
+        <div className="max-w-md mx-auto w-full p-5 rounded-3xl border bg-[var(--bg-card)] border-[var(--border-color)] shadow-sm space-y-3">
+          <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-primary)]">
+            <Landmark className="w-4 h-4 text-emerald-500" />
+            <span>{language === 'vi' ? 'Tài khoản nhận tiền (Zero Tracking)' : 'Receiving Account (Zero Tracking)'}</span>
+          </div>
+          <p className="text-[11px] text-[var(--text-secondary)]">
+            {language === 'vi'
+              ? 'Chọn tài khoản/Ví để QR Code nhận tiền đúng realtime cho lượt thanh toán này.'
+              : 'Pick the bank/e-wallet the VietQR routes to for this checkout, in real time.'}
+          </p>
+          <select
+            value={selectedPayAccount}
+            onChange={(e) => setSelectedPayAccount(e.target.value)}
+            className="w-full text-xs font-semibold px-3.5 py-2.5 rounded-xl border bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] outline-none focus:border-[var(--accent-primary)] cursor-pointer"
+          >
+            <option value="">{language === 'vi' ? '— Mặc định (tài khoản app) —' : '— App default account —'}</option>
+            {payAccounts.filter((a) => a.type === 'bank').map((a) => (
+              <option key={a.id} value={a.id}>
+                🏦 {a.bank_name || 'Ngân hàng'} — {a.account_no}
+              </option>
+            ))}
+            {payAccounts.filter((a) => a.type === 'momo').map((a) => (
+              <option key={a.id} value={a.id}>🟣 MoMo — {a.account_no}</option>
+            ))}
+            {payAccounts.filter((a) => a.type === 'zalopay').map((a) => (
+              <option key={a.id} value={a.id}>🔵 ZaloPay — {a.account_no}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
       {/* Coupon input section */}
       <div className="max-w-md mx-auto w-full p-5 rounded-3xl border bg-[var(--bg-card)] border-[var(--border-color)] shadow-sm space-y-3">
         <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-primary)]">
@@ -354,6 +413,9 @@ export const PricingScreen: React.FC = () => {
         isOpen={isPaymentModalOpen}
         onClose={() => setIsPaymentModalOpen(false)}
         billData={billData}
+        payAccounts={payAccounts}
+        selectedPayAccount={selectedPayAccount}
+        onBillChange={(newBill) => setBillData(newBill)}
       />
     </div>
   );
