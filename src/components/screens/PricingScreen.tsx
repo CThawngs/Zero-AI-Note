@@ -171,7 +171,17 @@ export const PricingScreen: React.FC = () => {
 
       const data = await res.json();
       setBillData(data);
-      setIsPaymentModalOpen(true);
+      if (data.autoActivated) {
+        // Coupon 100% → đã kích hoạt gói (0đ), không cần QR
+        setIsPaymentModalOpen(false);
+        addNotification(
+          language === 'vi' ? 'Kích hoạt gói thành công (0đ)' : 'Plan activated (0đ)',
+          language === 'vi' ? `Đã áp dụng coupon ${data.coupon?.code || ''} và nâng cấp ${planId.toUpperCase()}.` : `Coupon ${data.coupon?.code || ''} applied, ${planId.toUpperCase()} activated.`,
+          'success'
+        );
+      } else {
+        setIsPaymentModalOpen(true);
+      }
     } catch (err) {
       console.error('Checkout error:', err);
       addToast(

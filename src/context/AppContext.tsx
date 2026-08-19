@@ -1391,6 +1391,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          noteId: activeArtifactNote?.id,
           prompt: text,
           method: currentMethod,
           language: isEn ? 'en' : 'vi',

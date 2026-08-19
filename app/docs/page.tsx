@@ -40,11 +40,11 @@ const i18n = {
     heroSub: 'Hướng dẫn đầy đủ về cách sử dụng, kiến trúc kỹ thuật và tích hợp API của Zero AI Note.',
     cta: 'Bắt đầu miễn phí',
     ctaReady: 'Sẵn sàng dùng thử?',
-    sections: ['Giới thiệu', 'Bắt đầu nhanh', 'Lịch sử & Ghi chú', 'Phương pháp ghi chú', 'Kiến trúc kỹ thuật', 'Bảo mật', 'Routing', 'API Endpoints', 'Liên kết'],
+    sections: ['Giới thiệu', 'Bắt đầu nhanh', 'Thư viện Ghi chú', 'Phương pháp ghi chú', 'Kiến trúc kỹ thuật', 'Bảo mật', 'Routing', 'API Endpoints', 'Liên kết'],
     intro: {
       title: 'Giới thiệu',
-      p1: 'Zero AI Note là công cụ ghi chú AI nguồn mở, chuyển đổi video, audio, PDF, YouTube thành các phiên hội thoại tương tác và ghi chú cấu trúc cao theo các phương pháp học thuật chuẩn quốc tế.',
-      p2: 'Dự án sử dụng Neon Postgres cho database (lưu trữ chính), JWT cho authentication, Cloudflare R2 làm backup storage, và hệ thống quản lý Lịch sử Hội thoại & Ghi chú toàn diện với đầy đủ quyền CRUD.',
+      p1: 'Zero AI Note là công cụ ghi chú AI nguồn mở, chuyển đổi video, audio, PDF, YouTube thành các bài ghi chú cấu trúc cao theo các phương pháp học thuật chuẩn quốc tế.',
+      p2: 'Dự án sử dụng Neon Postgres cho database (lưu trữ chính), JWT cho authentication, Cloudflare R2 làm backup storage, kiến trúc Living Note cập nhật trực tiếp trong phiên và Thư viện Ghi chú toàn diện.',
     },
     quickstart: {
       title: 'Bắt đầu nhanh',
@@ -52,18 +52,18 @@ const i18n = {
         { text: 'Đăng ký tài khoản miễn phí', sub: 'Không cần thẻ tín dụng', linkText: 'Tạo tài khoản' },
         { text: 'Kéo thả file hoặc dán link YouTube vào khung chat', sub: 'Hỗ trợ video, audio, PDF, DOCX' },
         { text: 'Chọn phương pháp ghi chú', sub: 'Cornell, Outline, Q&A, Flashcard, Feynman, Tóm tắt nhanh' },
-        { text: 'Tương tác & Xem kết quả trong Artifact Panel', sub: 'Bên phải màn hình, cập nhật realtime' },
-        { text: 'Quản lý toàn bộ phiên trong Lịch sử (History)', sub: 'Tiếp tục chat, xem nhanh, đổi tên, ghim, chia sẻ, lưu trữ' },
+        { text: 'Tương tác & Xem kết quả trong Artifact Panel', sub: 'Cập nhật trực tiếp nội dung trong cùng phiên chat' },
+        { text: 'Quản lý trong Thư viện Ghi chú (Notes)', sub: 'Xem chi tiết, tiếp tục chat, đổi tên, ghim, chia sẻ, lưu trữ' },
       ],
     },
     history: {
-      title: 'Lịch sử Hội thoại & Ghi chú',
-      desc: 'Zero AI Note hợp nhất lịch sử chat với file Note được tạo ra thành các Chat Sessions. Người dùng có toàn quyền CRUD:',
+      title: 'Thư viện Ghi chú (Notes Library)',
+      desc: 'Quản lý toàn bộ bài ghi chú học thuật được AI tổng hợp với kiến trúc Living Note:',
       items: [
-        { title: 'Tạo mới (Create)', desc: 'Bắt đầu cuộc trò chuyện mới hoặc note mới với một click.' },
-        { title: 'Xem & Tiếp tục (Read & Resume)', desc: 'Mở lại toàn bộ ngữ cảnh hội thoại cũ và tự động tải Note Artifact kèm chế độ Xem nhanh (Quick Preview).' },
-        { title: 'Cập nhật (Update)', desc: 'Đổi tên phiên làm việc, ghim các phiên quan trọng lên đầu danh sách.' },
-        { title: 'Xóa & Lưu trữ (Delete & Archive)', desc: 'Chuyển vào Thùng rác với cơ chế lưu trữ 30 ngày tự động dọn dẹp để tối ưu dung lượng.' }
+        { title: 'Kiến trúc Living Note', desc: 'Mọi yêu cầu chỉnh sửa trong cùng phiên chat được cập nhật đè trực tiếp vào file Note hiện tại, không gây sinh file thừa.' },
+        { title: 'Xem & Tiếp tục Chat', desc: 'Mở xem toàn bộ nội dung note hoặc tiếp tục chat đào sâu kiến thức với AI.' },
+        { title: 'Cập nhật & Quản lý', desc: 'Đổi tên ghi chú, ghim các bài học quan trọng lên đầu danh sách.' },
+        { title: 'Lưu trữ 30 ngày', desc: 'Chuyển vào Thùng rác & Lưu trữ với chính sách tự động xóa sau 30 ngày an toàn.' }
       ]
     },
     methods: {
@@ -134,11 +134,11 @@ const i18n = {
     heroSub: 'Complete guide to using Zero AI Note — API integration, technical architecture, and more.',
     cta: 'Get started free',
     ctaReady: 'Ready to try it?',
-    sections: ['Introduction', 'Quick Start', 'Chat & Notes History', 'Note Methods', 'Tech Architecture', 'Security', 'Routing', 'API Endpoints', 'Links'],
+    sections: ['Introduction', 'Quick Start', 'Notes Library', 'Note Methods', 'Tech Architecture', 'Security', 'Routing', 'API Endpoints', 'Links'],
     intro: {
       title: 'Introduction',
       p1: 'Zero AI Note is an open-source AI note-taking platform that transforms video, audio, PDF, and YouTube into interactive chat sessions and highly structured academic notes.',
-      p2: 'Built on Neon Postgres serverless database (primary storage), JWT authentication, Cloudflare R2 backup storage, and a complete Chat & Notes History management suite with full CRUD operations.',
+      p2: 'Built on Neon Postgres serverless database (primary storage), JWT authentication, Cloudflare R2 backup storage, Living Note in-place update architecture, and a comprehensive Notes Library.',
     },
     quickstart: {
       title: 'Quick Start',
@@ -146,18 +146,18 @@ const i18n = {
         { text: 'Create a free account', sub: 'No credit card required', linkText: 'Sign up' },
         { text: 'Drag & drop files or paste a YouTube link', sub: 'Supports video, audio, PDF, DOCX' },
         { text: 'Choose a note-taking method', sub: 'Cornell, Outline, Q&A, Flashcard, Feynman, Quick Summary' },
-        { text: 'Interact & View results in Artifact Panel', sub: 'On the right side, updates in realtime' },
-        { text: 'Manage all sessions in History', sub: 'Resume chat, quick preview, rename, pin, share, archive' },
+        { text: 'Interact & View results in Artifact Panel', sub: 'In-place updates within the same chat session' },
+        { text: 'Manage in Notes Library', sub: 'Open details, resume chat, rename, pin, share, archive' },
       ],
     },
     history: {
-      title: 'Chat & Notes History',
-      desc: 'Zero AI Note unifies conversation history with generated Note artifacts into cohesive Chat Sessions with full CRUD control:',
+      title: 'Notes Library',
+      desc: 'Centralized repository of all AI-synthesized academic notes with Living Note architecture:',
       items: [
-        { title: 'Create', desc: 'Start a clean chat session and note artifact with one click.' },
-        { title: 'Read & Resume', desc: 'Resume any previous discussion context with linked notes automatically loaded in the Artifact Panel, plus instant modal Quick Preview.' },
-        { title: 'Update', desc: 'Rename sessions, pin critical research threads to the top of your list.' },
-        { title: 'Delete & Archive', desc: 'Move to Trash with 30-day retention countdown or purge permanently to manage storage.' }
+        { title: 'Living Note Architecture', desc: 'All edits and expansions within the same chat session update the current note in-place without generating clutter.' },
+        { title: 'View & Resume Chat', desc: 'Read complete structured notes or resume AI discussions in one click.' },
+        { title: 'Update & Pin', desc: 'Rename notes, pin crucial study materials to the top of your list.' },
+        { title: '30-Day Retention Archive', desc: 'Safely move old items to Trash & Archives with automatic 30-day purge protection.' }
       ]
     },
     methods: {

@@ -220,14 +220,14 @@ export const LibraryScreen: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-[var(--accent-subtle)] text-[var(--accent-primary)] flex items-center justify-center shrink-0 border border-[var(--accent-primary)]/20 shadow-xs">
-              <Clock className="w-5 h-5 stroke-[2.2]" />
+              <FileText className="w-5 h-5 stroke-[2.2]" />
             </div>
             <div>
               <h1 className="text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
-                {t('historyTitle') || 'Lịch sử Hội thoại & Ghi chú'}
+                {t('notesLibraryTitle') || 'Thư viện Ghi chú'}
               </h1>
               <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                {t('historySubtitle') || 'Lưu trữ các phiên chat nghiên cứu với AI kèm file Note cấu trúc cao'}
+                {t('notesLibrarySubtitle') || 'Quản lý, tìm kiếm và xuất bản các bài ghi chú học thuật AI'}
               </p>
             </div>
           </div>
@@ -502,14 +502,14 @@ export const LibraryScreen: React.FC = () => {
             className="h-80 flex flex-col items-center justify-center text-center p-8 border border-dashed rounded-3xl border-[var(--border-color)] bg-[var(--bg-card)]/50 backdrop-blur-xs max-w-xl mx-auto my-8"
           >
             <div className="w-14 h-14 rounded-3xl bg-[var(--accent-subtle)] text-[var(--accent-primary)] flex items-center justify-center mb-4 border border-[var(--accent-primary)]/20 shadow-sm">
-              <Clock className="w-7 h-7 stroke-[2]" />
+              <FileText className="w-7 h-7 stroke-[1.8]" />
             </div>
             <h3 className="text-base font-bold text-[var(--text-primary)]">
-              {language === 'vi' ? 'Chưa có lịch sử cuộc trò chuyện nào' : 'No chat history found'}
+              {language === 'vi' ? 'Chưa có bài ghi chú nào trong Thư viện' : 'No notes in Library yet'}
             </h3>
             <p className="text-xs text-[var(--text-secondary)] mt-1.5 max-w-md leading-relaxed">
               {language === 'vi' 
-                ? 'Bắt đầu cuộc trò chuyện với AI hoặc tải lên tệp để trích xuất bài ghi chú học thuật đầu tiên của bạn.' 
+                ? 'Bắt đầu cuộc trò chuyện với AI hoặc tải lên tệp để tạo bài ghi chú học thuật đầu tiên của bạn.' 
                 : 'Start a new AI conversation or upload documents to generate your first structured note.'}
             </p>
             <div className="flex items-center gap-3 mt-5">
@@ -531,7 +531,7 @@ export const LibraryScreen: React.FC = () => {
                 onClick={() => startNewChatNote()}
                 className="px-5 py-2.5 bg-[var(--accent-primary)] text-[var(--accent-text)] text-xs font-bold rounded-xl shadow-md shadow-[var(--accent-primary)]/20 cursor-pointer hover:opacity-90"
               >
-                {language === 'vi' ? '+ Bắt đầu cuộc trò chuyện mới' : '+ Start New Chat'}
+                {language === 'vi' ? '+ Tạo bài ghi chú mới' : '+ Create New Note'}
               </motion.button>
             </div>
           </motion.div>

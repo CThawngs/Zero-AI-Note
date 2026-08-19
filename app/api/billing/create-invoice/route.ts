@@ -5,6 +5,7 @@ import { getSql } from '@/lib/db';
 import {
   validateCouponForPlan,
   incrementCouponUsage,
+  upgradeUserPlan,
 } from '@/lib/neon/queries';
 import { applyCouponDiscount } from '@/lib/billing/coupon';
 
@@ -80,18 +81,33 @@ export async function POST(request: NextRequest) {
     }
 
     const bill = billResponse.data;
+    const billAlreadyPaid = bill.status === 'paid';
 
-    // 5) Persist pending subscription (with coupon + chosen payee for traceability)
+    // 5) Persist subscription (with coupon + chosen payee for traceability)
     try {
       const sql = getSql();
       await sql`
         insert into subscriptions (user_id, bill_id, plan, amount, status, qr_data, coupon_code, payment_account_id)
-        values (${session.sub}, ${bill.bill_id}, ${plan}, ${finalAmount}, 'pending',
+        values (${session.sub}, ${bill.bill_id}, ${plan}, ${finalAmount}, ${billAlreadyPaid ? 'paid' : 'pending'},
                 ${bill.qr_data ? JSON.stringify(bill.qr_data) : null},
                 ${appliedCouponCode}, ${payeeAccountId ?? null})
       `;
     } catch (e) {
-      console.warn('[create-invoice] Could not save pending subscription:', e);
+      console.warn('[create-invoice] Could not save subscription:', e);
+    }
+
+    // 5b) Coupon 100% → bill đã paid (0đ) trên Zero Tracking.
+    //     Tự động kích hoạt gói ngay (không cần quét QR).
+    let autoActivated = false;
+    if (billAlreadyPaid) {
+      try {
+        const sql = getSql();
+        await upgradeUserPlan(session.sub, plan as 'pro' | 'ultra', bill.bill_id, finalAmount, appliedCouponCode);
+        await sql`update subscriptions set paid_at = now(), renews_at = now() + interval '30 days' where bill_id = ${bill.bill_id}`;
+        autoActivated = true;
+      } catch (e) {
+        console.warn('[create-invoice] auto-activate failed:', e);
+      }
     }
 
     // 6) Increment coupon usage ONCE (only when bill actually created)
@@ -130,6 +146,8 @@ export async function POST(request: NextRequest) {
       coupon: appliedCouponCode
         ? { code: appliedCouponCode, baseAmount, finalAmount }
         : null,
+      autoActivated,
+      status: bill.status,
       expires_at: bill.expires_at,
     });
   } catch (error) {

@@ -74,22 +74,22 @@
 - **Multi-model**: ngoài default model (bắt buộc test), user thêm nhiều model LLM khác — mỗi model có input + nút Test riêng, chỉ lưu (`prov.models`) khi test pass. SettingsScreen hiển thị logo brand + badge ACTIVE + danh sách model đã add.
 - `AIProviderItem` mở rộng: `models?`, `logoUrl?`, `logoEmoji?`.
 
-### Unified Chat Sessions & Note Artifacts History (2026-08-19)
-- **Kiến trúc dữ liệu hợp nhất:** Zero AI Note hợp nhất toàn bộ luồng làm việc giữa Chat với AI và Note Artifact sinh ra thành **`ChatSessionItem`**.
-- `ChatSessionItem`:
-  - `id`: Định danh duy nhất (liên kết 1-1 với `note.id`)
-  - `title`: Tiêu đề phiên hội thoại & chủ đề ghi chú
-  - `messages`: Lịch sử các lượt trao đổi giữa User và AI (prompts, answers, model reasoning)
-  - `note`: Đối tượng `NoteItem` hoàn chỉnh (cấu trúc Cornell, Outline, Feynman, Q&A, Flashcards,...)
-  - `model`: Model AI xử lý (Gemini 2.5 Flash, GPT-4o, Claude 3.7 Sonnet,...)
-  - `method`: Phương pháp ghi chú học thuật áp dụng
-  - `sources`: Danh sách tệp nguồn đính kèm (PDF, YouTube, Audio, Docs, Image)
-  - `isPinned`, `isArchived`, `archiveDaysLeft`, `isShared`: Trạng thái quản lý phiên.
-- **Trang Lịch sử Hội thoại & Ghi chú (`HistoryScreen`):** Thay thế trang Notes tĩnh cũ, cung cấp đầy đủ quyền CRUD:
-  - **Create**: Khởi tạo cuộc trò chuyện & ghi chú mới (`+ Cuộc trò chuyện & Note mới` / `startNewChatNote()`).
-  - **Read / Resume**: Mở lại bất kỳ phiên nào trong lịch sử (`resumeChatSession(id)`), tự động khôi phục tin nhắn trong ChatScreen và mở Note tương ứng trong `ArtifactPanel`. Xem nhanh nội dung qua Quick Preview Modal.
-  - **Update**: Đổi tên phiên hội thoại & Note liên kết, Ghim/Bỏ ghim phiên ưu tiên lên đầu danh sách (`isPinned`).
-  - **Delete / Archive**: Đưa phiên vào mục Lưu trữ & Thùng rác với đồng hồ đếm ngược 30 ngày trước khi tự động purge khỏi Neon Postgres, hoặc xóa vĩnh viễn.
+### Living Note Architecture & Thư viện Ghi chú (2026-08-19)
+- **Kiến trúc Living Note (1 Phiên = 1 Living Note):**
+  - Trong cùng 1 phiên chat, AI duy trì duy nhất 1 file Note động (`activeArtifactNote`).
+  - Mọi yêu cầu chỉnh sửa/bổ sung/tóm tắt lại trong phiên đều thực hiện **In-place Update (cập nhật đè)** vào file Note hiện tại trên DB (`on conflict (id) do update set...`) mà không sinh ra các file note trùng lặp rác.
+  - Tạo file Note mới chỉ diễn ra khi người dùng chủ động bấm `+ Cuộc trò chuyện & Note mới` để bắt đầu chủ đề nghiên cứu mới.
+- **Thư viện Ghi chú (`LibraryScreen.tsx` / `Notes`):**
+  - Đóng vai trò là trung tâm quản lý các thành phẩm ghi chú học thuật chất lượng cao (Cornell, Outline, Feynman, Q&A,...).
+  - Hỗ trợ xem chi tiết, tiếp tục chat mở rộng, xem trước nhanh (Quick Preview), đổi tên, ghim và xuất bản (DOCX/PDF/HTML).
+- **Thùng rác & Lưu trữ 30 ngày (`ArchivesScreen.tsx`):**
+  - Chuyển tính năng Xóa thành Lưu trữ 30 ngày (`Archive`).
+  - Đếm ngược chính xác 30 ngày (`daysLeft`).
+  - Nút **Khôi phục (Restore)** đưa phiên làm việc và ghi chú trở lại Thư viện Ghi chú ngay lập tức và hủy bỏ đếm ngược xóa.
+  - Nút **Xóa vĩnh viễn (Permanent Delete)** với popup xác nhận an toàn.
+- **Sidebar Quick Switcher:**
+  - Mục điều hướng chính: `📝 Ghi chú (Notes)`.
+  - Mục `Hội thoại gần đây (Recent Chats)` ở sidebar đóng vai trò là Quick Switcher để nhảy nhanh vào các phiên làm việc đang dang dở.
 
 ### Nguyên tắc bất biến
 1. `content_structured` (JSON) là nguồn DUY NHẤT cho Preview + mọi export (MD/DOCX/PDF/HTML)

@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const {
+      noteId: existingNoteId,
       prompt,
       method = 'auto',
       language = 'vi',
@@ -25,6 +26,7 @@ export async function POST(request: NextRequest) {
       apiKey,
       sources = [],
     } = body as {
+      noteId?: string;
       prompt: string;
       method: NoteMethod;
       language: 'vi' | 'en';
@@ -45,22 +47,24 @@ export async function POST(request: NextRequest) {
       inputText += '\n\nTài liệu đính kèm:\n' + sources.map(s => `- [${s.type.toUpperCase()}] ${s.name}`).join('\n');
     }
 
-    // Check user note storage limit if logged in
+    // Check user note storage limit if logged in and creating a new note (not updating existing)
     let userId: string | null = null;
     let userPlan: 'free' | 'pro' | 'ultra' = 'free';
     if (session) {
       userId = session.sub;
       userPlan = (session.plan || 'free') as 'free' | 'pro' | 'ultra';
-      try {
-        const limitCheck = await checkNoteLimit(session.sub);
-        if (!limitCheck.allowed) {
-          return fail(
-            limitCheck.message || `Bạn đã đạt giới hạn tối đa ${limitCheck.limit} ghi chú. Vui lòng nâng cấp gói Pro hoặc Ultra.`,
-            403
-          );
+      if (!existingNoteId) {
+        try {
+          const limitCheck = await checkNoteLimit(session.sub);
+          if (!limitCheck.allowed) {
+            return fail(
+              limitCheck.message || `Bạn đã đạt giới hạn tối đa ${limitCheck.limit} ghi chú. Vui lòng nâng cấp gói Pro hoặc Ultra.`,
+              403
+            );
+          }
+        } catch (err) {
+          console.warn('Could not verify note limit from DB:', err);
         }
-      } catch (err) {
-        console.warn('Could not verify note limit from DB:', err);
       }
     }
 
@@ -68,7 +72,6 @@ export async function POST(request: NextRequest) {
     // tự chọn trong phạm vi template thuộc gói user sở hữu.
     // Free → 3 template cơ bản; Pro → 9; Ultra → 17 (toàn bộ).
     // Dispatcher nhận userPlan + method='auto' và tự route về Free-only pool.
-    // (Không đổi method ở đây vì NoteMethod không có variant 'auto-free'.)
 
     // Call Universal Dispatcher (System Gemini Pool or BYOK Provider)
     const generated = await dispatchStructuredNote({
@@ -82,7 +85,7 @@ export async function POST(request: NextRequest) {
       userPlan,
     });
 
-    const noteId = uuidv4();
+    const noteId = existingNoteId || uuidv4();
     const formattedDate = new Date().toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US', {
       day: '2-digit',
       month: '2-digit',
@@ -104,17 +107,22 @@ export async function POST(request: NextRequest) {
       rawMarkdown: generated.rawMarkdown,
     };
 
-    // Save note to Neon Postgres if user is logged in
+    // Save or update note in Neon Postgres if user is logged in
     if (userId) {
       try {
         const sql = getSql();
         await sql`
           insert into notes (
-            id, user_id, method, output_language, content_structured, created_at
+            id, user_id, method, output_language, content_structured, updated_at
           ) values (
             ${noteId}, ${userId}, ${generated.method}, ${language},
             ${JSON.stringify(generated)}, now()
           )
+          on conflict (id) do update set
+            method = ${generated.method},
+            output_language = ${language},
+            content_structured = ${JSON.stringify(generated)},
+            updated_at = now()
         `;
 
         // Increment processing minutes by 1 minute

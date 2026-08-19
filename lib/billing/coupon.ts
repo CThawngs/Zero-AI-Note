@@ -16,5 +16,7 @@ export function applyCouponDiscount(baseAmount: number, coupon: CouponItem): num
   } else {
     final = baseAmount - Number(coupon.discount_value);
   }
-  return Math.max(1000, Math.round(final));
+  // Cho phép 0đ khi giảm 100% (hoặc giảm hết). Không floor tối thiểu —
+  // Zero Tracking phải track đúng số tiền thực tế đã áp dụng coupon.
+  return Math.max(0, Math.round(final));
 }

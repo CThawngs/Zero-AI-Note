@@ -40,7 +40,7 @@ export const Sidebar: React.FC = () => {
   } = useApp();
 
   const navItems = [
-    { id: 'library', label: t('navHistory'), icon: Clock, screen: 'library' as ScreenType },
+    { id: 'library', label: t('navNotes'), icon: FileText, screen: 'library' as ScreenType },
     { 
       id: 'search', 
       label: t('navSearch'), 

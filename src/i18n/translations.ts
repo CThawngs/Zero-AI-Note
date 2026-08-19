@@ -44,7 +44,7 @@ export const translations = {
     freePlan: 'GÓI MIỄN PHÍ',
     
     // Sidebar
-    navNotes: 'Lịch sử',
+    navNotes: 'Ghi chú',
     navHistory: 'Lịch sử',
     navSearch: 'Tìm kiếm',
     navFiles: 'Tệp nguồn',
@@ -57,8 +57,10 @@ export const translations = {
     collapseSidebar: 'Thu gọn sidebar',
     expandSidebar: 'Mở rộng sidebar',
     newChatNote: 'Cuộc trò chuyện & Note mới',
-    historyTitle: 'Lịch sử Hội thoại & Ghi chú',
-    historySubtitle: 'Lưu trữ phiên tương tác với AI cùng file Note đã tổng hợp',
+    notesLibraryTitle: 'Thư viện Ghi chú',
+    notesLibrarySubtitle: 'Quản lý, tìm kiếm và xuất bản các bài ghi chú học thuật AI',
+    historyTitle: 'Thư viện Ghi chú',
+    historySubtitle: 'Quản lý, tìm kiếm và xuất bản các bài ghi chú học thuật AI',
 
     // Header
     modelSelectorLabel: 'Mô hình AI xử lý',
@@ -327,7 +329,7 @@ export const translations = {
     freePlan: 'FREE PLAN',
 
     // Sidebar
-    navNotes: 'History',
+    navNotes: 'Notes',
     navHistory: 'History',
     navSearch: 'Search',
     navFiles: 'Files',
@@ -340,8 +342,10 @@ export const translations = {
     collapseSidebar: 'Collapse sidebar',
     expandSidebar: 'Expand sidebar',
     newChatNote: 'New Chat & Note',
-    historyTitle: 'Chat & Notes History',
-    historySubtitle: 'Stored AI conversations with attached structured notes',
+    notesLibraryTitle: 'Notes Library',
+    notesLibrarySubtitle: 'Manage, search, and export AI-synthesized academic notes',
+    historyTitle: 'Notes Library',
+    historySubtitle: 'Manage, search, and export AI-synthesized academic notes',
 
     // Header
     modelSelectorLabel: 'AI Engine Model',
