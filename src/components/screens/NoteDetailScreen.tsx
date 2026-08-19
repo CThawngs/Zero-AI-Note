@@ -294,13 +294,15 @@ export const NoteDetailScreen: React.FC = () => {
       <div className="h-14 border-b flex items-center justify-between px-4 sm:px-6 shrink-0 transition-colors border-[var(--border-color)] bg-[var(--bg-card)]">
         {/* Left: Back to Library */}
         <div className="flex items-center gap-3">
-          <button
+          <motion.button
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.92 }}
             onClick={() => setCurrentScreen('library')}
-            className="p-1.5 rounded-xl border text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer active:scale-95 bg-[var(--bg-app)] border-[var(--border-color)]"
+            className="p-2 rounded-xl border text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent-primary)] transition-all cursor-pointer bg-[var(--bg-app)] border-[var(--border-color)] shadow-2xs"
             title={t('backToLibrary')}
           >
             <ArrowLeft className="w-4 h-4" />
-          </button>
+          </motion.button>
           <div className="flex items-center gap-2 min-w-0">
             <span className="text-xs font-semibold text-[var(--text-secondary)] truncate max-w-[120px] sm:max-w-[200px]">
               {activeNote.category}
@@ -314,88 +316,102 @@ export const NoteDetailScreen: React.FC = () => {
 
         {/* Center: Preview Mode Selector */}
         <div className="hidden md:flex items-center p-0.5 rounded-xl border bg-[var(--bg-app)] border-[var(--border-color)]">
-          <button
+          <motion.button
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setActiveTab('markdown')}
             className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
               activeTab === 'markdown'
                 ? 'bg-[var(--accent-primary)] text-[var(--accent-text)] shadow-xs font-bold'
-                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
             }`}
           >
             Markdown
-          </button>
+          </motion.button>
 
-          <button
+          <motion.button
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setActiveTab('static-html')}
             className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
               activeTab === 'static-html'
                 ? 'bg-[var(--accent-primary)] text-[var(--accent-text)] shadow-xs font-bold'
-                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
             }`}
           >
             <span>HTML Tĩnh</span>
             {!isProOrUltra && <Lock className="w-3 h-3 text-amber-500" />}
-          </button>
+          </motion.button>
 
-          <button
+          <motion.button
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setActiveTab('interactive-html')}
             className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
               activeTab === 'interactive-html'
                 ? 'bg-[var(--accent-primary)] text-[var(--accent-text)] shadow-xs font-bold'
-                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
             }`}
           >
             <span>HTML Tương Tác</span>
             {!isUltra && <Lock className="w-3 h-3 text-amber-500" />}
-          </button>
+          </motion.button>
 
-          <button
+          <motion.button
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setActiveTab('code')}
             className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
               activeTab === 'code'
                 ? 'bg-[var(--accent-primary)] text-[var(--accent-text)] shadow-xs font-bold'
-                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
             }`}
           >
             Raw Code
-          </button>
+          </motion.button>
         </div>
 
         {/* Right Actions */}
         <div className="flex items-center gap-2">
           {/* Share Note Button */}
-          <button
+          <motion.button
+            whileHover={{ scale: 1.05, y: -1 }}
+            whileTap={{ scale: 0.93 }}
             id="btn-share-note-detail"
             onClick={() => setIsShareModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer active:scale-95 bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] shadow-2xs"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] hover:shadow-md hover:shadow-[var(--accent-primary)]/15 shadow-2xs"
             title={language === 'vi' ? 'Chia sẻ bài ghi chú này' : 'Share this note'}
           >
             <Share2 className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
             <span className="hidden sm:inline">{language === 'vi' ? 'Chia sẻ' : 'Share'}</span>
-          </button>
+          </motion.button>
 
           {/* Copy Button */}
-          <button
+          <motion.button
+            whileHover={{ scale: 1.05, y: -1 }}
+            whileTap={{ scale: 0.93 }}
             id="btn-copy-note-detail"
             onClick={handleCopy}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer active:scale-95 bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] hover:border-[var(--accent-primary)]"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] hover:border-[var(--accent-primary)] hover:shadow-md hover:shadow-[var(--accent-primary)]/15 shadow-2xs"
           >
             {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
             <span className="hidden sm:inline">{isCopied ? t('copied') : t('copyMarkdown')}</span>
-          </button>
+          </motion.button>
 
           {/* Download Dropdown */}
           <div className="relative">
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05, y: -1 }}
+              whileTap={{ scale: 0.93 }}
               id="btn-download-note-detail"
               onClick={() => setIsDownloadOpen(!isDownloadOpen)}
               disabled={isExporting}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--accent-primary)] text-[var(--accent-text)] hover:opacity-90 text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-xs"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--accent-primary)] text-[var(--accent-text)] hover:opacity-95 text-xs font-bold transition-all cursor-pointer shadow-md shadow-[var(--accent-primary)]/20 hover:shadow-lg hover:shadow-[var(--accent-primary)]/30"
             >
               {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
               <span>{isExporting ? (language === 'vi' ? 'Đang xuất...' : 'Exporting...') : (language === 'vi' ? 'Tải file' : 'Export')}</span>
               <ChevronDown className={`w-3 h-3 transition-transform ${isDownloadOpen ? 'rotate-180' : ''}`} />
-            </button>
+            </motion.button>
 
             <AnimatePresence>
               {isDownloadOpen && (
@@ -409,33 +425,37 @@ export const NoteDetailScreen: React.FC = () => {
                   >
                     {/* Multi-export for Ultra */}
                     {isUltra ? (
-                      <button
+                      <motion.button
+                        whileHover={{ x: 3 }}
+                        whileTap={{ scale: 0.97 }}
                         onClick={() => {
                           setIsDownloadOpen(false);
                           setIsMultiExportModalOpen(true);
                         }}
-                        className="w-full text-left p-2 rounded-xl transition-colors cursor-pointer flex items-center justify-between bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-bold mb-1 border border-[var(--accent-primary)]/30"
+                        className="w-full text-left p-2 rounded-xl transition-all cursor-pointer flex items-center justify-between bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-bold mb-1 border border-[var(--accent-primary)]/30"
                       >
                         <span className="flex items-center gap-1.5">
                           <FileArchive className="w-4 h-4" />
                           <span>Multi-Export & ZIP</span>
                         </span>
                         <span className="text-[10px] uppercase bg-[var(--accent-primary)] text-[var(--accent-text)] px-1.5 py-0.5 rounded font-extrabold">Ultra</span>
-                      </button>
+                      </motion.button>
                     ) : (
-                      <button
+                      <motion.button
+                        whileHover={{ x: 3 }}
+                        whileTap={{ scale: 0.97 }}
                         onClick={() => {
                           setIsDownloadOpen(false);
                           setCurrentScreen('pricing');
                         }}
-                        className="w-full text-left p-2 rounded-xl transition-colors cursor-pointer flex items-center justify-between text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] mb-1"
+                        className="w-full text-left p-2 rounded-xl transition-all cursor-pointer flex items-center justify-between text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] mb-1"
                       >
                         <span className="flex items-center gap-1.5">
                           <Lock className="w-3.5 h-3.5 text-amber-500" />
                           <span>Multi-Export & ZIP</span>
                         </span>
                         <span className="text-[10px] text-amber-500 font-bold">Ultra</span>
-                      </button>
+                      </motion.button>
                     )}
 
                     {/* Standard Formats */}
@@ -448,8 +468,10 @@ export const NoteDetailScreen: React.FC = () => {
                       const isLocked = fmt.planReq === 'pro' && !isProOrUltra;
 
                       return (
-                        <button
+                        <motion.button
                           key={fmt.id}
+                          whileHover={{ x: 3 }}
+                          whileTap={{ scale: 0.97 }}
                           onClick={() => {
                             setIsDownloadOpen(false);
                             if (isLocked) {
@@ -470,7 +492,7 @@ export const NoteDetailScreen: React.FC = () => {
                             <span className="text-[10px] text-[var(--text-muted)]">{fmt.desc}</span>
                           </div>
                           {isLocked && <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0 ml-1" />}
-                        </button>
+                        </motion.button>
                       );
                     })}
                   </motion.div>

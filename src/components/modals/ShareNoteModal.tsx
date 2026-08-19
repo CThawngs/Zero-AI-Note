@@ -150,33 +150,39 @@ export const ShareNoteModal: React.FC<ShareNoteModalProps> = ({
               value={shareUrl}
               className="flex-1 rounded-xl px-3.5 py-2 text-xs font-mono border bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none select-all truncate"
             />
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.93 }}
               onClick={handleCopyLink}
-              className="px-3.5 py-2 rounded-xl bg-[var(--accent-primary)] text-[var(--accent-text)] text-xs font-bold flex items-center gap-1.5 cursor-pointer hover:opacity-90 active:scale-95 transition-all shadow-xs shrink-0"
+              className="px-3.5 py-2 rounded-xl bg-[var(--accent-primary)] text-[var(--accent-text)] text-xs font-bold flex items-center gap-1.5 cursor-pointer hover:opacity-95 transition-all shadow-md shadow-[var(--accent-primary)]/20 shrink-0"
             >
               {isCopiedLink ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{isCopiedLink ? (language === 'vi' ? 'Đã chép' : 'Copied') : (language === 'vi' ? 'Sao chép' : 'Copy')}</span>
-            </button>
+            </motion.button>
           </div>
         </div>
 
         {/* Action Buttons: Native Share / Copy Markdown / QR */}
         <div className="grid grid-cols-2 gap-2">
-          <button
+          <motion.button
+            whileHover={{ scale: 1.03, y: -1 }}
+            whileTap={{ scale: 0.95 }}
             onClick={handleCopyMarkdown}
-            className="flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer active:scale-95 bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-primary)] hover:border-[var(--accent-primary)] shadow-2xs"
+            className="flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-primary)] hover:border-[var(--accent-primary)] hover:shadow-md hover:shadow-[var(--accent-primary)]/10 shadow-2xs"
           >
             {isCopiedMd ? <Check className="w-4 h-4 text-emerald-500" /> : <FileText className="w-4 h-4 text-[var(--accent-primary)]" />}
             <span>{isCopiedMd ? (language === 'vi' ? 'Đã chép MD' : 'Copied') : (language === 'vi' ? 'Chép Markdown' : 'Copy Markdown')}</span>
-          </button>
+          </motion.button>
 
-          <button
+          <motion.button
+            whileHover={{ scale: 1.03, y: -1 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setShowQr(!showQr)}
-            className="flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer active:scale-95 bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-primary)] hover:border-[var(--accent-primary)] shadow-2xs"
+            className="flex items-center justify-center gap-2 p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-primary)] hover:border-[var(--accent-primary)] hover:shadow-md hover:shadow-[var(--accent-primary)]/10 shadow-2xs"
           >
             <QrCode className="w-4 h-4 text-[var(--accent-primary)]" />
             <span>{showQr ? (language === 'vi' ? 'Ẩn mã QR' : 'Hide QR') : (language === 'vi' ? 'Hiện mã QR' : 'Show QR Code')}</span>
-          </button>
+          </motion.button>
         </div>
 
         {/* QR Code Container */}
@@ -202,16 +208,18 @@ export const ShareNoteModal: React.FC<ShareNoteModalProps> = ({
             {socialLinks.map((item, idx) => {
               const Icon = item.icon;
               return (
-                <a
+                <motion.a
                   key={idx}
+                  whileHover={{ scale: 1.08, y: -2 }}
+                  whileTap={{ scale: 0.94 }}
                   href={item.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-xl border text-xs font-semibold transition-all border-[var(--border-color)] bg-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-2xs ${item.color} active:scale-95`}
+                  className={`flex flex-col items-center justify-center gap-1.5 p-2.5 rounded-xl border text-xs font-semibold transition-all border-[var(--border-color)] bg-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] shadow-2xs ${item.color}`}
                 >
                   <Icon className="w-4 h-4" />
                   <span className="text-[10px]">{item.name.split(' ')[0]}</span>
-                </a>
+                </motion.a>
               );
             })}
           </div>

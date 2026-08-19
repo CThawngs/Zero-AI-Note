@@ -344,91 +344,105 @@ export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ note, isOpen, onCl
         <div className={`h-14 px-3 sm:px-4 flex items-center justify-between border-b shrink-0 transition-colors border-[var(--border-color)] bg-[var(--bg-card)] backdrop-blur-md`}>
           {/* Left: Preview Tabs */}
           <div className="flex items-center gap-1 p-0.5 rounded-xl border bg-[var(--bg-app)] border-[var(--border-color)] overflow-x-auto no-scrollbar">
-            <button
+            <motion.button
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setActiveTab('markdown')}
-              className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap active:scale-95 ${
+              className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === 'markdown'
                   ? 'bg-[var(--accent-primary)] text-[var(--accent-text)] shadow-xs font-bold'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
               }`}
             >
               Markdown
-            </button>
+            </motion.button>
 
-            <button
+            <motion.button
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setActiveTab('static-html')}
-              className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap active:scale-95 ${
+              className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === 'static-html'
                   ? 'bg-[var(--accent-primary)] text-[var(--accent-text)] shadow-xs font-bold'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
               }`}
             >
               <span>HTML Tĩnh</span>
               {!isProOrUltra && <Lock className="w-3 h-3 text-amber-500" />}
-            </button>
+            </motion.button>
 
-            <button
+            <motion.button
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setActiveTab('interactive-html')}
-              className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap active:scale-95 ${
+              className={`flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === 'interactive-html'
                   ? 'bg-[var(--accent-primary)] text-[var(--accent-text)] shadow-xs font-bold'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
               }`}
             >
               <span>HTML Tương Tác</span>
               {!isUltra && <Lock className="w-3 h-3 text-amber-500" />}
-            </button>
+            </motion.button>
 
-            <button
+            <motion.button
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setActiveTab('code')}
-              className={`px-2 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer whitespace-nowrap active:scale-95 ${
+              className={`px-2 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === 'code'
                   ? 'bg-[var(--accent-primary)] text-[var(--accent-text)] shadow-xs font-bold'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
               }`}
             >
               Raw
-            </button>
+            </motion.button>
           </div>
 
           {/* Right: Action Buttons (Share, Copy, Export, Fullscreen, Close) */}
           <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
             {/* Share Note Button */}
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05, y: -1 }}
+              whileTap={{ scale: 0.93 }}
               id="btn-artifact-share-note"
               onClick={() => setIsShareModalOpen(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer active:scale-95 bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] shadow-2xs"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] hover:shadow-md hover:shadow-[var(--accent-primary)]/15 shadow-2xs"
               title={language === 'vi' ? 'Chia sẻ bài ghi chú này' : 'Share this note'}
             >
               <Share2 className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
               <span className="hidden sm:inline">{language === 'vi' ? 'Chia sẻ' : 'Share'}</span>
-            </button>
+            </motion.button>
 
             {/* Copy Note Button */}
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05, y: -1 }}
+              whileTap={{ scale: 0.93 }}
               id="btn-artifact-copy"
               onClick={handleCopy}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer active:scale-95 bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] hover:border-[var(--accent-primary)] shadow-2xs"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] hover:border-[var(--accent-primary)] hover:shadow-md hover:shadow-[var(--accent-primary)]/15 shadow-2xs"
               title={language === 'vi' ? 'Sao chép ghi chú' : 'Copy note'}
             >
               {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
               <span className="hidden sm:inline">
                 {isCopied ? (language === 'vi' ? 'Đã chép' : 'Copied') : (language === 'vi' ? 'Sao chép' : 'Copy')}
               </span>
-            </button>
+            </motion.button>
 
             {/* Export Dropdown */}
             <div className="relative">
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05, y: -1 }}
+                whileTap={{ scale: 0.93 }}
                 id="btn-artifact-download-dropdown"
                 onClick={() => setIsDownloadOpen(!isDownloadOpen)}
                 disabled={isExporting}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--accent-primary)] text-[var(--accent-text)] hover:opacity-90 transition-all cursor-pointer active:scale-95 shadow-md shadow-[var(--accent-primary)]/20"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--accent-primary)] text-[var(--accent-text)] hover:opacity-95 transition-all cursor-pointer shadow-md shadow-[var(--accent-primary)]/25 hover:shadow-lg hover:shadow-[var(--accent-primary)]/35"
               >
                 {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
                 <span className="hidden sm:inline">{language === 'vi' ? 'Xuất File' : 'Export'}</span>
                 <ChevronDown className={`w-3 h-3 transition-transform ${isDownloadOpen ? 'rotate-180' : ''}`} />
-              </button>
+              </motion.button>
 
               <AnimatePresence>
                 {isDownloadOpen && (
@@ -442,33 +456,37 @@ export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ note, isOpen, onCl
                     >
                       {/* Multi-Export for Ultra */}
                       {isUltra ? (
-                        <button
+                        <motion.button
+                          whileHover={{ x: 3 }}
+                          whileTap={{ scale: 0.97 }}
                           onClick={() => {
                             setIsDownloadOpen(false);
                             setIsMultiExportModalOpen(true);
                           }}
-                          className="w-full text-left p-2 rounded-xl transition-colors cursor-pointer flex items-center justify-between bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-bold mb-1 border border-[var(--accent-primary)]/30 text-xs"
+                          className="w-full text-left p-2 rounded-xl transition-all cursor-pointer flex items-center justify-between bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-bold mb-1 border border-[var(--accent-primary)]/30 text-xs"
                         >
                           <span className="flex items-center gap-1.5">
                             <FileArchive className="w-4 h-4" />
                             <span>Multi-Export & ZIP</span>
                           </span>
                           <span className="text-[10px] uppercase bg-[var(--accent-primary)] text-[var(--accent-text)] px-1.5 py-0.5 rounded font-extrabold">Ultra</span>
-                        </button>
+                        </motion.button>
                       ) : (
-                        <button
+                        <motion.button
+                          whileHover={{ x: 3 }}
+                          whileTap={{ scale: 0.97 }}
                           onClick={() => {
                             setIsDownloadOpen(false);
                             setCurrentScreen('pricing');
                           }}
-                          className="w-full text-left p-2 rounded-xl transition-colors cursor-pointer flex items-center justify-between text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] mb-1 text-xs"
+                          className="w-full text-left p-2 rounded-xl transition-all cursor-pointer flex items-center justify-between text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] mb-1 text-xs"
                         >
                           <span className="flex items-center gap-1.5">
                             <Lock className="w-3.5 h-3.5 text-amber-500" />
                             <span>Multi-Export & ZIP</span>
                           </span>
                           <span className="text-[10px] text-amber-500 font-bold">Ultra</span>
-                        </button>
+                        </motion.button>
                       )}
 
                       {[
@@ -480,8 +498,10 @@ export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ note, isOpen, onCl
                         const isLocked = fmt.planReq === 'pro' && !isProOrUltra;
 
                         return (
-                          <button
+                          <motion.button
                             key={fmt.id}
+                            whileHover={{ x: 3 }}
+                            whileTap={{ scale: 0.97 }}
                             onClick={() => {
                               setIsDownloadOpen(false);
                               if (isLocked) {
@@ -502,7 +522,7 @@ export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ note, isOpen, onCl
                               <span className="text-[10px] text-[var(--text-muted)]">{fmt.desc}</span>
                             </div>
                             {isLocked && <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0 ml-1" />}
-                          </button>
+                          </motion.button>
                         );
                       })}
                     </motion.div>
@@ -512,22 +532,26 @@ export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ note, isOpen, onCl
             </div>
 
             {/* Toggle Fullscreen / Extend View */}
-            <button
+            <motion.button
+              whileHover={{ scale: 1.1, y: -1 }}
+              whileTap={{ scale: 0.9 }}
               onClick={() => setIsArtifactFullscreen(!isArtifactFullscreen)}
-              className="p-1.5 rounded-xl border transition-colors cursor-pointer border-[var(--border-color)] bg-[var(--bg-app)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--accent-primary)] active:scale-95 shadow-2xs"
+              className="p-1.5 rounded-xl border transition-all cursor-pointer border-[var(--border-color)] bg-[var(--bg-app)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--accent-primary)] shadow-2xs"
               title={isArtifactFullscreen ? 'Thu nhỏ (Esc)' : 'Mở rộng toàn màn hình'}
             >
               {isArtifactFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-            </button>
+            </motion.button>
 
             {/* Close */}
-            <button
+            <motion.button
+              whileHover={{ scale: 1.1, y: -1 }}
+              whileTap={{ scale: 0.9 }}
               onClick={onClose}
-              className="p-1.5 rounded-xl border transition-colors cursor-pointer border-[var(--border-color)] bg-[var(--bg-app)] text-[var(--text-muted)] hover:text-red-500 hover:border-red-500/30 active:scale-95 shadow-2xs"
+              className="p-1.5 rounded-xl border transition-all cursor-pointer border-[var(--border-color)] bg-[var(--bg-app)] text-[var(--text-muted)] hover:text-red-500 hover:border-red-500/30 shadow-2xs"
               title="Đóng panel"
             >
               <X className="w-4 h-4" />
-            </button>
+            </motion.button>
           </div>
         </div>
 
@@ -536,15 +560,17 @@ export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ note, isOpen, onCl
           <div className="h-10 px-4 sm:px-8 border-b flex items-center justify-between text-xs bg-[var(--bg-card)]/90 border-[var(--border-color)] shrink-0">
             <div className="flex items-center gap-4 text-[var(--text-secondary)]">
               {/* ToC Toggle */}
-              <button
+              <motion.button
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setIsToCOpen(!isToCOpen)}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-colors cursor-pointer ${
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
                   isToCOpen ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] border-[var(--accent-primary)]/40 font-bold' : 'border-transparent hover:bg-[var(--bg-hover)]'
                 }`}
               >
                 <ListOrdered className="w-3.5 h-3.5" />
                 <span>{language === 'vi' ? 'Mục lục (ToC)' : 'Outline ToC'}</span>
-              </button>
+              </motion.button>
 
               {/* Reading Stats */}
               <span className="hidden sm:inline font-medium text-[var(--text-muted)]">
@@ -562,10 +588,12 @@ export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ note, isOpen, onCl
                   { id: 'midnight-slate', label: 'Slate', bg: 'bg-[#0B0F19] border border-blue-900/30' },
                   { id: 'emerald-focus', label: 'Emerald', bg: 'bg-[#0C1B17] border border-emerald-900/30' }
                 ].map(p => (
-                  <button
+                  <motion.button
                     key={p.id}
+                    whileHover={{ scale: 1.25 }}
+                    whileTap={{ scale: 0.85 }}
                     onClick={() => setPaperTheme(p.id as any)}
-                    className={`w-5 h-5 rounded-md ${p.bg} transition-transform ${paperTheme === p.id ? 'ring-2 ring-[var(--accent-primary)] scale-110' : 'opacity-70 hover:opacity-100'}`}
+                    className={`w-5 h-5 rounded-md ${p.bg} transition-all cursor-pointer ${paperTheme === p.id ? 'ring-2 ring-[var(--accent-primary)] scale-110' : 'opacity-70 hover:opacity-100'}`}
                     title={p.label}
                   />
                 ))}
@@ -574,24 +602,28 @@ export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ note, isOpen, onCl
               {/* Font Size Selector */}
               <div className="flex items-center border rounded-lg p-0.5 bg-[var(--bg-app)] border-[var(--border-color)] text-[10px] font-bold">
                 {(['sm', 'base', 'lg'] as TextSize[]).map(s => (
-                  <button
+                  <motion.button
                     key={s}
+                    whileHover={{ scale: 1.15 }}
+                    whileTap={{ scale: 0.9 }}
                     onClick={() => setTextSize(s)}
-                    className={`px-2 py-0.5 rounded cursor-pointer ${textSize === s ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+                    className={`px-2 py-0.5 rounded cursor-pointer transition-colors ${textSize === s ? 'bg-[var(--accent-primary)] text-[var(--accent-text)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
                   >
                     {s === 'sm' ? 'A-' : s === 'base' ? 'A' : 'A+'}
-                  </button>
+                  </motion.button>
                 ))}
               </div>
 
               {/* Serif / Sans Toggle */}
-              <button
+              <motion.button
+                whileHover={{ scale: 1.08 }}
+                whileTap={{ scale: 0.92 }}
                 onClick={() => setFontFamily(fontFamily === 'sans' ? 'serif' : 'sans')}
-                className="px-2 py-1 rounded-lg border border-[var(--border-color)] font-serif text-xs hover:border-[var(--accent-primary)] cursor-pointer"
+                className="px-2 py-1 rounded-lg border border-[var(--border-color)] font-serif text-xs hover:border-[var(--accent-primary)] cursor-pointer transition-all"
                 title="Đổi phông chữ Serif / Sans"
               >
                 {fontFamily === 'sans' ? 'Serif' : 'Sans'}
-              </button>
+              </motion.button>
             </div>
           </div>
         )}
@@ -610,52 +642,60 @@ export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ note, isOpen, onCl
                 </div>
 
                 <div className="space-y-1 text-xs">
-                  <button
+                  <motion.button
+                    whileHover={{ x: 4 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => scrollToSection('sec-overview')}
-                    className={`w-full text-left px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-2 ${
+                    className={`w-full text-left px-2.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-2 ${
                       activeToCId === 'sec-overview' ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-bold' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
                     }`}
                   >
                     <span>📌</span>
                     <span className="truncate">{language === 'vi' ? 'Tóm tắt tổng quan' : 'Executive Overview'}</span>
-                  </button>
+                  </motion.button>
 
                   {note.keywords && note.keywords.length > 0 && (
-                    <button
+                    <motion.button
+                      whileHover={{ x: 4 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={() => scrollToSection('sec-keywords')}
-                      className={`w-full text-left px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-2 ${
+                      className={`w-full text-left px-2.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-2 ${
                         activeToCId === 'sec-keywords' ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-bold' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
                       }`}
                     >
                       <span>🏷️</span>
                       <span className="truncate">{language === 'vi' ? 'Từ khóa trọng tâm' : 'Key Concepts & Tags'}</span>
-                    </button>
+                    </motion.button>
                   )}
 
                   {note.coreQuestions && note.coreQuestions.length > 0 && (
-                    <button
+                    <motion.button
+                      whileHover={{ x: 4 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={() => scrollToSection('sec-qa')}
-                      className={`w-full text-left px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-2 ${
+                      className={`w-full text-left px-2.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-2 ${
                         activeToCId === 'sec-qa' ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-bold' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
                       }`}
                     >
                       <span>💡</span>
                       <span className="truncate">{language === 'vi' ? 'Câu hỏi & Thẻ nhớ Q&A' : 'Core Q&A Flashcards'}</span>
-                    </button>
+                    </motion.button>
                   )}
 
                   {/* Sections List */}
                   {note.content?.sections?.map((sec, idx) => (
-                    <button
+                    <motion.button
                       key={idx}
+                      whileHover={{ x: 4 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={() => scrollToSection(`sec-detail-${idx}`)}
-                      className={`w-full text-left px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-2 ${
+                      className={`w-full text-left px-2.5 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-2 ${
                         activeToCId === `sec-detail-${idx}` ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-bold' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
                       }`}
                     >
                       <span className="font-mono text-[10px] opacity-70">0{idx + 1}</span>
                       <span className="truncate">{sec.title}</span>
-                    </button>
+                    </motion.button>
                   ))}
                 </div>
               </div>
@@ -715,13 +755,15 @@ export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ note, isOpen, onCl
                         {language === 'vi' ? 'Tóm Tắt Tổng Quan Học Thuật' : 'Executive Academic Overview'}
                       </h3>
                     </div>
-                    <button
+                    <motion.button
+                      whileHover={{ scale: 1.15, rotate: 5 }}
+                      whileTap={{ scale: 0.9 }}
                       onClick={() => handleCopySection('Executive Overview', note.summary)}
-                      className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] cursor-pointer"
+                      className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] cursor-pointer transition-colors"
                       title="Sao chép phần này"
                     >
                       <Copy className="w-3.5 h-3.5" />
-                    </button>
+                    </motion.button>
                   </div>
 
                   <p className={`${getTextSizeClass()} leading-relaxed`}>
@@ -741,12 +783,13 @@ export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ note, isOpen, onCl
                     </h4>
                     <div className="flex flex-wrap gap-2">
                       {note.keywords.map((kw, i) => (
-                        <span 
+                        <motion.span 
                           key={i} 
-                          className="px-3 py-1 rounded-xl border text-xs font-bold bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] hover:border-[var(--accent-primary)] transition-colors shadow-2xs"
+                          whileHover={{ scale: 1.06, y: -1 }}
+                          className="px-3 py-1 rounded-xl border text-xs font-bold bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] hover:border-[var(--accent-primary)] transition-colors shadow-2xs cursor-default"
                         >
                           #{kw}
-                        </span>
+                        </motion.span>
                       ))}
                     </div>
                   </div>
@@ -780,12 +823,14 @@ export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ note, isOpen, onCl
                         const answerText = parts.length > 1 ? parts.slice(1).join('?').trim() : (note.content?.sections?.[qIdx]?.text || note.summary);
 
                         return (
-                          <div
+                          <motion.div
                             key={qIdx}
+                            whileHover={{ scale: 1.015, y: -2 }}
+                            whileTap={{ scale: 0.98 }}
                             onClick={() => toggleCardFlip(qIdx)}
                             className={`p-4 rounded-2xl border transition-all cursor-pointer shadow-2xs ${
                               isFlipped 
-                                ? 'bg-[var(--accent-subtle)]/50 border-[var(--accent-primary)]/50' 
+                                ? 'bg-[var(--accent-subtle)]/50 border-[var(--accent-primary)]/50 shadow-md shadow-[var(--accent-primary)]/10' 
                                 : 'bg-[var(--bg-app)] border-[var(--border-color)] hover:border-[var(--accent-primary)]/50'
                             }`}
                           >
@@ -808,7 +853,7 @@ export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ note, isOpen, onCl
                                 {answerText || (language === 'vi' ? 'Xem chi tiết trong các phân mục bên dưới.' : 'Refer to detailed sections below.')}
                               </motion.div>
                             )}
-                          </div>
+                          </motion.div>
                         );
                       })}
                     </div>
@@ -828,19 +873,21 @@ export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ note, isOpen, onCl
                         {/* Section Header Accordion Bar */}
                         <div 
                           onClick={() => toggleSectionCollapse(idx)}
-                          className="p-4 sm:p-5 flex items-center justify-between cursor-pointer hover:bg-[var(--bg-hover)] transition-colors select-none"
+                          className="p-4 sm:p-5 flex items-center justify-between cursor-pointer hover:bg-[var(--bg-hover)] transition-colors select-none group"
                         >
                           <div className="flex items-center gap-3">
-                            <span className="w-7 h-7 rounded-xl bg-[var(--accent-primary)] text-[var(--accent-text)] text-xs font-bold flex items-center justify-center shrink-0 shadow-2xs">
+                            <span className="w-7 h-7 rounded-xl bg-[var(--accent-primary)] text-[var(--accent-text)] text-xs font-bold flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
                               {idx + 1}
                             </span>
-                            <h3 className="text-sm sm:text-base font-bold tracking-tight">
+                            <h3 className="text-sm sm:text-base font-bold tracking-tight group-hover:text-[var(--accent-primary)] transition-colors">
                               {sec.title}
                             </h3>
                           </div>
 
                           <div className="flex items-center gap-2">
-                            <button
+                            <motion.button
+                              whileHover={{ scale: 1.2, rotate: 5 }}
+                              whileTap={{ scale: 0.9 }}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleCopySection(sec.title, sec.text, sec.bulletPoints);
@@ -849,8 +896,8 @@ export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ note, isOpen, onCl
                               title="Sao chép phân mục"
                             >
                               <Copy className="w-3.5 h-3.5" />
-                            </button>
-                            <div className="p-1 text-[var(--text-muted)]">
+                            </motion.button>
+                            <div className="p-1 text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors">
                               {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
                             </div>
                           </div>
@@ -861,7 +908,7 @@ export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ note, isOpen, onCl
                           <div className="p-5 sm:p-6 pt-0 space-y-4 border-t border-[var(--border-color)]/50">
                             {/* Definition Box */}
                             {sec.definition && (
-                              <div className="p-4 rounded-2xl border-l-4 border-[var(--accent-primary)] bg-[var(--accent-subtle)]/40 text-xs sm:text-sm italic text-[var(--text-primary)]">
+                              <div className="p-4 rounded-2xl border-l-4 border-[var(--accent-primary)] bg-[var(--accent-subtle)]/40 text-xs sm:text-sm italic text-[var(--text-primary)] shadow-2xs">
                                 <span className="font-bold not-italic text-[var(--accent-primary)] block mb-1">
                                   💡 {language === 'vi' ? 'Khái niệm trọng tâm:' : 'Core Definition:'}
                                 </span>
@@ -908,12 +955,14 @@ export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ note, isOpen, onCl
                     <p className="text-xs text-[var(--text-secondary)]">
                       {language === 'vi' ? 'Tính năng hiển thị HTML độc lập với phong cách tạp chí học thuật dành riêng cho gói Pro và Ultra.' : 'Pro feature.'}
                     </p>
-                    <button
+                    <motion.button
+                      whileHover={{ scale: 1.04, y: -1 }}
+                      whileTap={{ scale: 0.94 }}
                       onClick={() => setCurrentScreen('pricing')}
-                      className="px-5 py-2.5 rounded-xl bg-[var(--accent-primary)] text-[var(--accent-text)] text-xs font-bold hover:opacity-90 active:scale-95 cursor-pointer shadow-md"
+                      className="px-5 py-2.5 rounded-xl bg-[var(--accent-primary)] text-[var(--accent-text)] text-xs font-bold hover:opacity-90 cursor-pointer shadow-md"
                     >
                       {language === 'vi' ? 'Nâng cấp Pro ngay' : 'Upgrade to Pro'}
-                    </button>
+                    </motion.button>
                   </div>
                 ) : (
                   <iframe
@@ -946,12 +995,14 @@ export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({ note, isOpen, onCl
                     <p className="text-xs text-[var(--text-secondary)]">
                       {language === 'vi' ? 'Trải nghiệm ghi chú học thuật có khả năng lọc, tìm kiếm thời gian thực, lật thẻ Flashcards tương tác dành cho gói Ultra.' : 'Ultra feature.'}
                     </p>
-                    <button
+                    <motion.button
+                      whileHover={{ scale: 1.04, y: -1 }}
+                      whileTap={{ scale: 0.94 }}
                       onClick={() => setCurrentScreen('pricing')}
-                      className="px-5 py-2.5 rounded-xl bg-[var(--accent-primary)] text-[var(--accent-text)] text-xs font-bold hover:opacity-90 active:scale-95 cursor-pointer shadow-md"
+                      className="px-5 py-2.5 rounded-xl bg-[var(--accent-primary)] text-[var(--accent-text)] text-xs font-bold hover:opacity-90 cursor-pointer shadow-md"
                     >
                       {language === 'vi' ? 'Nâng cấp Ultra' : 'Upgrade to Ultra'}
-                    </button>
+                    </motion.button>
                   </div>
                 ) : (
                   <iframe
