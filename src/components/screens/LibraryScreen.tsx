@@ -15,6 +15,7 @@ import {
   Sparkles, 
   Share2, 
   Trash2, 
+  Archive,
   Edit3, 
   Clock, 
   Tag,
@@ -27,6 +28,7 @@ import {
   Check,
   Calendar,
   Layers,
+  RotateCcw,
   Bot
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
@@ -69,7 +71,7 @@ export const LibraryScreen: React.FC = () => {
   const [openMenuSessionId, setOpenMenuSessionId] = useState<string | null>(null);
   const [renameModalSession, setRenameModalSession] = useState<ChatSessionItem | null>(null);
   const [renameTitleInput, setRenameTitleInput] = useState('');
-  const [deleteConfirmSession, setDeleteConfirmSession] = useState<ChatSessionItem | null>(null);
+  const [archiveConfirmSession, setArchiveConfirmSession] = useState<ChatSessionItem | null>(null);
   const [previewNote, setPreviewNote] = useState<NoteItem | null>(null);
   const [sharingNote, setSharingNote] = useState<NoteItem | null>(null);
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
@@ -96,17 +98,17 @@ export const LibraryScreen: React.FC = () => {
     }
   };
 
-  const handleConfirmDelete = async () => {
-    if (deleteConfirmSession) {
-      await archiveChatSession(deleteConfirmSession.id);
-      setDeleteConfirmSession(null);
+  const handleConfirmArchive = async () => {
+    if (archiveConfirmSession) {
+      await archiveChatSession(archiveConfirmSession.id);
+      setArchiveConfirmSession(null);
     }
   };
 
   const isDark = theme === 'dark';
 
-  // Base list: use chatSessions or fallback to notes mapped as sessions
-  const baseSessions: ChatSessionItem[] = chatSessions.length > 0 
+  // Base list: use active non-archived chatSessions or fallback to notes mapped as sessions
+  const baseSessions: ChatSessionItem[] = (chatSessions.length > 0 
     ? chatSessions 
     : notes.map(n => ({
         id: n.id,
@@ -120,13 +122,13 @@ export const LibraryScreen: React.FC = () => {
         messages: [
           {
             id: `msg_${n.id}`,
-            sender: 'user',
+            sender: 'user' as const,
             text: n.title,
             timestamp: n.date || 'Vừa xong'
           },
           {
             id: `msg_ai_${n.id}`,
-            sender: 'ai',
+            sender: 'ai' as const,
             text: n.summary || 'Ghi chú đã được AI cấu trúc sẵn sàng.',
             timestamp: n.date || 'Vừa xong',
             noteResultId: n.id
@@ -137,9 +139,9 @@ export const LibraryScreen: React.FC = () => {
         isPinned: false,
         isArchived: n.isArchived,
         isShared: n.isShared
-      }));
+      }))).filter(s => !s.isArchived);
 
-  // Counts for tabs
+  // Tab counts
   const totalCount = baseSessions.length;
   const pinnedCount = baseSessions.filter(s => s.isPinned).length;
   const withNotesCount = baseSessions.filter(s => !!s.note).length;
@@ -212,147 +214,146 @@ export const LibraryScreen: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden transition-colors bg-[var(--bg-app)] text-[var(--text-primary)]">
-      {/* Top Controls Bar */}
-      <div className="p-4 sm:p-6 pb-4 border-b space-y-4 border-[var(--border-color)] bg-[var(--bg-card)]/90 backdrop-blur-md">
-        {/* Title & Tabs row */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
-          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+      {/* Top Header & Controls */}
+      <div className="p-4 sm:p-6 pb-4 border-b space-y-4 border-[var(--border-color)] bg-[var(--bg-card)]/90 backdrop-blur-md shrink-0">
+        {/* Main Title Row */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-[var(--accent-subtle)] text-[var(--accent-primary)] flex items-center justify-center shrink-0 border border-[var(--accent-primary)]/20 shadow-xs">
+              <Clock className="w-5 h-5 stroke-[2.2]" />
+            </div>
             <div>
-              <div className="flex items-center gap-2">
-                <Clock className="w-5 h-5 text-[var(--accent-primary)]" />
-                <h1 className="text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
-                  {t('historyTitle') || 'Lịch sử Hội thoại & Ghi chú'}
-                </h1>
-              </div>
-              <p className="text-[11px] text-[var(--text-secondary)] mt-0.5 hidden sm:block">
+              <h1 className="text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
+                {t('historyTitle') || 'Lịch sử Hội thoại & Ghi chú'}
+              </h1>
+              <p className="text-xs text-[var(--text-secondary)] mt-0.5">
                 {t('historySubtitle') || 'Lưu trữ các phiên chat nghiên cứu với AI kèm file Note cấu trúc cao'}
               </p>
             </div>
-            
-            {/* Tabs */}
-            <div className="flex p-0.5 rounded-xl border bg-[var(--bg-app)] border-[var(--border-color)]">
-              <button
-                id="tab-all-history"
-                onClick={() => setActiveHistoryTab('all')}
-                className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                  activeHistoryTab === 'all'
-                    ? 'bg-[var(--bg-card)] text-[var(--text-primary)] shadow-xs font-bold'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                }`}
-              >
-                {language === 'vi' ? 'Tất cả' : 'All'} ({totalCount})
-              </button>
-              <button
-                id="tab-pinned-history"
-                onClick={() => setActiveHistoryTab('pinned')}
-                className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                  activeHistoryTab === 'pinned'
-                    ? 'bg-[var(--bg-card)] text-amber-500 shadow-xs font-bold'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                }`}
-              >
-                <Pin className="w-3 h-3" />
-                <span>{language === 'vi' ? 'Đã ghim' : 'Pinned'}</span>
-                {pinnedCount > 0 && <span className="font-mono text-[10px] opacity-80">({pinnedCount})</span>}
-              </button>
-              <button
-                id="tab-with-notes-history"
-                onClick={() => setActiveHistoryTab('with-notes')}
-                className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                  activeHistoryTab === 'with-notes'
-                    ? 'bg-[var(--bg-card)] text-[var(--accent-primary)] shadow-xs font-bold'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                }`}
-              >
-                <FileText className="w-3 h-3" />
-                <span>{language === 'vi' ? 'Có Note AI' : 'With Notes'}</span>
-                {withNotesCount > 0 && <span className="font-mono text-[10px] opacity-80">({withNotesCount})</span>}
-              </button>
-              <button
-                id="tab-shared-history"
-                onClick={() => setActiveHistoryTab('shared')}
-                className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                  activeHistoryTab === 'shared'
-                    ? 'bg-[var(--bg-card)] text-[var(--text-primary)] shadow-xs font-bold'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                }`}
-              >
-                {t('tabShared')}
-              </button>
-            </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Storage Quota */}
-            <div className="flex items-center gap-2">
-              <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-xl border ${
-                baseSessions.length >= noteLimit
-                  ? 'bg-red-500/15 border-red-500/30 text-red-600 dark:text-red-400'
-                  : 'bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-secondary)]'
-              }`}>
-                {language === 'vi' 
-                  ? `Lưu trữ: ${baseSessions.length}/${isUltra ? '∞' : noteLimit} Phiên` 
-                  : `Storage: ${baseSessions.length}/${isUltra ? '∞' : noteLimit} Sessions`}
+          <div className="flex items-center gap-2.5 self-start sm:self-auto">
+            {/* Storage Quota Pill */}
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border bg-[var(--bg-app)] border-[var(--border-color)] text-xs">
+              <span className="text-[var(--text-secondary)] font-medium">
+                {language === 'vi' ? 'Lưu trữ:' : 'Storage:'}
+              </span>
+              <span className="font-bold text-[var(--text-primary)] font-mono">
+                {baseSessions.length}/{isUltra ? '∞' : noteLimit}
               </span>
               {!isUltra && baseSessions.length >= (user.plan === 'pro' ? 40 : 15) && (
                 <button
                   onClick={() => setCurrentScreen('pricing')}
-                  className="text-[11px] font-bold text-[var(--accent-primary)] hover:underline cursor-pointer"
+                  className="font-bold text-[var(--accent-primary)] hover:underline ml-1 cursor-pointer"
                 >
-                  {language === 'vi' ? 'Nâng gói' : 'Upgrade'}
+                  {language === 'vi' ? 'Nâng cấp' : 'Upgrade'}
                 </button>
               )}
             </div>
 
             {/* New Chat & Note Button */}
             <motion.button
-              id="btn-library-new-note"
-              whileHover={{ scale: 1.04, y: -1 }}
-              whileTap={{ scale: 0.95 }}
+              id="btn-history-new-chat"
+              whileHover={{ scale: 1.03, y: -1 }}
+              whileTap={{ scale: 0.97 }}
               onClick={() => startNewChatNote()}
-              className="flex items-center gap-2 px-3.5 py-2 bg-[var(--accent-primary)] hover:opacity-90 text-[var(--accent-text)] rounded-xl text-xs font-bold shadow-md shadow-[var(--accent-primary)]/20 transition-all cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2 bg-[var(--accent-primary)] hover:opacity-90 active:opacity-100 text-[var(--accent-text)] rounded-xl text-xs font-bold shadow-md shadow-[var(--accent-primary)]/20 transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4 stroke-[2.5]" />
-              <span>{t('newChatNote') || '+ Cuộc trò chuyện & Note mới'}</span>
+              <span>{t('newChatNote') || 'Cuộc trò chuyện & Note mới'}</span>
             </motion.button>
           </div>
         </div>
 
-        {/* Search, Filter, Sort & View Mode row */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          {/* Search bar */}
-          <div className="relative w-full sm:flex-1 sm:max-w-md">
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
-            <input
-              ref={searchInputRef}
-              id="library-search-input"
-              type="text"
-              value={librarySearchQuery}
-              onChange={(e) => setLibrarySearchQuery(e.target.value)}
-              placeholder={language === 'vi' ? 'Tìm theo chủ đề, nội dung chat, tệp đính kèm, tag...' : 'Search by topic, messages, sources, tags...'}
-              className="w-full rounded-xl pl-10 pr-8 py-2 text-xs transition-colors border bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)]"
-            />
-            {librarySearchQuery && (
-              <button
-                onClick={() => setLibrarySearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] text-sm cursor-pointer p-1"
-              >
-                ×
-              </button>
-            )}
+        {/* Tabs & Search Filter Row */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-1">
+          {/* Segmented Filter Tabs */}
+          <div className="flex p-1 rounded-2xl border bg-[var(--bg-app)] border-[var(--border-color)] self-start overflow-x-auto max-w-full">
+            <button
+              id="tab-history-all"
+              onClick={() => setActiveHistoryTab('all')}
+              className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+                activeHistoryTab === 'all'
+                  ? 'bg-[var(--bg-card)] text-[var(--text-primary)] shadow-sm font-extrabold'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+              }`}
+            >
+              {language === 'vi' ? 'Tất cả' : 'All'} ({totalCount})
+            </button>
+            <button
+              id="tab-history-pinned"
+              onClick={() => setActiveHistoryTab('pinned')}
+              className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                activeHistoryTab === 'pinned'
+                  ? 'bg-[var(--bg-card)] text-amber-500 shadow-sm font-extrabold'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+              }`}
+            >
+              <Pin className="w-3.5 h-3.5" />
+              <span>{language === 'vi' ? 'Đã ghim' : 'Pinned'}</span>
+              {pinnedCount > 0 && <span className="font-mono opacity-80">({pinnedCount})</span>}
+            </button>
+            <button
+              id="tab-history-notes"
+              onClick={() => setActiveHistoryTab('with-notes')}
+              className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                activeHistoryTab === 'with-notes'
+                  ? 'bg-[var(--bg-card)] text-[var(--accent-primary)] shadow-sm font-extrabold'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>{language === 'vi' ? 'Có Note AI' : 'With Notes'}</span>
+              {withNotesCount > 0 && <span className="font-mono opacity-80">({withNotesCount})</span>}
+            </button>
+            <button
+              id="tab-history-shared"
+              onClick={() => setActiveHistoryTab('shared')}
+              className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                activeHistoryTab === 'shared'
+                  ? 'bg-[var(--bg-card)] text-[var(--text-primary)] shadow-sm font-extrabold'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+              }`}
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span>{t('tabShared') || (language === 'vi' ? 'Được chia sẻ' : 'Shared')}</span>
+              {sharedCount > 0 && <span className="font-mono opacity-80">({sharedCount})</span>}
+            </button>
           </div>
 
-          {/* Filter, Sort & View Toggle */}
-          <div className="flex items-center justify-end gap-2 shrink-0">
+          {/* Search, Filter Dropdowns & View Mode */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Search Input */}
+            <div className="relative flex-1 sm:w-64 min-w-[200px]">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+              <input
+                ref={searchInputRef}
+                id="history-search-input"
+                type="text"
+                value={librarySearchQuery}
+                onChange={(e) => setLibrarySearchQuery(e.target.value)}
+                placeholder={language === 'vi' ? 'Tìm theo chủ đề, chat, file...' : 'Search topics, messages, files...'}
+                className="w-full rounded-xl pl-9 pr-7 py-1.5 text-xs border transition-colors bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)]"
+              />
+              {librarySearchQuery && (
+                <button
+                  onClick={() => setLibrarySearchQuery('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)] text-sm cursor-pointer p-0.5"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+
             {/* Filter Dropdown */}
             <div className="relative">
               <button
-                id="library-filter-btn"
+                id="history-filter-btn"
                 onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap bg-[var(--bg-app)] border-[var(--border-color)] hover:border-[var(--accent-primary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap bg-[var(--bg-app)] border-[var(--border-color)] hover:border-[var(--accent-primary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               >
                 <Filter className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
-                <span>{t('filter')}: {libraryFilter === 'all' ? t('all') : libraryFilter}</span>
+                <span>{libraryFilter === 'all' ? (language === 'vi' ? 'Tất cả loại' : 'All Types') : libraryFilter}</span>
               </button>
               <AnimatePresence>
                 {isFilterDropdownOpen && (
@@ -362,14 +363,14 @@ export const LibraryScreen: React.FC = () => {
                       initial={{ opacity: 0, scale: 0.96, y: 4 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.96, y: 4 }}
-                      className="absolute right-0 mt-1.5 w-48 rounded-xl shadow-2xl p-1.5 z-30 space-y-1 text-xs border bg-[var(--bg-card)] border-[var(--border-color)]"
+                      className="absolute right-0 mt-1.5 w-48 rounded-2xl shadow-2xl p-1.5 z-30 space-y-1 text-xs border bg-[var(--bg-card)] border-[var(--border-color)]"
                     >
                       {[
-                        { id: 'all', label: t('catAll') },
-                        { id: 'khoa-hoc', label: t('catScience') },
-                        { id: 'du-an', label: t('catProject') },
-                        { id: 'ca-nhan', label: t('catPersonal') },
-                        { id: 'ngon-ngu', label: t('catLanguage') },
+                        { id: 'all', label: t('catAll') || 'Tất cả thể loại' },
+                        { id: 'khoa-hoc', label: t('catScience') || 'Khoa học' },
+                        { id: 'du-an', label: t('catProject') || 'Dự án' },
+                        { id: 'ca-nhan', label: t('catPersonal') || 'Cá nhân' },
+                        { id: 'ngon-ngu', label: t('catLanguage') || 'Ngôn ngữ' },
                         { id: 'cornell', label: 'Cornell Method' },
                         { id: 'outline', label: 'Outline Framework' },
                         { id: 'feynman', label: 'Feynman Technique' },
@@ -383,7 +384,7 @@ export const LibraryScreen: React.FC = () => {
                             setLibraryFilter(f.id);
                             setIsFilterDropdownOpen(false);
                           }}
-                          className={`w-full text-left px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                          className={`w-full text-left px-3 py-1.5 rounded-xl transition-colors cursor-pointer ${
                             libraryFilter === f.id 
                               ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-bold'
                               : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
@@ -401,18 +402,18 @@ export const LibraryScreen: React.FC = () => {
             {/* Sort Dropdown */}
             <div className="relative">
               <button
-                id="library-sort-btn"
+                id="history-sort-btn"
                 onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap bg-[var(--bg-app)] border-[var(--border-color)] hover:border-[var(--accent-primary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap bg-[var(--bg-app)] border-[var(--border-color)] hover:border-[var(--accent-primary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               >
                 <ArrowUpDown className="w-3.5 h-3.5 text-[var(--accent-primary)]" />
                 <span>
                   {librarySort === 'recent' 
-                    ? t('recent') 
+                    ? (language === 'vi' ? 'Mới nhất' : 'Recent') 
                     : librarySort === 'az' 
-                      ? t('nameAsc') 
+                      ? 'A → Z' 
                       : librarySort === 'messages' 
-                        ? (language === 'vi' ? 'Nhiều tin nhắn' : 'Most Messages') 
+                        ? (language === 'vi' ? 'Nhiều tin nhắn' : 'Most msgs') 
                         : (language === 'vi' ? 'Cũ nhất' : 'Oldest')}
                 </span>
               </button>
@@ -424,10 +425,10 @@ export const LibraryScreen: React.FC = () => {
                       initial={{ opacity: 0, scale: 0.96, y: 4 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.96, y: 4 }}
-                      className="absolute right-0 mt-1.5 w-44 rounded-xl shadow-2xl p-1.5 z-30 space-y-1 text-xs border bg-[var(--bg-card)] border-[var(--border-color)]"
+                      className="absolute right-0 mt-1.5 w-44 rounded-2xl shadow-2xl p-1.5 z-30 space-y-1 text-xs border bg-[var(--bg-card)] border-[var(--border-color)]"
                     >
                       {[
-                        { id: 'recent', label: t('recent') },
+                        { id: 'recent', label: language === 'vi' ? 'Mới nhất trước' : 'Most recent' },
                         { id: 'messages', label: language === 'vi' ? 'Nhiều tin nhắn nhất' : 'Most messages' },
                         { id: 'az', label: language === 'vi' ? 'Tên A → Z' : 'Name A → Z' },
                         { id: 'za', label: language === 'vi' ? 'Tên Z → A' : 'Name Z → A' },
@@ -440,7 +441,7 @@ export const LibraryScreen: React.FC = () => {
                             setLibrarySort(s.id);
                             setIsSortDropdownOpen(false);
                           }}
-                          className={`w-full text-left px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                          className={`w-full text-left px-3 py-1.5 rounded-xl transition-colors cursor-pointer ${
                             librarySort === s.id 
                               ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] font-bold'
                               : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
@@ -456,37 +457,37 @@ export const LibraryScreen: React.FC = () => {
             </div>
 
             {/* View Mode Toggle */}
-            <div className="flex p-1 rounded-xl border shrink-0 bg-[var(--bg-app)] border-[var(--border-color)]">
+            <div className="flex p-0.5 rounded-xl border bg-[var(--bg-app)] border-[var(--border-color)]">
               <button
                 id="btn-view-grid"
                 onClick={() => setLibraryViewMode('grid')}
                 className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                   libraryViewMode === 'grid' 
-                    ? 'bg-[var(--bg-card)] text-[var(--accent-primary)] shadow-2xs font-bold' 
+                    ? 'bg-[var(--bg-card)] text-[var(--accent-primary)] shadow-xs font-bold' 
                     : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                 }`}
-                title={t('grid')}
+                title={t('grid') || 'Lưới'}
               >
-                <LayoutGrid className="w-4 h-4" />
+                <LayoutGrid className="w-3.5 h-3.5" />
               </button>
               <button
                 id="btn-view-list"
                 onClick={() => setLibraryViewMode('list')}
                 className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                   libraryViewMode === 'list' 
-                    ? 'bg-[var(--bg-card)] text-[var(--accent-primary)] shadow-2xs font-bold' 
+                    ? 'bg-[var(--bg-card)] text-[var(--accent-primary)] shadow-xs font-bold' 
                     : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                 }`}
-                title={t('list')}
+                title={t('list') || 'Danh sách'}
               >
-                <List className="w-4 h-4" />
+                <List className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content Area */}
+      {/* Main Body */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar">
         {isLoadingScreen ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
@@ -495,36 +496,47 @@ export const LibraryScreen: React.FC = () => {
             ))}
           </div>
         ) : filteredSessions.length === 0 ? (
-          <div className="h-64 flex flex-col items-center justify-center text-center p-6 border border-dashed rounded-3xl border-[var(--border-color)] bg-[var(--bg-card)]">
-            <Clock className="w-10 h-10 text-[var(--text-muted)] mb-3 opacity-60" />
-            <h3 className="text-sm font-bold text-[var(--text-primary)]">
-              {language === 'vi' ? 'Không tìm thấy phiên hội thoại nào' : 'No chat history found'}
-            </h3>
-            <p className="text-xs mt-1 max-w-sm text-[var(--text-secondary)]">
-              {language === 'vi' 
-                ? 'Thử điều chỉnh từ khóa tìm kiếm hoặc tạo một cuộc trò chuyện mới để AI tổng hợp ghi chú.' 
-                : 'Try adjusting your search terms or start a new AI chat note.'}
-            </p>
-            <div className="flex items-center gap-3 mt-4">
-              <button
-                onClick={() => {
-                  setLibrarySearchQuery('');
-                  setLibraryFilter('all');
-                  setActiveHistoryTab('all');
-                }}
-                className="px-4 py-2 bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs font-semibold rounded-xl transition-colors cursor-pointer"
-              >
-                {language === 'vi' ? 'Đặt lại bộ lọc' : 'Reset filters'}
-              </button>
-              <button
-                onClick={() => startNewChatNote()}
-                className="px-4 py-2 bg-[var(--accent-primary)] text-[var(--accent-text)] text-xs font-bold rounded-xl shadow-md cursor-pointer hover:opacity-90 active:scale-95"
-              >
-                {t('newChatNote') || '+ Bắt đầu ngay'}
-              </button>
+          <motion.div 
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="h-80 flex flex-col items-center justify-center text-center p-8 border border-dashed rounded-3xl border-[var(--border-color)] bg-[var(--bg-card)]/50 backdrop-blur-xs max-w-xl mx-auto my-8"
+          >
+            <div className="w-14 h-14 rounded-3xl bg-[var(--accent-subtle)] text-[var(--accent-primary)] flex items-center justify-center mb-4 border border-[var(--accent-primary)]/20 shadow-sm">
+              <Clock className="w-7 h-7 stroke-[2]" />
             </div>
-          </div>
+            <h3 className="text-base font-bold text-[var(--text-primary)]">
+              {language === 'vi' ? 'Chưa có lịch sử cuộc trò chuyện nào' : 'No chat history found'}
+            </h3>
+            <p className="text-xs text-[var(--text-secondary)] mt-1.5 max-w-md leading-relaxed">
+              {language === 'vi' 
+                ? 'Bắt đầu cuộc trò chuyện với AI hoặc tải lên tệp để trích xuất bài ghi chú học thuật đầu tiên của bạn.' 
+                : 'Start a new AI conversation or upload documents to generate your first structured note.'}
+            </p>
+            <div className="flex items-center gap-3 mt-5">
+              {librarySearchQuery && (
+                <button
+                  onClick={() => {
+                    setLibrarySearchQuery('');
+                    setLibraryFilter('all');
+                    setActiveHistoryTab('all');
+                  }}
+                  className="px-4 py-2 bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+                >
+                  {language === 'vi' ? 'Đặt lại bộ lọc' : 'Reset filters'}
+                </button>
+              )}
+              <motion.button
+                whileHover={{ scale: 1.04, y: -1 }}
+                whileTap={{ scale: 0.96 }}
+                onClick={() => startNewChatNote()}
+                className="px-5 py-2.5 bg-[var(--accent-primary)] text-[var(--accent-text)] text-xs font-bold rounded-xl shadow-md shadow-[var(--accent-primary)]/20 cursor-pointer hover:opacity-90"
+              >
+                {language === 'vi' ? '+ Bắt đầu cuộc trò chuyện mới' : '+ Start New Chat'}
+              </motion.button>
+            </div>
+          </motion.div>
         ) : libraryViewMode === 'grid' ? (
+          /* GRID VIEW */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
             {filteredSessions.map((session) => {
               const lastMsg = session.messages && session.messages.length > 0 
@@ -536,7 +548,7 @@ export const LibraryScreen: React.FC = () => {
               return (
                 <motion.div
                   key={session.id}
-                  initial={{ opacity: 0, y: 8 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.2 }}
                   className={`group relative p-5 rounded-3xl border transition-all flex flex-col justify-between min-h-[260px] bg-[var(--bg-card)] border-[var(--border-color)] hover:border-[var(--accent-primary)]/50 hover:shadow-xl hover:shadow-[var(--accent-primary)]/5 hover:-translate-y-1 ${
@@ -544,23 +556,18 @@ export const LibraryScreen: React.FC = () => {
                   }`}
                 >
                   <div>
-                    {/* Card Header: Badges & Actions */}
+                    {/* Card Header: Badges & Dropdown */}
                     <div className="flex items-center justify-between gap-2 mb-3">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        {/* Pinned badge */}
                         {isPinned && (
                           <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-500 border border-amber-500/30">
                             <Pin className="w-3 h-3 fill-amber-500" />
                             <span>Ghim</span>
                           </span>
                         )}
-
-                        {/* Category */}
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg border bg-[var(--bg-app)] text-[var(--text-secondary)] border-[var(--border-color)]">
                           {session.category}
                         </span>
-
-                        {/* Method badge */}
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-[var(--accent-subtle)] text-[var(--accent-primary)] uppercase">
                           {session.method}
                         </span>
@@ -573,7 +580,7 @@ export const LibraryScreen: React.FC = () => {
                             e.stopPropagation();
                             setOpenMenuSessionId(openMenuSessionId === session.id ? null : session.id);
                           }}
-                          className="p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] cursor-pointer"
+                          className="p-1.5 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] cursor-pointer"
                         >
                           <MoreVertical className="w-4 h-4" />
                         </button>
@@ -586,14 +593,14 @@ export const LibraryScreen: React.FC = () => {
                                 initial={{ opacity: 0, scale: 0.95, y: -4 }}
                                 animate={{ opacity: 1, scale: 1, y: 0 }}
                                 exit={{ opacity: 0, scale: 0.95, y: -4 }}
-                                className="absolute right-0 mt-1 w-44 rounded-xl shadow-2xl p-1.5 z-30 space-y-1 text-xs border bg-[var(--bg-card)] border-[var(--border-color)]"
+                                className="absolute right-0 mt-1 w-48 rounded-2xl shadow-2xl p-1.5 z-30 space-y-1 text-xs border bg-[var(--bg-card)] border-[var(--border-color)]"
                               >
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleOpenRename(session);
                                   }}
-                                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--bg-hover)] text-[var(--text-primary)] text-left cursor-pointer"
+                                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-[var(--bg-hover)] text-[var(--text-primary)] text-left cursor-pointer"
                                 >
                                   <Edit3 className="w-3.5 h-3.5 text-blue-500" />
                                   <span>{language === 'vi' ? 'Đổi tên' : 'Rename'}</span>
@@ -604,7 +611,7 @@ export const LibraryScreen: React.FC = () => {
                                     pinChatSession(session.id);
                                     setOpenMenuSessionId(null);
                                   }}
-                                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--bg-hover)] text-[var(--text-primary)] text-left cursor-pointer"
+                                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-[var(--bg-hover)] text-[var(--text-primary)] text-left cursor-pointer"
                                 >
                                   <Pin className="w-3.5 h-3.5 text-amber-500" />
                                   <span>{isPinned ? (language === 'vi' ? 'Bỏ ghim' : 'Unpin') : (language === 'vi' ? 'Ghim lên đầu' : 'Pin to Top')}</span>
@@ -616,7 +623,7 @@ export const LibraryScreen: React.FC = () => {
                                       setSharingNote(session.note!);
                                       setOpenMenuSessionId(null);
                                     }}
-                                    className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[var(--bg-hover)] text-[var(--text-primary)] text-left cursor-pointer"
+                                    className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-[var(--bg-hover)] text-[var(--text-primary)] text-left cursor-pointer"
                                   >
                                     <Share2 className="w-3.5 h-3.5 text-emerald-500" />
                                     <span>{language === 'vi' ? 'Chia sẻ Note' : 'Share Note'}</span>
@@ -626,13 +633,13 @@ export const LibraryScreen: React.FC = () => {
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    setDeleteConfirmSession(session);
+                                    setArchiveConfirmSession(session);
                                     setOpenMenuSessionId(null);
                                   }}
-                                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-red-500/10 text-red-500 text-left cursor-pointer"
+                                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-amber-500/10 text-amber-600 dark:text-amber-400 text-left cursor-pointer font-semibold"
                                 >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                  <span>{language === 'vi' ? 'Xóa vào Thùng rác' : 'Move to Trash'}</span>
+                                  <Archive className="w-3.5 h-3.5" />
+                                  <span>{language === 'vi' ? 'Chuyển vào Lưu trữ (30 ngày)' : 'Move to Archives (30d)'}</span>
                                 </button>
                               </motion.div>
                             </>
@@ -641,7 +648,7 @@ export const LibraryScreen: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Session Title (Click to resume chat) */}
+                    {/* Session Title */}
                     <h3 
                       onClick={() => resumeChatSession(session.id)}
                       className="text-sm sm:text-base font-extrabold tracking-tight line-clamp-2 text-[var(--text-primary)] hover:text-[var(--accent-primary)] transition-colors cursor-pointer mb-2"
@@ -679,7 +686,7 @@ export const LibraryScreen: React.FC = () => {
                     {session.note && (
                       <div 
                         onClick={() => openNoteDetail(session.note!)}
-                        className="flex items-center justify-between p-2 rounded-xl border transition-all cursor-pointer bg-[var(--accent-subtle)]/40 border-[var(--accent-primary)]/30 hover:border-[var(--accent-primary)] group/note mb-3"
+                        className="flex items-center justify-between p-2.5 rounded-2xl border transition-all cursor-pointer bg-[var(--accent-subtle)]/40 border-[var(--accent-primary)]/30 hover:border-[var(--accent-primary)] group/note mb-3"
                       >
                         <div className="flex items-center gap-2 min-w-0">
                           <FileText className="w-3.5 h-3.5 text-[var(--accent-primary)] shrink-0" />
@@ -688,7 +695,7 @@ export const LibraryScreen: React.FC = () => {
                               {session.note.title}
                             </span>
                             <span className="text-[9px] text-[var(--text-muted)]">
-                              98% AI Precision • {session.note.content?.sections?.length || 3} mục nội dung
+                              98% AI Precision • {session.note.content?.sections?.length || 3} mục cấu trúc
                             </span>
                           </div>
                         </div>
@@ -706,7 +713,7 @@ export const LibraryScreen: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Card Footer: Metadata & Direct Action Buttons */}
+                  {/* Card Footer: Metadata & Actions */}
                   <div className="pt-3 border-t flex items-center justify-between border-[var(--border-color)]">
                     <div className="flex items-center gap-2 text-[11px] text-[var(--text-muted)] font-medium">
                       <span className="flex items-center gap-1 font-mono">
@@ -718,19 +725,21 @@ export const LibraryScreen: React.FC = () => {
                     </div>
 
                     <div className="flex items-center gap-1.5">
-                      {session.note && (
-                        <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => openNoteDetail(session.note!)}
-                          className="px-2.5 py-1.5 rounded-xl border text-[11px] font-bold transition-all bg-[var(--bg-app)] border-[var(--border-color)] hover:border-[var(--accent-primary)] text-[var(--text-primary)] cursor-pointer"
-                        >
-                          {language === 'vi' ? 'Xem Note' : 'View Note'}
-                        </motion.button>
-                      )}
+                      {/* Archive Button */}
                       <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
+                        onClick={() => setArchiveConfirmSession(session)}
+                        className="p-1.5 rounded-xl border border-[var(--border-color)] hover:border-amber-500/50 hover:bg-amber-500/10 text-[var(--text-muted)] hover:text-amber-500 transition-all cursor-pointer"
+                        title={language === 'vi' ? 'Chuyển vào Lưu trữ (30 ngày)' : 'Move to Archives (30d)'}
+                      >
+                        <Archive className="w-3.5 h-3.5" />
+                      </motion.button>
+
+                      {/* Resume Chat Button */}
+                      <motion.button
+                        whileHover={{ scale: 1.04 }}
+                        whileTap={{ scale: 0.96 }}
                         onClick={() => resumeChatSession(session.id)}
                         className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-bold shadow-xs bg-[var(--accent-primary)] hover:opacity-90 text-[var(--accent-text)] cursor-pointer"
                       >
@@ -828,7 +837,7 @@ export const LibraryScreen: React.FC = () => {
                               onClick={() => resumeChatSession(session.id)}
                               className="px-3 py-1 rounded-lg text-xs font-bold bg-[var(--accent-primary)] text-[var(--accent-text)] cursor-pointer hover:opacity-90 active:scale-95"
                             >
-                              {language === 'vi' ? 'Mở Chat' : 'Resume'}
+                              {language === 'vi' ? 'Tiếp tục' : 'Resume'}
                             </button>
                             <button
                               onClick={() => handleOpenRename(session)}
@@ -838,11 +847,11 @@ export const LibraryScreen: React.FC = () => {
                               <Edit3 className="w-3.5 h-3.5" />
                             </button>
                             <button
-                              onClick={() => setDeleteConfirmSession(session)}
-                              className="p-1.5 rounded-lg border border-red-500/20 text-red-500 hover:bg-red-500/10 cursor-pointer"
-                              title="Xóa"
+                              onClick={() => setArchiveConfirmSession(session)}
+                              className="p-1.5 rounded-lg border border-[var(--border-color)] hover:border-amber-500/50 hover:bg-amber-500/10 text-[var(--text-muted)] hover:text-amber-500 cursor-pointer"
+                              title={language === 'vi' ? 'Lưu trữ (30 ngày)' : 'Archive (30d)'}
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              <Archive className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </td>
@@ -862,7 +871,7 @@ export const LibraryScreen: React.FC = () => {
           isOpen={true}
           onClose={() => setRenameModalSession(null)}
           title={language === 'vi' ? 'Đổi Tên Cuộc Trò Chuyện & Ghi Chú' : 'Rename Session & Note'}
-          subtitle={language === 'vi' ? 'Cập nhật tiêu đề hiển thị trong lịch sử' : 'Update the display title in history'}
+          subtitle={language === 'vi' ? 'Cập nhật tiêu đề hiển thị trong lịch sử' : 'Update display title in history'}
           maxWidth="max-w-md"
         >
           <form onSubmit={handleSaveRename} className="space-y-4">
@@ -898,35 +907,49 @@ export const LibraryScreen: React.FC = () => {
         </Modal>
       )}
 
-      {/* DELETE / ARCHIVE CONFIRMATION MODAL */}
-      {deleteConfirmSession && (
+      {/* ARCHIVE CONFIRMATION MODAL */}
+      {archiveConfirmSession && (
         <Modal
           isOpen={true}
-          onClose={() => setDeleteConfirmSession(null)}
-          title={language === 'vi' ? 'Xác Nhận Chuyển Vào Thùng Rác' : 'Move to Trash'}
-          subtitle={language === 'vi' ? 'Ghi chú và phiên hội thoại sẽ được lưu trong 30 ngày trước khi tự động xóa vĩnh viễn' : 'Session and note will be kept for 30 days before permanent deletion'}
+          onClose={() => setArchiveConfirmSession(null)}
+          title={language === 'vi' ? 'Chuyển Vào Mục Lưu Trữ & Thùng Rác' : 'Move to Trash & Archives'}
+          subtitle={language === 'vi' ? 'Chính sách lưu trữ tự động trong vòng 30 ngày' : '30-day automatic retention policy'}
           maxWidth="max-w-md"
         >
           <div className="space-y-4">
+            <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-start gap-3">
+              <Clock className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+              <div className="text-xs leading-relaxed text-[var(--text-primary)]">
+                <span className="font-bold text-amber-600 dark:text-amber-400 block mb-0.5">
+                  {language === 'vi' ? 'Lưu ý thời hạn 30 ngày:' : '30-day retention notice:'}
+                </span>
+                {language === 'vi' 
+                  ? 'Phiên hội thoại & ghi chú này sẽ được lưu trong mục Thùng rác & Lưu trữ trong 30 ngày. Quá 30 ngày, hệ thống sẽ tự động xóa vĩnh viễn không thể khôi phục.' 
+                  : 'This conversation and attached note will remain in Trash & Archives for 30 days before being automatically purged forever.'}
+              </div>
+            </div>
+
             <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
               {language === 'vi' 
-                ? `Bạn có chắc muốn chuyển phiên hội thoại "${deleteConfirmSession.title}" vào mục Thùng rác & Lưu trữ? Bạn có thể khôi phục lại bất kỳ lúc nào trong vòng 30 ngày.`
-                : `Are you sure you want to move "${deleteConfirmSession.title}" to Trash & Archives? You can restore it anytime within 30 days.`}
+                ? `Bạn có muốn chuyển "${archiveConfirmSession.title}" vào mục Lưu trữ? Bạn có thể khôi phục lại bất kỳ lúc nào trước khi hết 30 ngày.`
+                : `Move "${archiveConfirmSession.title}" to Archives? You can restore it to History anytime within 30 days.`}
             </p>
+
             <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
-                onClick={() => setDeleteConfirmSession(null)}
+                onClick={() => setArchiveConfirmSession(null)}
                 className="px-4 py-2 rounded-xl text-xs font-bold bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
               >
                 {t('cancel')}
               </button>
               <button
                 type="button"
-                onClick={handleConfirmDelete}
-                className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow-md cursor-pointer active:scale-95"
+                onClick={handleConfirmArchive}
+                className="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-md cursor-pointer active:scale-95 flex items-center gap-1.5"
               >
-                {language === 'vi' ? 'Chuyển vào Thùng rác' : 'Move to Trash'}
+                <Archive className="w-3.5 h-3.5" />
+                <span>{language === 'vi' ? 'Xác nhận Lưu trữ' : 'Confirm Archive'}</span>
               </button>
             </div>
           </div>

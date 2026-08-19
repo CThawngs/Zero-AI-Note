@@ -56,7 +56,7 @@ export const translations = {
     recentSessions: 'Hội thoại gần đây',
     collapseSidebar: 'Thu gọn sidebar',
     expandSidebar: 'Mở rộng sidebar',
-    newChatNote: '+ Cuộc trò chuyện & Note mới',
+    newChatNote: 'Cuộc trò chuyện & Note mới',
     historyTitle: 'Lịch sử Hội thoại & Ghi chú',
     historySubtitle: 'Lưu trữ phiên tương tác với AI cùng file Note đã tổng hợp',
 
@@ -339,7 +339,7 @@ export const translations = {
     recentSessions: 'Recent Chats',
     collapseSidebar: 'Collapse sidebar',
     expandSidebar: 'Expand sidebar',
-    newChatNote: '+ New Chat & Note',
+    newChatNote: 'New Chat & Note',
     historyTitle: 'Chat & Notes History',
     historySubtitle: 'Stored AI conversations with attached structured notes',
 

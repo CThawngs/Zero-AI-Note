@@ -101,6 +101,7 @@ export interface NoteItem {
   };
   rawMarkdown: string;
   isArchived?: boolean;
+  archivedAt?: string;
   archiveDaysLeft?: number;
   isShared?: boolean;
 }
@@ -233,6 +234,7 @@ export interface ChatSessionItem {
   }[];
   isPinned?: boolean;
   isArchived?: boolean;
+  archivedAt?: string;
   archiveDaysLeft?: number;
   isShared?: boolean;
 }

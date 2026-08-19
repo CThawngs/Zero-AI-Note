@@ -133,7 +133,7 @@ export const Sidebar: React.FC = () => {
           className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md bg-[var(--accent-primary)] hover:opacity-90 active:opacity-100 text-[var(--accent-text)] shadow-[var(--accent-primary)]/20"
         >
           <Plus className="w-4 h-4 stroke-[2.5]" />
-          <span>{t('newChatNote') || '+ Cuộc trò chuyện & Note mới'}</span>
+          <span>{t('newChatNote') || 'Cuộc trò chuyện & Note mới'}</span>
         </motion.button>
       </div>
 
