@@ -78,6 +78,7 @@ export async function dispatchStructuredNote(params: AIModelRequest): Promise<St
       method: resolvedMethod,
       language,
       model: model || 'gemini-2.5-flash',
+      apiKey,
     });
   }
 

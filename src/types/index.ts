@@ -152,6 +152,7 @@ export interface AIProviderItem {
   logoUrl?: string;
   logoEmoji?: string;
   apiKeyMasked: string;
+  apiKey?: string;
   status: 'active' | 'inactive';
   latencyMs: number;
   streaming?: boolean;

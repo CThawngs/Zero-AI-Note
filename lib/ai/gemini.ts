@@ -42,9 +42,10 @@ export async function generateStructuredNote(params: {
   method?: NoteMethod;
   language?: 'vi' | 'en';
   model?: string;
+  apiKey?: string;
   systemPrompt?: string;
 }): Promise<StructuredNoteOutput> {
-  const apiKey = getGeminiApiKey();
+  const apiKey = params.apiKey?.trim() || getGeminiApiKey();
   if (!apiKey) {
     throw new Error('GEMINI_API_KEY is not configured on server.');
   }

@@ -18,6 +18,7 @@ export interface ProviderCatalogPreset {
   logoUrl: string;
   /** Fallback emoji nếu logo load lỗi */
   logoEmoji: string;
+  isVerified?: boolean;
   models: { id: string; name: string; descVi: string; descEn: string }[];
 }
 
@@ -148,6 +149,7 @@ export const BYOK_PROVIDER_PRESETS: ProviderCatalogPreset[] = [
     defaultModel: 'gemini-2.0-flash',
     logoUrl: '/assets/providers/google.svg',
     logoEmoji: '✦',
+    isVerified: true,
     models: [
       { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', descVi: 'Nhanh & Tối ưu ghi chú', descEn: 'Fast & Note-taking optimized' },
       { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', descVi: 'Bản cải tiến học thuật', descEn: 'Academic synthesis upgrade' },
@@ -167,6 +169,7 @@ export const BYOK_PROVIDER_PRESETS: ProviderCatalogPreset[] = [
     defaultModel: 'gpt-4o-mini',
     logoUrl: '/assets/providers/openai.svg',
     logoEmoji: '◈',
+    isVerified: true,
     models: [
       { id: 'gpt-4o-mini', name: 'GPT-4o Mini', descVi: 'Nhanh, thông minh & tiết kiệm', descEn: 'Fast, intelligent and cost-effective' },
       { id: 'gpt-4o', name: 'GPT-4o (Omni)', descVi: 'Mô hình Flagship đa phương thức', descEn: 'Flagship multimodal intelligence' },
@@ -184,6 +187,7 @@ export const BYOK_PROVIDER_PRESETS: ProviderCatalogPreset[] = [
     defaultModel: 'claude-3-5-haiku-20241022',
     logoUrl: '/assets/providers/anthropic.svg',
     logoEmoji: '✱',
+    isVerified: true,
     models: [
       { id: 'claude-3-7-sonnet-20250219', name: 'Claude 3.7 Sonnet', descVi: 'Hybrid Reasoning thế hệ mới nhất', descEn: 'Latest hybrid thinking model' },
       { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet', descVi: 'Khả năng viết & lập luận xuất sắc', descEn: 'Industry-leading writing and coding' },
@@ -198,6 +202,7 @@ export const BYOK_PROVIDER_PRESETS: ProviderCatalogPreset[] = [
     defaultModel: 'deepseek/deepseek-r1',
     logoUrl: '/assets/providers/openrouter.svg',
     logoEmoji: '⬡',
+    isVerified: true,
     models: [
       { id: 'deepseek/deepseek-r1', name: 'DeepSeek R1', descVi: 'Mô hình lý luận mã nguồn mở số 1', descEn: 'Top open-weights reasoning model' },
       { id: 'deepseek/deepseek-chat', name: 'DeepSeek V3 (Chat)', descVi: 'Thông minh & siêu tiết kiệm', descEn: 'High intelligence and low cost' },
@@ -217,6 +222,7 @@ export const BYOK_PROVIDER_PRESETS: ProviderCatalogPreset[] = [
     defaultModel: 'llama-3.3-70b-versatile',
     logoUrl: '/assets/providers/groq.svg',
     logoEmoji: '▰',
+    isVerified: true,
     models: [
       { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B Versatile', descVi: '500+ tokens/giây', descEn: '500+ tokens/sec inference' },
       { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B Instant', descVi: 'Phản hồi chớp mắt', descEn: 'Sub-second latency response' },
@@ -232,6 +238,7 @@ export const BYOK_PROVIDER_PRESETS: ProviderCatalogPreset[] = [
     defaultModel: 'meta/llama-3.1-70b-instruct',
     logoUrl: '/assets/providers/nvidia.svg',
     logoEmoji: '❖',
+    isVerified: true,
     models: [
       { id: 'meta/llama-3.1-70b-instruct', name: 'Llama 3.1 70B (NIM)', descVi: 'Tăng tốc TensorRT-LLM', descEn: 'TensorRT-LLM accelerated' },
       { id: 'meta/llama-3.1-8b-instruct', name: 'Llama 3.1 8B (NIM)', descVi: 'NIM Microservice', descEn: 'Lightweight NIM microservice' },
@@ -241,18 +248,33 @@ export const BYOK_PROVIDER_PRESETS: ProviderCatalogPreset[] = [
     ],
   },
   {
-    id: 'custom',
-    name: 'Local LLM (Ollama / vLLM / LM Studio)',
+    id: 'local',
+    name: 'Local LLM (Ollama / LM Studio)',
     endpointUrl: 'http://localhost:11434/v1',
     defaultModel: 'llama3.3:latest',
     logoUrl: '/assets/providers/ollama.svg',
-    logoEmoji: '⚙',
+    logoEmoji: '🦙',
+    isVerified: true,
     models: [
       { id: 'llama3.3:latest', name: 'Llama 3.3 (Local)', descVi: 'Chạy trực tiếp trên máy của bạn', descEn: 'Runs directly on your machine' },
       { id: 'deepseek-r1:latest', name: 'DeepSeek R1 (Local)', descVi: 'Ollama local reasoning', descEn: 'Local reasoning on Ollama' },
       { id: 'qwen2.5:latest', name: 'Qwen 2.5 (Local)', descVi: 'Đa ngôn ngữ & code tốt', descEn: 'Strong multilingual local model' },
       { id: 'mistral:latest', name: 'Mistral (Local)', descVi: 'Local inference', descEn: 'Local inference baseline' },
       { id: 'phi4:latest', name: 'Phi-4 (Local)', descVi: 'Microsoft Small Model', descEn: 'Microsoft high-efficiency small model' },
+    ],
+  },
+  {
+    id: 'custom',
+    name: 'Custom Endpoint',
+    endpointUrl: 'https://api.your-domain.com/v1',
+    defaultModel: 'gpt-4o-mini',
+    logoUrl: '/assets/providers/custom.svg',
+    logoEmoji: '⚡',
+    isVerified: false,
+    models: [
+      { id: 'gpt-4o-mini', name: 'GPT-4o Mini', descVi: 'OpenAI-compatible default', descEn: 'OpenAI-compatible default' },
+      { id: 'deepseek-chat', name: 'DeepSeek Chat', descVi: 'DeepSeek v3 compatible', descEn: 'DeepSeek v3 compatible' },
+      { id: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet', descVi: 'Claude proxy', descEn: 'Claude proxy endpoint' },
     ],
   },
 ];

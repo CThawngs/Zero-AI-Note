@@ -650,6 +650,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch {}
   }, [user.id]);
 
+  // Load custom aiProviders from localStorage
+  useEffect(() => {
+    try {
+      const storageKey = `zero_ai_providers_${user.id || 'default'}`;
+      const stored = localStorage.getItem(storageKey);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setAIProviders(parsed);
+        }
+      }
+    } catch {}
+  }, [user.id]);
+
+  // Persist aiProviders to localStorage whenever changed
+  useEffect(() => {
+    try {
+      const storageKey = `zero_ai_providers_${user.id || 'default'}`;
+      if (aiProviders.length > 0) {
+        localStorage.setItem(storageKey, JSON.stringify(aiProviders));
+      }
+    } catch {}
+  }, [aiProviders, user.id]);
+
   const openNoteDetail = (note: NoteItem) => {
     setActiveNote(note);
     setActiveArtifactNote(note);
@@ -1382,7 +1406,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const isEn = language === 'en';
 
-    const activeProvider = aiProviders.find(p => p.defaultModel === selectedModel || p.name === selectedModel);
+    const activeProvider = aiProviders.find(p => 
+      p.defaultModel === selectedModel || 
+      p.name === selectedModel || 
+      p.models?.includes(selectedModel) ||
+      p.providerId === selectedModel
+    );
 
     try {
       setTimeout(() => setProcessingStep(2), 600);
@@ -1398,6 +1427,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           model: selectedModel || 'gemini-2.5-flash',
           providerId: activeProvider?.providerId,
           endpointUrl: activeProvider?.endpointUrl,
+          apiKey: activeProvider?.apiKey,
           sources: attachedSources || [],
         }),
       });

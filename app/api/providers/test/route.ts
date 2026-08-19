@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { endpointUrl, apiKey, defaultModel, providerId } = body;
 
-    if (!endpointUrl) {
+    if (!endpointUrl || !endpointUrl.trim()) {
       return NextResponse.json(
         { success: false, error: 'Endpoint URL không được để trống' },
         { status: 400 }
@@ -20,11 +20,38 @@ export async function POST(request: NextRequest) {
 
     const cleanEndpoint = endpointUrl.trim().replace(/\/+$/, '');
     const cleanKey = (apiKey || '').trim();
-    const model = (defaultModel || 'gpt-4o-mini').trim();
+    
+    // Auto-resolve default model if omitted by user
+    let model = (defaultModel || '').trim();
+    if (!model) {
+      if (cleanEndpoint.includes('googleapis.com') || providerId === 'google') {
+        model = 'gemini-2.0-flash';
+      } else if (cleanEndpoint.includes('anthropic.com') || providerId === 'anthropic') {
+        model = 'claude-3-5-haiku-20241022';
+      } else if (cleanEndpoint.includes('groq.com') || providerId === 'groq') {
+        model = 'llama-3.3-70b-versatile';
+      } else if (cleanEndpoint.includes('openrouter.ai') || providerId === 'openrouter') {
+        model = 'deepseek/deepseek-r1';
+      } else if (cleanEndpoint.includes('nvidia.com') || providerId === 'nvidia') {
+        model = 'meta/llama-3.1-70b-instruct';
+      } else if (cleanEndpoint.includes('localhost') || cleanEndpoint.includes('127.0.0.1') || providerId === 'local') {
+        model = 'llama3.3:latest';
+      } else {
+        model = 'gpt-4o-mini';
+      }
+    }
 
     // 1. Google Gemini Provider
     if (cleanEndpoint.includes('googleapis.com') || providerId === 'google') {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${cleanKey || process.env.GEMINI_API_KEY}`;
+      const targetKey = cleanKey || process.env.GEMINI_API_KEY;
+      if (!targetKey) {
+        return NextResponse.json({
+          success: false,
+          error: 'Vui lòng nhập Google Gemini API Key để kiểm tra kết nối',
+          latency: Date.now() - startTime,
+        });
+      }
+      const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${targetKey}`;
       const res = await fetch(url, { method: 'GET' });
       const latency = Date.now() - startTime;
       if (!res.ok) {
@@ -38,12 +65,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         latency,
+        resolvedModel: model,
         message: 'Kết nối Google AI Studio thành công',
       });
     }
 
     // 2. Anthropic Claude Provider
     if (cleanEndpoint.includes('anthropic.com') || providerId === 'anthropic') {
+      if (!cleanKey) {
+        return NextResponse.json({
+          success: false,
+          error: 'Vui lòng nhập Anthropic API Key (sk-ant-...)',
+          latency: Date.now() - startTime,
+        });
+      }
       const url = `${cleanEndpoint}/messages`;
       const res = await fetch(url, {
         method: 'POST',
@@ -70,11 +105,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         latency,
+        resolvedModel: model,
         message: 'Kết nối Anthropic Claude thành công',
       });
     }
 
-    // 3. OpenAI / OpenRouter / Groq / NVIDIA / Local OpenAI-compatible
+    // 3. OpenAI / OpenRouter / Groq / NVIDIA / Local / Custom Endpoints
     const testUrl = cleanEndpoint.endsWith('/chat/completions')
       ? cleanEndpoint
       : `${cleanEndpoint}/chat/completions`;
@@ -90,7 +126,7 @@ export async function POST(request: NextRequest) {
       headers['X-Title'] = 'Zero AI Note';
     }
 
-    const res = await fetch(testUrl, {
+    let res = await fetch(testUrl, {
       method: 'POST',
       headers,
       body: JSON.stringify({
@@ -100,8 +136,26 @@ export async function POST(request: NextRequest) {
       }),
     });
 
-    const latency = Date.now() - startTime;
+    let latency = Date.now() - startTime;
+
+    // Fallback: If chat/completions failed, try GET /models endpoint to verify connectivity
     if (!res.ok) {
+      try {
+        const modelsUrl = cleanEndpoint.replace(/\/chat\/completions$/, '') + '/models';
+        const modelsRes = await fetch(modelsUrl, {
+          method: 'GET',
+          headers: cleanKey ? { Authorization: `Bearer ${cleanKey}` } : {},
+        });
+        if (modelsRes.ok) {
+          return NextResponse.json({
+            success: true,
+            latency: Date.now() - startTime,
+            resolvedModel: model,
+            message: 'Kết nối Endpoint thành công qua Models Discovery',
+          });
+        }
+      } catch {}
+
       const errData = await res.json().catch(() => ({}));
       return NextResponse.json({
         success: false,
@@ -113,6 +167,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       latency,
+      resolvedModel: model,
       message: 'Kết nối AI Provider thành công',
     });
   } catch (error) {

@@ -57,16 +57,23 @@ export const Header: React.FC = () => {
 
   // Custom models derived from user's configured BYOK providers
   const customModels: ModelCatalogItem[] = useMemo(() => {
-    return aiProviders.map(p => ({
-      id: p.defaultModel,
-      name: p.defaultModel,
-      provider: p.name,
-      providerId: p.providerId,
-      descVi: `Endpoint: ${p.endpointUrl}`,
-      descEn: `Endpoint: ${p.endpointUrl}`,
-      isSystem: false,
-      status: p.status,
-    }));
+    const list: ModelCatalogItem[] = [];
+    aiProviders.forEach(p => {
+      const allModelIds = Array.from(new Set([p.defaultModel, ...(p.models || [])].filter(Boolean)));
+      allModelIds.forEach(mId => {
+        list.push({
+          id: mId,
+          name: mId === p.defaultModel ? `${mId} (${p.name.split(' ')[0]})` : mId,
+          provider: p.name,
+          providerId: p.providerId,
+          descVi: `Endpoint: ${p.endpointUrl}`,
+          descEn: `Endpoint: ${p.endpointUrl}`,
+          isSystem: false,
+          status: p.status,
+        });
+      });
+    });
+    return list;
   }, [aiProviders]);
 
   // All combined available models
