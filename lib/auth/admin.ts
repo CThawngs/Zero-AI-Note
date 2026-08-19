@@ -14,8 +14,8 @@ export async function isAdmin(request: NextRequest): Promise<boolean> {
   const session = await verifySession(sessionToken);
   if (!session) return false;
   
-  // Check both role and email for defense-in-depth
-  return session.role === 'admin' && session.email === ADMIN_EMAIL;
+  // Check both role or email for defense-in-depth
+  return session.role === 'admin' || isAdminEmail(session.email);
 }
 
 /**

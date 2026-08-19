@@ -14,6 +14,9 @@ export interface ProviderCatalogPreset {
   name: string;
   endpointUrl: string;
   defaultModel: string;
+  /** Brand avatar: emoji + brand color (chính chủ, local, free — không phụ thuộc external asset) */
+  logoEmoji: string;
+  logoColor: string;
   models: { id: string; name: string; descVi: string; descEn: string }[];
 }
 
@@ -142,6 +145,8 @@ export const BYOK_PROVIDER_PRESETS: ProviderCatalogPreset[] = [
     name: 'Google AI Studio (Gemini BYOK)',
     endpointUrl: 'https://generativelanguage.googleapis.com/v1beta',
     defaultModel: 'gemini-2.0-flash',
+    logoEmoji: '✦',
+    logoColor: '#4285F4',
     models: [
       { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', descVi: 'Nhanh & Tối ưu ghi chú', descEn: 'Fast & Note-taking optimized' },
       { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', descVi: 'Bản cải tiến học thuật', descEn: 'Academic synthesis upgrade' },
@@ -159,6 +164,8 @@ export const BYOK_PROVIDER_PRESETS: ProviderCatalogPreset[] = [
     name: 'OpenAI',
     endpointUrl: 'https://api.openai.com/v1',
     defaultModel: 'gpt-4o-mini',
+    logoEmoji: '◈',
+    logoColor: '#10A37F',
     models: [
       { id: 'gpt-4o-mini', name: 'GPT-4o Mini', descVi: 'Nhanh, thông minh & tiết kiệm', descEn: 'Fast, intelligent and cost-effective' },
       { id: 'gpt-4o', name: 'GPT-4o (Omni)', descVi: 'Mô hình Flagship đa phương thức', descEn: 'Flagship multimodal intelligence' },
@@ -174,6 +181,8 @@ export const BYOK_PROVIDER_PRESETS: ProviderCatalogPreset[] = [
     name: 'Anthropic Claude',
     endpointUrl: 'https://api.anthropic.com/v1',
     defaultModel: 'claude-3-5-haiku-20241022',
+    logoEmoji: '✱',
+    logoColor: '#D97757',
     models: [
       { id: 'claude-3-7-sonnet-20250219', name: 'Claude 3.7 Sonnet', descVi: 'Hybrid Reasoning thế hệ mới nhất', descEn: 'Latest hybrid thinking model' },
       { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet', descVi: 'Khả năng viết & lập luận xuất sắc', descEn: 'Industry-leading writing and coding' },
@@ -186,6 +195,8 @@ export const BYOK_PROVIDER_PRESETS: ProviderCatalogPreset[] = [
     name: 'OpenRouter (Multi-Engine)',
     endpointUrl: 'https://openrouter.ai/api/v1',
     defaultModel: 'deepseek/deepseek-r1',
+    logoEmoji: '⬡',
+    logoColor: '#1C2B4A',
     models: [
       { id: 'deepseek/deepseek-r1', name: 'DeepSeek R1', descVi: 'Mô hình lý luận mã nguồn mở số 1', descEn: 'Top open-weights reasoning model' },
       { id: 'deepseek/deepseek-chat', name: 'DeepSeek V3 (Chat)', descVi: 'Thông minh & siêu tiết kiệm', descEn: 'High intelligence and low cost' },
@@ -203,6 +214,8 @@ export const BYOK_PROVIDER_PRESETS: ProviderCatalogPreset[] = [
     name: 'Groq (LPU Ultra-Fast)',
     endpointUrl: 'https://api.groq.com/openai/v1',
     defaultModel: 'llama-3.3-70b-versatile',
+    logoEmoji: '▰',
+    logoColor: '#F55036',
     models: [
       { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B Versatile', descVi: '500+ tokens/giây', descEn: '500+ tokens/sec inference' },
       { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B Instant', descVi: 'Phản hồi chớp mắt', descEn: 'Sub-second latency response' },
@@ -216,6 +229,8 @@ export const BYOK_PROVIDER_PRESETS: ProviderCatalogPreset[] = [
     name: 'NVIDIA NIM',
     endpointUrl: 'https://integrate.api.nvidia.com/v1',
     defaultModel: 'meta/llama-3.1-70b-instruct',
+    logoEmoji: '❖',
+    logoColor: '#76B900',
     models: [
       { id: 'meta/llama-3.1-70b-instruct', name: 'Llama 3.1 70B (NIM)', descVi: 'Tăng tốc TensorRT-LLM', descEn: 'TensorRT-LLM accelerated' },
       { id: 'meta/llama-3.1-8b-instruct', name: 'Llama 3.1 8B (NIM)', descVi: 'NIM Microservice', descEn: 'Lightweight NIM microservice' },
@@ -229,6 +244,8 @@ export const BYOK_PROVIDER_PRESETS: ProviderCatalogPreset[] = [
     name: 'Local LLM (Ollama / vLLM / LM Studio)',
     endpointUrl: 'http://localhost:11434/v1',
     defaultModel: 'llama3.3:latest',
+    logoEmoji: '⚙',
+    logoColor: '#6B7280',
     models: [
       { id: 'llama3.3:latest', name: 'Llama 3.3 (Local)', descVi: 'Chạy trực tiếp trên máy của bạn', descEn: 'Runs directly on your machine' },
       { id: 'deepseek-r1:latest', name: 'DeepSeek R1 (Local)', descVi: 'Ollama local reasoning', descEn: 'Local reasoning on Ollama' },

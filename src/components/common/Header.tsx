@@ -372,11 +372,10 @@ export const Header: React.FC = () => {
           <button
             id="btn-upgrade-plan-header"
             onClick={() => setCurrentScreen('pricing')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[var(--accent-primary)]/50 bg-[var(--accent-subtle)] hover:bg-[var(--accent-primary)] text-[var(--accent-primary)] hover:text-[var(--accent-text)] text-xs font-semibold transition-all cursor-pointer active:scale-95 shadow-xs group"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-[var(--accent-primary)]/50 bg-[var(--accent-subtle)] hover:bg-[var(--accent-primary)] text-[var(--accent-primary)] hover:text-[var(--accent-text)] text-xs font-bold transition-all duration-200 cursor-pointer hover:scale-[1.04] hover:shadow-md hover:shadow-[var(--accent-primary)]/25 active:scale-95 group relative overflow-hidden"
           >
             <Crown className="w-3.5 h-3.5 text-[var(--accent-primary)] group-hover:text-[var(--accent-text)] fill-[var(--accent-primary)] group-hover:fill-[var(--accent-text)] transition-colors" />
-            <span className="hidden md:inline">{isEn ? 'Upgrade to Pro' : 'Nâng cấp Pro'}</span>
-            <span className="md:hidden">Pro</span>
+            <span>{isEn ? 'Upgrade' : 'Nâng cấp'}</span>
           </button>
         )}
 
