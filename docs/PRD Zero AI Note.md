@@ -278,7 +278,12 @@ Dùng cho **Hermes `browser_exec`** để điều khiển Chrome thật (đọc 
 16. **Syntopical Matrix** — Phân tích tổng hợp đa tài liệu: Từ khóa chung, điểm đồng thuận, luận điểm tranh cãi, khoảng trống tri thức
 17. **5W1H & Actionable Matrix** — Khung 5W1H, ma trận đánh giá rủi ro và lộ trình hành động có đo lường KPI
 
-**Coupon**: trang quản lý riêng, CRUD đầy đủ, giới hạn số lần dùng + ngày hết hạn + áp dụng cho gói nào.
+**Coupon**: trang quản lý riêng (admin), CRUD đầy đủ, giới hạn số lần dùng + ngày hết hạn + áp dụng cho gói nào (all/paid).
+
+**Ràng buộc coupon thực tế đã implement (2026-08-19/20):**
+- **1 tài khoản chỉ được nhập đúng 1 mã coupon duy nhất**: bảng `user_coupons(user_id PK, coupon_code, used_at)`. Khi user Active bất kỳ mã nào, `validateCouponForPlan(code, plan, userId)` kiểm tra `user_coupons` → nếu user đã từng dùng coupon nào thì từ chối mọi mã (kể cả mã cũ đã hết hạn), trả thông báo *"Mỗi tài khoản chỉ được dùng 1 mã duy nhất"* vào chuông thông báo. Mục đích: chặn user lưu coupon hết hạn rồi tái sử dụng.
+- **Coupon giảm 100% → Zero Tracking track 0đ**: `applyCouponDiscount` cho phép `finalAmount = 0` (bỏ floor tối thiểu). `create-invoice` truyền `finalAmount` đã giảm sang Zero Tracking; nếu Zero Tracking trả bill `status='paid'` (số tiền 0đ) → hệ thống auto `upgradeUserPlan` + kích hoạt gói ngay (không cần quét QR). Zero Tracking chấp nhận `amount=0` (bill auto-paid, không cần QR).
+- **Quy trình Active (UI)**: Chọn gói → nhập mã → bấm **Active** → thành công ghi nhận discount + quyền, thất bại báo lỗi trong chuông thông báo. Coupon backend thực sự (không chỉ frontend): `validate-coupon` read-only, `create-invoice` validate → tính giảm → tạo bill → lưu `subscriptions.coupon_code` + tăng `usage_count` đúng 1 lần.
 
 **Admin**: chỉ 1 tài khoản (`nguyenchithang2804@gmail.com`) truy cập trang Coupon, phân quyền qua `role` kiểm tra server-side + RLS, set thủ công 1 lần qua SQL — không có flow tự nhận quyền admin.
 
@@ -347,13 +352,22 @@ create table subscriptions (
   user_id uuid references profiles(id) not null,
   bill_id text unique not null,               -- ID đơn hàng từ Zero Tracking
   plan text not null check (plan in ('pro','ultra')),
-  amount numeric not null,                    -- Số tiền thực trả (99000 / 199000)
+  amount numeric not null,                    -- Số tiền thực trả (đã trừ coupon; 0đ nếu coupon 100%)
   status text default 'pending' check (status in ('pending','paid','expired','canceled')),
-  qr_data text,                               -- Chuỗi EMVCo payload (render client-side)
+  qr_data text,                               -- Chuỗi EMVCo payload (render client-side); null nếu bill 0đ auto-paid
   coupon_code text,
+  payment_account_id text,   -- Zero Tracking payee được chọn tại checkout (null = app default); snapshot for traceability
   paid_at timestamptz,
   renews_at timestamptz,                      -- Ngày hết hạn gói (now() + 30 days)
   created_at timestamptz default now()
+);
+
+-- Ràng buộc: 1 tài khoản chỉ được nhập đúng 1 mã coupon duy nhất (không trùng)
+create table user_coupons (
+  user_id uuid not null references profiles(id) on delete cascade,
+  coupon_code text not null,
+  used_at timestamptz not null default now(),
+  primary key (user_id)   -- mỗi account = 1 coupon duy nhất
 );
 
 -- Note đã tạo — content_structured là nguồn duy nhất để render mọi định dạng
