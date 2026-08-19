@@ -210,7 +210,17 @@ Dùng cho **Hermes `browser_exec`** để điều khiển Chrome thật (đọc 
 
 > **Đã loại bỏ**: TTS (Text-to-Speech), Audio Player, Web Speech API, Edge-TTS — KHÔNG còn trong bất kỳ gói nào, giữ codebase tinh gọn.
 
-### 4.7 Tính năng mở rộng (ưu tiên thấp hơn, làm sau)
+### 4.7 Quy trình AI chat thông minh (đã implement 2026-08-20)
+
+Bot AI không tự động tạo note ngay khi user gửi — tuân thủ luồng hỏi-hoặc-xác-nhận để tránh tạo note sai/lãng phí:
+
+1. **Thiếu nguồn đính kèm**: nếu user gửi tin nhắn mà chưa attach file/link YouTube → AI hỏi lại: *"Bạn chưa đính kèm tài liệu/file/link nào. Bạn có quên upload không? Hay ý bạn là muốn tôi tư vấn/tóm tắt từ nội dung bạn gõ?"* — không gọi generate.
+2. **Có nguồn → xác nhận trước khi tạo**: AI hiển thị thông báo xác nhận kèm số nguồn + phương pháp sẽ dùng (Auto hoặc cụ thể), lưu `pendingNoteRef`. Chỉ khi user trả lời xác nhận (`có`/`ok`/`yes`/`xác nhận`/`thực hiện`/`đồng ý`) → gọi `executeTakeNote` tạo file. User từ chối → hủy, coi như tin nhắn thường.
+3. **Tự động chọn phương pháp** (chế độ Auto) vẫn áp dụng khi user không chỉ định rõ (Cornell/Outline/... được detect từ prompt).
+
+**CRUD lịch sử chat**: LibraryScreen hỗ trợ đổi tên (`renameChatSession` → `updateNote` DB), ghim (`pinChatSession`), lưu trữ (`archiveChatSession`), xóa vĩnh viễn (`deleteChatSessionPermanently` → `deleteNotePermanently` DB). Mọi thao tác persist qua Neon, không chỉ state local.
+
+### 4.8 Tính năng mở rộng (ưu tiên thấp hơn, làm sau)
 - Trích xuất action item, đồng bộ Notion/Google Docs/Calendar
 - Spaced repetition cho template Flashcard
 - ~~Chế độ on-device Gemma~~ — đã tạm gác (mâu thuẫn với quyết định full-cloud; quay lại nếu có nhu cầu doanh nghiệp thật, khi đó triển khai qua WebGPU/ONNX Runtime Web trên trình duyệt user, không phải server Zero)
