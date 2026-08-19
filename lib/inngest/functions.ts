@@ -19,7 +19,7 @@ export const processNotePipeline = inngest.createFunction(
     triggers: [{ event: 'note/pipeline.process' }],
   },
   async ({ event, step }) => {
-    const { jobId, userId, sourceKey, method, language, model } = event.data;
+    const { jobId, userId, sourceKey, method, language, model, userPlan = 'free' } = event.data;
 
     const sql = getSql();
 
@@ -53,7 +53,7 @@ export const processNotePipeline = inngest.createFunction(
         method: method as any,
         language,
         model,
-        userPlan: 'free',
+        userPlan: (userPlan || 'free') as 'free' | 'pro' | 'ultra',
       });
     });
 

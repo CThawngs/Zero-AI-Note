@@ -23,6 +23,7 @@ export type AppEvents = {
       method: string;
       language: 'vi' | 'en';
       model: string;
+      userPlan?: 'free' | 'pro' | 'ultra';
     };
   };
 };

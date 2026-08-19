@@ -32,6 +32,19 @@ export async function POST(request: NextRequest) {
 
     const sql = getSql();
 
+    // Lấy plan hiện tại của user để worker gating đúng theo gói (PRD 4.2)
+    let userPlan: 'free' | 'pro' | 'ultra' = 'free';
+    try {
+      const profileRows = (await sql`
+        select plan from profiles where id::text = ${session.sub} limit 1
+      `) as unknown as { plan: string }[];
+      if (profileRows.length > 0 && ['pro', 'ultra'].includes(profileRows[0].plan)) {
+        userPlan = profileRows[0].plan as 'pro' | 'ultra';
+      }
+    } catch (profileErr) {
+      console.warn('[pipeline/process] plan lookup failed, default free:', profileErr);
+    }
+
     const jobId = crypto.randomUUID();
     await sql`
       insert into jobs (id, user_id, source_key, method, language, model, status, created_at)
@@ -49,6 +62,7 @@ export async function POST(request: NextRequest) {
           method,
           language,
           model,
+          userPlan,
         },
       });
     } catch (enqueueError) {
