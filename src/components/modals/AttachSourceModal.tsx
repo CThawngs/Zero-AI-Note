@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Modal } from '../common/Modal';
 import { Upload, Link as LinkIcon, FileText } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { uploadFileToR2 } from '../../lib/apiClient';
+import { storageService } from '@/lib/storage';
 
 interface AttachSourceModalProps {
   isOpen: boolean;
@@ -10,7 +12,7 @@ interface AttachSourceModalProps {
 }
 
 export const AttachSourceModal: React.FC<AttachSourceModalProps> = ({ isOpen, onClose, onAttach }) => {
-  const { addSourceFile, theme, language, t } = useApp();
+  const { addSourceFile, theme, language, t, addToast } = useApp();
   const [tab, setTab] = useState<'upload' | 'link' | 'raw'>('upload');
   const [linkInput, setLinkInput] = useState('');
   const [rawTextInput, setRawTextInput] = useState('');
@@ -19,10 +21,39 @@ export const AttachSourceModal: React.FC<AttachSourceModalProps> = ({ isOpen, on
 
   const isDark = theme === 'dark';
 
-  const handleFileUpload = (fileName: string, size: string = '2.4 MB') => {
-    addSourceFile(fileName, size, fileName.endsWith('.mp4') ? 'video' : 'pdf');
-    onAttach({ type: 'pdf', name: fileName });
-    onClose();
+  const handleFileUpload = async (file: File) => {
+    try {
+      // Upload file thật lên R2 qua Presigned URL (PRD mục 3.1/4.1)
+      const { key } = await uploadFileToR2(file);
+      const publicUrl = await storageService.getPublicUrl(key);
+      
+      // Lưu metadata vào Neon DB
+      await addSourceFile(file.name, file.size.toString(), file.type.includes('video') ? 'video' : file.type.includes('audio') ? 'audio' : file.type.includes('pdf') ? 'pdf' : 'doc', publicUrl);
+      onAttach({ type: 'pdf', name: file.name });
+      onClose();
+    } catch (err) {
+      addToast(
+        language === 'vi' ? 'Lỗi tải lên' : 'Upload failed',
+        err instanceof Error ? err.message : 'Unknown error',
+        'error'
+      );
+    }
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleFileUpload(file);
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      await handleFileUpload(file);
+    }
   };
 
   const handleLinkSubmit = (e: React.FormEvent) => {
@@ -102,20 +133,21 @@ export const AttachSourceModal: React.FC<AttachSourceModalProps> = ({ isOpen, on
           <div
             onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
             onDragLeave={() => setDragActive(false)}
-            onDrop={(e) => {
-              e.preventDefault();
-              setDragActive(false);
-              if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                handleFileUpload(e.dataTransfer.files[0].name, '3.2 MB');
-              }
-            }}
+            onDrop={handleDrop}
             className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer ${
               dragActive 
                 ? 'border-[var(--accent-primary)] bg-[var(--accent-subtle)]' 
                 : 'border-[var(--border-color)] hover:border-[var(--accent-primary)]/50 bg-[var(--bg-app)]'
             }`}
-            onClick={() => handleFileUpload('Giao_Trinh_Kinh_Te_2024.pdf', '4.5 MB')}
+            onClick={() => document.getElementById('file-upload-input')?.click()}
           >
+            <input
+              id="file-upload-input"
+              type="file"
+              accept=".pdf,.doc,.docx,.ppt,.pptx,.mp3,.mp4,.wav,.ogg,.webm,.txt"
+              onChange={handleFileInputChange}
+              className="hidden"
+            />
             <div className="w-12 h-12 rounded-2xl bg-[var(--accent-subtle)] text-[var(--accent-primary)] flex items-center justify-center mx-auto mb-3">
               <Upload className="w-6 h-6" />
             </div>
@@ -138,7 +170,7 @@ export const AttachSourceModal: React.FC<AttachSourceModalProps> = ({ isOpen, on
               <button
                 key={i}
                 id={`sample-file-upload-${i}`}
-                onClick={() => handleFileUpload(f.name, f.size)}
+                onClick={() => handleFileUpload(new File([], f.name, { type: f.name.endsWith('.pdf') ? 'application/pdf' : f.name.endsWith('.mp3') ? 'audio/mpeg' : 'application/octet-stream' }))}
                 className="flex items-center justify-between p-2.5 rounded-xl border text-left transition-all cursor-pointer active:scale-95 bg-[var(--bg-app)] border-[var(--border-color)] hover:border-[var(--accent-primary)]/40 shadow-2xs"
               >
                 <div className="truncate mr-2">

@@ -126,7 +126,7 @@ interface AppContextType {
 
   // Files
   files: SourceFileItem[];
-  addSourceFile: (name: string, size: string, type: 'pdf' | 'video' | 'audio' | 'image' | 'doc') => void;
+  addSourceFile: (name: string, size: string, type: 'pdf' | 'video' | 'audio' | 'image' | 'doc', fileUrl?: string) => void;
   deleteSourceFile: (fileId: string) => void;
 
   // AI Providers
@@ -785,7 +785,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
-  const addSourceFile = async (name: string, size: string, type: 'pdf' | 'video' | 'audio' | 'image' | 'doc') => {
+  const addSourceFile = async (name: string, size: string, type: 'pdf' | 'video' | 'audio' | 'image' | 'doc', fileUrl?: string) => {
       try {
         let sizeBytes = 0;
         const match = size.match(/([\d.]+)\s*(GB|MB|KB|B)?/i);
@@ -803,7 +803,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         await createSource({
           type,
           file_name: name,
-          size_bytes: sizeBytes
+          size_bytes: sizeBytes,
+          file_url: fileUrl
         });
       
         const updatedFiles = await getSources();

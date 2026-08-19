@@ -124,6 +124,7 @@ export async function createSource(input: {
   type: string;
   file_name: string;
   size_bytes: number;
+  file_url?: string;
 }): Promise<any> {
   const res = await fetch('/api/sources', {
     method: 'POST',
@@ -136,6 +137,66 @@ export async function createSource(input: {
   }
   const data = await res.json();
   return data.source;
+}
+
+// ============================================================
+// Upload (Presigned URL → R2) — PRD mục 3.1/4.1
+// Client đẩy file thẳng lên Cloudflare R2, KHÔNG đi qua server
+// (tránh giới hạn 4.5MB request payload của Vercel).
+// ============================================================
+
+export async function presignUpload(input: {
+  fileName: string;
+  contentType: string;
+  fileSize: number;
+}): Promise<{ uploadUrl: string; key: string; uploadId: string; expiresIn: number }> {
+  const res = await fetch('/api/upload/presign', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to get presigned URL');
+  }
+  const json = await res.json();
+  return json.data ?? json;
+}
+
+/** Upload file trực tiếp lên presigned URL (R2), không qua Vercel server */
+export async function putFileToR2(uploadUrl: string, file: File): Promise<boolean> {
+  const res = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': file.type || 'application/octet-stream' },
+    body: file,
+  });
+  if (!res.ok && res.status !== 200) {
+    throw new Error(`Upload to R2 failed with HTTP ${res.status}`);
+  }
+  return true;
+}
+
+export async function confirmUpload(key: string, uploadId: string): Promise<any> {
+  const res = await fetch(`/api/upload/put?key=${encodeURIComponent(key)}&uploadId=${encodeURIComponent(uploadId)}`, {
+    method: 'PUT',
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to confirm upload');
+  }
+  return res.json();
+}
+
+/** One-shot: presign → PUT R2 → confirm — dùng cho client upload file thật */
+export async function uploadFileToR2(file: File): Promise<{ key: string; uploadId: string }> {
+  const presign = await presignUpload({
+    fileName: file.name,
+    contentType: file.type || 'application/octet-stream',
+    fileSize: file.size,
+  });
+  await putFileToR2(presign.uploadUrl, file);
+  await confirmUpload(presign.key, presign.uploadId);
+  return { key: presign.key, uploadId: presign.uploadId };
 }
 
 export async function deleteSource(sourceId: string): Promise<void> {

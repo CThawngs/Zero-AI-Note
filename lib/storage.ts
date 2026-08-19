@@ -2,9 +2,11 @@ import { getSql } from '@/lib/db';
 
 /**
  * Storage Abstraction Layer for Zero AI Note
- * DATABASE CHÍNH: Neon Postgres (lưu notes, sources, metadata).
- * BACKUP STORAGE: Cloudflare R2 (S3-compatible) — dùng khi Neon database đầy.
- * Quyết định 2026-08-17: Neon database là chính, R2 là backup.
+ * DATABASE CHÍNH: Neon Postgres (lưu Text, Metadata, JSON, Profile, Notes).
+ * MEDIA STORAGE: Cloudflare R2 (S3-compatible) — Lưu file media tải lên
+ * (Video/Audio/PDF/Docx/ppt...) thông qua cơ chế Presigned URL.
+ * Quyết định 2026-08-18 (PRD mục 3.1/5/10): R2 là Nơi lưu trữ File Media
+ * tải lên, KHÔNG phải backup fallback khi Neon đầy.
  *
  * Lớp này là nơi DUY NHẤT được phép gọi SDK storage.
  * Nếu tương lai chuyển sang Neon Object Storage (khi mở rộng region),
@@ -12,7 +14,7 @@ import { getSql } from '@/lib/db';
  *
  * Usage:
  *   const { uploadUrl, key } = await storageService.generatePresignedUploadUrl(userId, fileName, contentType);
- *   await fetch(uploadUrl, { method: 'PUT', body: file });
+ *   await fetch(uploadUrl, { method: 'PUT', body: file });  // browser upload thẳng lên R2
  *   await storageService.confirmUpload(key);
  */
 export class StorageService {

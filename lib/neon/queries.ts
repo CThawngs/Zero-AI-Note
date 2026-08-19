@@ -252,11 +252,12 @@ export async function createSource(input: {
   type: string;
   file_name: string;
   size_bytes: number;
+  file_url?: string;
 }): Promise<SourceRow> {
   const sql = getSql();
   const rows = await sql`
     insert into sources (user_id, type, file_url, size_bytes, status)
-    values (${input.user_id}, ${input.type}, ${input.file_name}, ${input.size_bytes}, 'processed')
+    values (${input.user_id}, ${input.type}, ${input.file_url || input.file_name}, ${input.size_bytes}, 'processed')
     returning *
   `;
   return (rows as unknown as SourceRow[])[0];

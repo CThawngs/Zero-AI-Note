@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
       type: body.type ?? 'doc',
       file_name: body.file_name ?? 'Tệp không tên',
       size_bytes: body.size_bytes ?? 0,
+      file_url: body.file_url,
     });
     return NextResponse.json({ source });
   } catch (err) {
