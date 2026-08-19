@@ -27,7 +27,7 @@ export async function GET(
 
     const sql = getSql();
     const result = await sql`
-      select id, user_id, method, language, model, status, error, created_at, updated_at
+      select id, user_id, source_key, note_id, method, language, model, status, error, created_at, updated_at
       from jobs
       where id = ${jobId}
       limit 1
@@ -75,6 +75,8 @@ export async function GET(
       method: job.method,
       language: job.language,
       model: job.model,
+      noteId: job.note_id || null,
+      sourceKey: job.source_key || null,
       error: job.error || null,
       createdAt: job.created_at,
       updatedAt: job.updated_at,

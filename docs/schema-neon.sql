@@ -122,6 +122,7 @@ create table if not exists jobs (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references profiles(id) on delete cascade,
   source_key text,
+  note_id uuid,
   method text default 'cornell',
   language text default 'vi',
   model text,
@@ -130,6 +131,9 @@ create table if not exists jobs (
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
+
+-- Migrate cho DB cũ (create table if not exists không sửa bảng đã tồn tại)
+alter table jobs add column if not exists note_id uuid;
 
 -- 11. uploads (file upload tracking)
 create table if not exists uploads (

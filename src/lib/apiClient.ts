@@ -208,6 +208,78 @@ export async function deleteSource(sourceId: string): Promise<void> {
 }
 
 // ============================================================
+// Pipeline (file processing via Inngest) — PRD mục 3.2
+// Client gọi enqueue job → poll status mỗi 2-3s (thay vì stream)
+// ============================================================
+
+export interface JobStatus {
+  jobId: string;
+  status: 'queued' | 'processing' | 'done' | 'error' | 'not_found';
+  progress: number;
+  step: number;
+  stepLabel: string;
+  error: string | null;
+  found: boolean;
+  noteId?: string | null;
+  sourceKey?: string | null;
+  method?: string | null;
+  language?: string | null;
+  model?: string | null;
+}
+
+export async function processFilePipeline(input: {
+  key: string;
+  method?: string;
+  language?: 'vi' | 'en';
+  model?: string;
+}): Promise<{ jobId: string; status: string }> {
+  const res = await fetch('/api/pipeline/process', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to start processing');
+  }
+  const json = await res.json();
+  return json.data ?? json;
+}
+
+export async function pollJobStatus(jobId: string): Promise<JobStatus> {
+  const res = await fetch(`/api/notes/status/${encodeURIComponent(jobId)}`, {
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Failed to poll job status');
+  }
+  const json = await res.json();
+  return json.data ?? json;
+}
+
+/**
+ * Poll cho tới khi job hoàn tất (done) hoặc lỗi (error).
+ * Gọi onProgress(step, progress) mỗi lần poll để cập nhật Stepper UI.
+ */
+export async function pollJobUntilDone(
+  jobId: string,
+  onProgress?: (step: number, progress: number, stepLabel: string) => void,
+  intervalMs = 2500,
+  maxAttempts = 200
+): Promise<JobStatus> {
+  for (let i = 0; i < maxAttempts; i++) {
+    const status = await pollJobStatus(jobId);
+    onProgress?.(status.step, status.progress, status.stepLabel);
+    if (status.status === 'done' || status.status === 'error') {
+      return status;
+    }
+    await new Promise((r) => setTimeout(r, intervalMs));
+  }
+  throw new Error('Polling timeout — job chưa hoàn tất sau ' + maxAttempts * intervalMs + 'ms');
+}
+
+// ============================================================
 // Coupons (admin)
 // ============================================================
 

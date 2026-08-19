@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getSql } from '@/lib/db';
 import { verifySession } from '@/lib/auth/session';
 import { ok, fail } from '@/lib/auth/http';
 import { checkNoteLimit } from '@/lib/neon/queries';
+import { inngest } from '@/lib/inngest/client';
 
 export const runtime = 'nodejs';
 
@@ -36,6 +37,19 @@ export async function POST(request: NextRequest) {
       insert into jobs (id, user_id, source_key, method, language, model, status, created_at)
       values (${jobId}, ${session.sub}, ${key}, ${method}, ${language}, ${model}, 'queued', now())
     `;
+
+    // Enqueue job qua Inngest — worker sẽ xử lý nền (PRD mục 3.2)
+    await inngest.send({
+      name: 'note/pipeline.process',
+      data: {
+        jobId,
+        userId: session.sub,
+        sourceKey: key,
+        method,
+        language,
+        model,
+      },
+    });
 
     return ok({
       jobId,
