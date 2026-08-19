@@ -67,11 +67,11 @@
 - **Secrets:** `.env.local` được git-ignore; `ZEROINVOICE_API_KEY` (app key `zi_...`) chỉ nằm server-side, không lộ client. Không commit credential.
 
 ### AI Provider & Model (BYOK) — 2026-08-19
-- `src/data/modelCatalog.ts`: `BYOK_PROVIDER_PRESETS` có 6 provider (google/openai/anthropic/openrouter/groq/nvidia/custom), mỗi preset có `logoEmoji` + `logoColor` (brand avatar chính chủ, local, free — không phụ thuộc external asset).
+- `src/data/modelCatalog.ts`: `BYOK_PROVIDER_PRESETS` có 6 provider (google/openai/anthropic/openrouter/groq/nvidia/custom), mỗi preset có `logoUrl` (SVG brand thật từ website chính chủ, lưu local `public/assets/providers/*.svg`) + `logoEmoji` fallback. Render `<img>` avatar vuông bo góc, fallback emoji nếu load lỗi.
 - **AddProviderModal**: input API Key chuyển viền xanh (`var(--status-success)`) + nền xanh nhạt khi test thành công. **1 button duy nhất 2 trạng thái**: "⚡ Test Kết Nối" (khi chưa connected) → sau success chuyển thành "Lưu & Kích Hoạt" (màu xanh lá). Test gọi `POST /api/providers/test` (thực sự kết nối: Google models list / Anthropic messages / OpenAI-compatible chat/completions).
 - **Real-time notification (chuông):** mọi kết quả test (success/error) đẩy vào `addNotification` → hiện trong Bell (Header) kèm badge số chưa đọc (`hasUnreadNotifications`), real-time theo account (lưu localStorage theo `user.email`).
 - **Multi-model**: ngoài default model (bắt buộc test), user thêm nhiều model LLM khác — mỗi model có input + nút Test riêng, chỉ lưu (`prov.models`) khi test pass. SettingsScreen hiển thị logo brand + badge ACTIVE + danh sách model đã add.
-- `AIProviderItem` mở rộng: `models?`, `logoEmoji?`, `logoColor?`.
+- `AIProviderItem` mở rộng: `models?`, `logoUrl?`, `logoEmoji?`.
 
 ### Nguyên tắc bất biến
 1. `content_structured` (JSON) là nguồn DUY NHẤT cho Preview + mọi export (MD/DOCX/PDF/HTML)
