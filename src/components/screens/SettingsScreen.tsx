@@ -668,6 +668,12 @@ export const SettingsScreen: React.FC = () => {
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2.5">
+                          <span
+                            className="w-7 h-7 rounded-xl flex items-center justify-center text-[13px] font-bold shrink-0"
+                            style={{ backgroundColor: (prov.logoColor || '#6B7280') + '22', color: prov.logoColor || '#6B7280' }}
+                          >
+                            {prov.logoEmoji || '✦'}
+                          </span>
                           <h4 className={`text-sm font-bold ${isDark ? 'text-[var(--text-primary)]' : 'text-[var(--text-primary)]'}`}>{prov.name}</h4>
                           <span className={`text-xs font-bold px-2 py-0.5 rounded ${
                             prov.status === 'active' 
@@ -684,6 +690,14 @@ export const SettingsScreen: React.FC = () => {
                           <span>•</span>
                           <span className="font-mono text-xs">{prov.apiKeyMasked}</span>
                         </div>
+                        {prov.models && prov.models.length > 0 && (
+                          <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                            <span className="text-[11px] text-[var(--text-muted)]">{language === 'vi' ? 'Model khác:' : 'Other models:'}</span>
+                            {prov.models.map((m) => (
+                              <span key={m} className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-[var(--bg-hover)] border border-[var(--border-color)] text-[var(--text-secondary)]">{m}</span>
+                            ))}
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-2 self-end sm:self-auto">

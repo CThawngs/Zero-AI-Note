@@ -8,7 +8,6 @@ import {
   Sun, 
   Moon, 
   Crown, 
-  Share2, 
   Check, 
   Menu,
   PlusCircle,
@@ -103,10 +102,6 @@ export const Header: React.FC = () => {
     { name: 'Tiếng Việt', code: 'vi' as const, flag: '🇻🇳' },
     { name: 'English', code: 'en' as const, flag: '🇺🇸' }
   ];
-
-  const handleShare = () => {
-    navigator.clipboard?.writeText(window.location.href);
-  };
 
   const isDark = theme === 'dark';
 
@@ -521,21 +516,6 @@ export const Header: React.FC = () => {
             )}
           </AnimatePresence>
         </div>
-
-        {/* Global Share Workspace Button */}
-        <button
-          id="btn-global-share"
-          onClick={handleShare}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-colors cursor-pointer active:scale-95 ${
-            isDark 
-              ? 'bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] hover:border-[var(--accent-primary)]/60' 
-              : 'bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] hover:border-[var(--accent-primary)]/60 shadow-2xs'
-          }`}
-          title="Share workspace"
-        >
-          <Share2 className="w-3.5 h-3.5 text-[var(--text-muted)]" />
-          <span className="hidden sm:inline">{isEn ? 'Share' : 'Chia sẻ'}</span>
-        </button>
       </div>
     </header>
   );

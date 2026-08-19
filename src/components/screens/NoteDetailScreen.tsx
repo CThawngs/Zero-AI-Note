@@ -27,6 +27,7 @@ import {
 import { useApp } from '../../context/AppContext';
 import { NoteItem } from '../../types';
 import { generateHtmlExport, generateInteractiveHtmlExport } from '../../../lib/export/html';
+import { ShareNoteModal } from '../modals/ShareNoteModal';
 
 export const NoteDetailScreen: React.FC = () => {
   const { 
@@ -44,6 +45,7 @@ export const NoteDetailScreen: React.FC = () => {
   const [mobileTab, setMobileTab] = useState<'content' | 'ask' | 'summary'>('content');
   const [isCopied, setIsCopied] = useState(false);
   const [isDownloadOpen, setIsDownloadOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isMultiExportModalOpen, setIsMultiExportModalOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [selectedMultiFormats, setSelectedMultiFormats] = useState<{ [key: string]: boolean }>({
