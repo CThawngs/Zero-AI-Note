@@ -31,8 +31,6 @@ export const PricingScreen: React.FC = () => {
   const [appliedCoupon, setAppliedCoupon] = useState<{ 
     code: string; 
     discountPercent?: number; 
-    discountValue?: number; 
-    discountType?: 'percent' | 'fixed'; 
     baseAmount?: number; 
     finalAmount?: number 
   } | null>(null);
@@ -148,8 +146,6 @@ export const PricingScreen: React.FC = () => {
       setAppliedCoupon({ 
         code: couponCode.trim().toUpperCase(),
         discountPercent: res.discountPercent,
-        discountValue: res.discountValue,
-        discountType: res.discountType,
         baseAmount: res.baseAmount,
         finalAmount: res.finalAmount
       });
