@@ -32,8 +32,8 @@ export async function GET(request: NextRequest) {
         const sql = getSql();
         await sql`
           update subscriptions
-          set status = 'active', renews_at = now() + interval '30 days'
-          where zeroinvoice_invoice_id = ${billId}
+          set status = 'paid', paid_at = now(), renews_at = now() + interval '30 days'
+          where bill_id = ${billId}
         `;
       } catch (e) {
         console.warn('Subscription record update error:', e);

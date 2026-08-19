@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
       // Look up subscription to find the user_id and target plan
       const subRows = (await sql`
         select user_id, amount, coupon_code from subscriptions
-        where zeroinvoice_invoice_id = ${billId}
+        where bill_id = ${billId}
         limit 1
       `) as any[];
 
@@ -99,8 +99,8 @@ export async function POST(request: NextRequest) {
 
         await sql`
           update subscriptions
-          set status = 'active', renews_at = now() + interval '30 days'
-          where zeroinvoice_invoice_id = ${billId}
+          set status = 'paid', paid_at = now(), renews_at = now() + interval '30 days'
+          where bill_id = ${billId}
         `;
         console.log(`[ZeroInvoice Webhook] Successfully upgraded user ${sub.user_id} to ${targetPlan}`);
       }

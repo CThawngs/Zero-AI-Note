@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Search, 
@@ -15,20 +15,79 @@ import {
   HardDrive,
   AlertCircle,
   CheckCircle2,
-  Clock
+  Clock,
+  Sparkles,
+  Loader2
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { AttachSourceModal } from '../modals/AttachSourceModal';
+import { processFilePipeline, pollJobUntilDone } from '../../lib/apiClient';
+import type { SourceFileItem } from '../../types';
 
 export const FilesScreen: React.FC = () => {
-  const { files, user, upgradeToPro, deleteSourceFile, openNoteDetail, notes, addToast, theme, language, t } = useApp();
+  const { files, user, upgradeToPro, deleteSourceFile, openNoteDetail, notes, addToast, theme, language, t, setActiveArtifactNote, setIsArtifactOpen } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [sortOption, setSortOption] = useState<'recent' | 'oldest' | 'name' | 'size'>('recent');
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [processingFileId, setProcessingFileId] = useState<string | null>(null);
+  const [processingStep, setProcessingStepLocal] = useState(0);
 
   const isDark = theme === 'dark';
+
+  // Xử lý file thành Note qua Inngest pipeline + Stepper polling (PRD 3.2)
+  const handleProcessFile = async (file: SourceFileItem) => {
+    if (!file.sourceKey) {
+      addToast(language === 'vi' ? 'Không có nguồn' : 'No source', language === 'vi' ? 'File này chưa có key nguồn để xử lý.' : 'This file has no source key.', 'error');
+      return;
+    }
+    if (user.plan !== 'pro' && user.plan !== 'ultra') {
+      addToast(language === 'vi' ? 'Cần gói Pro/Ultra' : 'Pro/Ultra required', language === 'vi' ? 'Xử lý file thành Note yêu cầu gói Pro hoặc Ultra.' : 'Processing files into Notes requires Pro or Ultra plan.', 'warning');
+      return;
+    }
+    setProcessingFileId(file.id);
+    setProcessingStepLocal(1);
+    try {
+      const { jobId } = await processFilePipeline({
+        key: file.sourceKey,
+        method: 'cornell',
+        language: language === 'vi' ? 'vi' : 'en',
+        model: 'gemini-2.0-flash',
+      });
+      const final = await pollJobUntilDone(jobId, (step, progress, label) => {
+        setProcessingStepLocal(step || 1);
+      }, 2500, 300);
+      if (final.status === 'error') {
+        addToast(language === 'vi' ? 'Xử lý lỗi' : 'Processing failed', final.error || 'Job failed', 'error');
+        return;
+      }
+      if (final.noteId) {
+        // Fetch note từ server (openNoteDetail cần NoteItem, không phải id string)
+        const fresh = await fetch(`/api/notes/${final.noteId}`, { cache: 'no-store' });
+        if (fresh.ok) {
+          const noteJson = await fresh.json();
+          const noteItem = noteJson.note || noteJson.data?.note || noteJson;
+          if (noteItem && noteItem.id) {
+            setActiveArtifactNote(noteItem as any);
+            setIsArtifactOpen(true);
+          }
+        } else {
+          const note = notes.find(n => n.id === final.noteId);
+          if (note) {
+            setActiveArtifactNote(note);
+            setIsArtifactOpen(true);
+          }
+        }
+      }
+      addToast(language === 'vi' ? 'Hoàn tất' : 'Done', language === 'vi' ? 'File đã được xử lý thành Note.' : 'File processed into a Note.', 'success');
+    } catch (err) {
+      addToast(language === 'vi' ? 'Lỗi xử lý' : 'Processing error', err instanceof Error ? err.message : 'Unknown error', 'error');
+    } finally {
+      setProcessingFileId(null);
+      setProcessingStepLocal(0);
+    }
+  };
 
   // Accurate Real-time Cloud Storage calculations
   const totalBytesUsed = files.reduce((acc, file) => {
@@ -368,15 +427,29 @@ export const FilesScreen: React.FC = () => {
 
                   {/* Actions buttons */}
                   <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--border-color)]">
-                    <button
-                      onClick={() => {
-                        addToast(language === 'vi' ? 'Đang tải file' : 'Downloading file', `"${file.name}"...`);
-                      }}
-                      className="min-h-[38px] px-3 flex items-center gap-1.5 rounded-xl border text-xs font-semibold transition-colors cursor-pointer active:scale-95 border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>{language === 'vi' ? 'Tải xuống' : 'Download'}</span>
-                    </button>
+                                      {processingFileId === file.id ? (
+                                        <span className="inline-flex items-center gap-1.5 min-h-[38px] px-3 rounded-xl text-xs font-semibold bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] border border-[var(--accent-primary)]/30">
+                                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                          {language === 'vi' ? `Đang xử lý bước ${processingStep}/3...` : `Processing step ${processingStep}/3...`}
+                                        </span>
+                                      ) : (
+                                        <button
+                                          onClick={() => handleProcessFile(file)}
+                                          className="min-h-[38px] px-3 flex items-center gap-1.5 rounded-xl bg-[var(--accent-primary)]/15 text-[var(--accent-primary)] border border-[var(--accent-primary)]/30 hover:bg-[var(--accent-primary)]/25 text-xs font-semibold transition-colors cursor-pointer active:scale-95"
+                                        >
+                                          <Sparkles className="w-3.5 h-3.5" />
+                                          <span>{language === 'vi' ? 'Xử lý thành Note' : 'Process to Note'}</span>
+                                        </button>
+                                      )}
+                                      <button
+                                        onClick={() => {
+                                          addToast(language === 'vi' ? 'Đang tải file' : 'Downloading file', `"${file.name}"...`);
+                                        }}
+                                        className="min-h-[38px] px-3 flex items-center gap-1.5 rounded-xl border text-xs font-semibold transition-colors cursor-pointer active:scale-95 border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"
+                                      >
+                                        <Download className="w-3.5 h-3.5" />
+                                        <span>{language === 'vi' ? 'Tải xuống' : 'Download'}</span>
+                                      </button>
                     <button
                       onClick={() => deleteSourceFile(file.id)}
                       className="min-h-[38px] px-3 flex items-center gap-1.5 rounded-xl bg-[var(--status-error)]/15 text-[var(--status-error)] border border-[var(--status-error)]/30 hover:bg-[var(--status-error)]/25 text-xs font-semibold transition-colors cursor-pointer active:scale-95"
@@ -455,6 +528,20 @@ export const FilesScreen: React.FC = () => {
                       {/* Actions */}
                       <td className="px-4 py-3.5 text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          {processingFileId === file.id ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]">
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              <span>{language === 'vi' ? 'Đang xử lý...' : 'Processing...'}</span>
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => handleProcessFile(file)}
+                              className="p-1.5 rounded-lg transition-colors cursor-pointer active:scale-95 text-[var(--accent-primary)] hover:text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/10"
+                              title={language === 'vi' ? 'Xử lý thành Note' : 'Process to Note'}
+                            >
+                              <Sparkles className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                           <button
                             onClick={() => {
                               addToast(language === 'vi' ? 'Đang tải file' : 'Downloading file', `"${file.name}"...`);

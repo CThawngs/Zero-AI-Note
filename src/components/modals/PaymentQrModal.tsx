@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, CheckCircle, ExternalLink, QrCode, Copy, Check, Loader2, Sparkles, ShieldCheck } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import { QRPay, VietQRStatus, BankCode } from 'vietnam-qr-pay';
 import { Modal } from '../common/Modal';
 import { useApp } from '../../context/AppContext';
 import confetti from 'canvas-confetti';
@@ -14,6 +15,7 @@ interface PaymentQrModalProps {
     amount: number;
     plan: 'pro' | 'ultra';
     payment_url: string;
+    /** Zero Tracking trả object EMVCo fields — tự dựng payload chuẩn bằng vietnam-qr-pay */
     qr_data?: {
       acqId: string;
       amount: number;
@@ -35,26 +37,45 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({ isOpen, onClose,
 
   const isDark = theme === 'dark';
 
-  // Dựng chuỗi VietQR chuẩn từ qr_data (Zero Tracking: amount + addInfo LOCKED,
-  // render client-side bằng qrcode.react — không phụ thuộc img.vietqr.io)
-  const pad2 = (n: number): string => String(n).padStart(2, '0');
+  // ============================================================
+  // QR value — DỰNG payload EMVCo CHUẨN (vietnam-qr-pay, Napas spec 2022)
+  // Zero Tracking trả qr_data object → build payload hợp lệ với CRC16 đúng
+  // (mọi ngân hàng VN chấp nhận — fix lỗi "Không hỗ trợ chuyển tiền với QR này")
+  // ============================================================
 
+  /** Map acqId (BIN) từ Zero Tracking sang BankCode enum của thư viện */
+  const bankCodeFromAcqId = (acqId: string): string => {
+    const bin = (acqId || '').trim();
+    if (!bin) return BankCode.VIETCOMBANK;
+    // Tìm trong BankCode enum theo BIN — fallback Vietcombank (970436)
+    const found = Object.entries(BankCode).find(([, v]) => String(v) === bin);
+    return found ? (found[1] as string) : BankCode.VIETCOMBANK;
+  };
+
+  /** Dựng payload EMVCo VietQR chuẩn từ qr_data object */
   const buildVietQrString = (): string => {
     if (!billData?.qr_data) return '';
     const { acqId, accountNo, amount, addInfo } = billData.qr_data;
-    // Merchant Account Information (EMVCo tag 26) — VietQR: 00 + len + acqId, 01 + len + accountNo
-    const tnv = '00' + pad2(acqId.length) + acqId + '01' + pad2(accountNo.length) + accountNo;
-    const payload =
-      '000201' +
-      '26' + pad2(tnv.length) + tnv +
-      '5802VN' +
-      '54' + pad2(String(amount).length) + String(amount) +
-      '62' + '05' + pad2(addInfo.length) + addInfo +
-      '6304';
-    return payload;
+    try {
+      const qr = QRPay.initVietQR({
+        bankBin: acqId || '970436',
+        bankNumber: accountNo,
+        amount: String(Number(amount) || 0),
+        purpose: addInfo || billData.bill_id,
+      });
+      const payload = qr.build();
+      // Kiểm tra payload hợp lệ: bắt đầu 000201 + có CRC tag 63 (4 ký tự hex)
+      if (payload && payload.startsWith('000201') && /63\d{2}[0-9A-F]{4}$/.test(payload)) {
+        return payload;
+      }
+      return '';
+    } catch (e) {
+      console.error('VietQR build error:', e);
+      return '';
+    }
   };
 
-  // QR value ưu tiên: qrString từ qr_data (EMVCo VietQR chuẩn)
+  // QR value: payload EMVCo chuẩn (đã có CRC16) — KHÔNG tự dựng thủ công
   const qrValue = billData?.qr_data ? buildVietQrString() : '';
   // Fallback (nếu có payment_url): QR redirect tới trang thanh toán
   const qrFallbackUrl = billData?.payment_url || '';

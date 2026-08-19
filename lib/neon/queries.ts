@@ -248,7 +248,7 @@ export async function getSources(userId: string): Promise<SourceRow[]> {
 }
 
 export async function createSource(input: {
-  user_id: string;
+  user_id?: string;
   type: string;
   file_name: string;
   size_bytes: number;
@@ -256,8 +256,8 @@ export async function createSource(input: {
 }): Promise<SourceRow> {
   const sql = getSql();
   const rows = await sql`
-    insert into sources (user_id, type, file_url, size_bytes, status)
-    values (${input.user_id}, ${input.type}, ${input.file_url || input.file_name}, ${input.size_bytes}, 'processed')
+    insert into sources (user_id, type, file_name, file_url, size_bytes, status)
+    values (${input.user_id}, ${input.type}, ${input.file_name}, ${input.file_url || input.file_name}, ${input.size_bytes}, 'processed')
     returning *
   `;
   return (rows as unknown as SourceRow[])[0];
@@ -406,11 +406,11 @@ export async function upgradeUserPlan(
 
   const userId = updatedProfiles[0]?.id || userIdOrEmail;
 
-  // Insert or record in subscriptions table if exists
+  // Insert or record in subscriptions table if exists (schema mới: bill_id)
   try {
     await sql`
-      insert into subscriptions (user_id, zeroinvoice_invoice_id, status, amount, coupon_code, renews_at)
-      values (${userId}, ${invoiceId || null}, 'active', ${amount || null}, ${couponCode || null}, now() + interval '30 days')
+      insert into subscriptions (user_id, bill_id, plan, amount, status, coupon_code, renews_at)
+      values (${userId}, ${invoiceId || null}, ${plan}, ${amount || null}, 'paid', ${couponCode || null}, now() + interval '30 days')
     `;
   } catch (e) {
     console.warn('Could not insert subscription record:', e);

@@ -72,12 +72,12 @@ export async function POST(request: NextRequest) {
 
     const bill = billResponse.data;
 
-    // Save pending subscription record
+    // Save pending subscription record (schema mới: bill_id — PRD mục 6)
     try {
       const sql = getSql();
       await sql`
-        insert into subscriptions (user_id, zeroinvoice_invoice_id, status, amount, coupon_code)
-        values (${session.sub}, ${bill.bill_id}, 'pending', ${finalAmount}, ${couponCode || null})
+        insert into subscriptions (user_id, bill_id, plan, amount, status, qr_data, coupon_code)
+        values (${session.sub}, ${bill.bill_id}, ${plan}, ${finalAmount}, 'pending', ${bill.qr_data ? JSON.stringify(bill.qr_data) : null}, ${couponCode || null})
       `;
     } catch (e) {
       console.warn('Could not save pending subscription:', e);

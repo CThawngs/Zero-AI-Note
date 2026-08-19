@@ -129,6 +129,10 @@ export interface SourceFileItem {
   uploadedAt?: string;
   /** Kích thước bytes (FilesScreen sort theo sizeBytes) */
   sizeBytes?: number;
+  /** URL file trên R2 (nếu là file upload qua Presigned URL) */
+  fileUrl?: string | null;
+  /** Key file trên R2 — dùng cho pipeline xử lý */
+  sourceKey?: string | null;
   linkedNoteId?: string;
   linkedNoteTitle?: string;
   status: 'processed' | 'auto-delete' | 'error';

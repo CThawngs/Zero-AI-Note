@@ -32,7 +32,8 @@
     "qrcode.react": "^4.2.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "uuid": "^14.0.1"
+    "uuid": "^14.0.1",
+    "vietnam-qr-pay": "^1.5.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",

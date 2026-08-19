@@ -97,10 +97,13 @@ export interface DbCoupon {
 export interface DbSubscription {
   id: string;
   user_id: string;
-  zeroinvoice_invoice_id: string | null;
-  status: 'active' | 'canceled' | 'past_due';
+  bill_id: string;
+  plan: 'pro' | 'ultra';
   amount: number | null;
+  status: 'pending' | 'paid' | 'expired' | 'canceled';
+  qr_data: string | null;
   coupon_code: string | null;
+  paid_at: string | null;
   renews_at: string | null;
   created_at: string;
 }

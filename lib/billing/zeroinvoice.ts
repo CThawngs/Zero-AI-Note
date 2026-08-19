@@ -15,6 +15,7 @@ export interface ZeroInvoiceBillResponse {
     bill_id: string;
     amount: number;
     status: 'pending' | 'paid' | 'expired' | 'failed' | 'resolved';
+    /** Zero Tracking trả OBJECT EMVCo fields (xác minh thực tế 2026-08-19) */
     qr_data?: {
       acqId: string;
       amount: number;

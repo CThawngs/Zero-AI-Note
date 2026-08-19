@@ -109,13 +109,35 @@ create table if not exists coupons (
 create table if not exists subscriptions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references profiles(id) on delete cascade,
-  zeroinvoice_invoice_id text,
-  status text check (status in ('active','canceled','past_due')),
+  bill_id text unique not null,
+  plan text not null check (plan in ('pro','ultra')),
   amount numeric,
+  status text default 'pending' check (status in ('pending','paid','expired','canceled')),
+  qr_data text,
   coupon_code text,
+  paid_at timestamptz,
   renews_at timestamptz,
   created_at timestamptz default now()
 );
+
+-- Migrate cho DB cũ (bảng subscriptions từng dùng zeroinvoice_invoice_id)
+-- Bước 1: thêm cột mới nếu chưa có (idempotent)
+alter table subscriptions add column if not exists bill_id text;
+alter table subscriptions add column if not exists plan text;
+alter table subscriptions add column if not exists qr_data text;
+alter table subscriptions add column if not exists paid_at timestamptz;
+-- Bước 2: copy dữ liệu cũ (nếu có) từ zeroinvoice_invoice_id sang bill_id
+update subscriptions set bill_id = zeroinvoice_invoice_id where bill_id is null and zeroinvoice_invoice_id is not null;
+update subscriptions set status = 'paid' where status = 'active';
+update subscriptions set status = 'canceled' where status = 'past_due';
+-- Bước 3: xoá cột cũ (sau khi đã copy) — an toàn vì không còn code tham chiếu
+delete from subscriptions where bill_id is null;
+alter table subscriptions drop column if exists zeroinvoice_invoice_id;
+-- Bước 4: ràng buộc chuẩn hoá
+alter table subscriptions alter column bill_id set not null;
+alter table subscriptions add constraint subscriptions_bill_id_unique unique (bill_id);
+alter table subscriptions add constraint subscriptions_plan_check check (plan in ('pro','ultra'));
+alter table subscriptions add constraint subscriptions_status_check check (status in ('pending','paid','expired','canceled'));
 
 -- 10. jobs (background pipeline)
 create table if not exists jobs (

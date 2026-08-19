@@ -517,10 +517,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return {
         id: row.id,
-        name: row.file_url ?? 'Tệp không tên',
+        name: row.file_name ?? row.file_url ?? 'Tệp không tên',
         type: (row.type as SourceFileItem['type']) ?? 'doc',
         size: formattedSize,
         sizeBytes: bytes,
+        fileUrl: row.file_url || null,
+        sourceKey: row.file_url || null,
         uploadedAt: row.created_at || '',
         uploadDate: row.created_at ? new Date(row.created_at).toLocaleDateString('vi-VN') : '',
         status: (row.status as any) || 'processed',
