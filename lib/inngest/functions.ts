@@ -32,16 +32,16 @@ export const processNotePipeline = inngest.createFunction(
     // Bước [1] Trích Transcript — lấy nội dung nguồn
     const inputText = await step.run('extract-transcript', async () => {
       const sourceRows = (await sql`
-        select transcript, file_url, file_name from sources
+        select transcript, file_url from sources
         where id = ${sourceKey} or file_url = ${sourceKey}
         limit 1
-      `) as unknown as { transcript: string | null; file_url: string | null; file_name: string | null }[];
+      `) as unknown as { transcript: string | null; file_url: string | null }[];
 
       if (sourceRows.length > 0 && sourceRows[0].transcript) {
         return sourceRows[0].transcript;
       }
       if (sourceRows.length > 0 && sourceRows[0].file_url) {
-        return `Nội dung nguồn (file: ${sourceRows[0].file_name || sourceKey}): ${sourceRows[0].file_url}`;
+        return `Nội dung nguồn (file: ${sourceKey}): ${sourceRows[0].file_url}`;
       }
       return `Nội dung nguồn tải lên: ${sourceKey}`;
     });
