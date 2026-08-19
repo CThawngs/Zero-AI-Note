@@ -398,18 +398,6 @@ create table coupons (
   created_at timestamptz default now()
 );
 
--- Subscription, đồng bộ với ZeroInvoice
-create table subscriptions (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid references profiles(id),
-  zeroinvoice_invoice_id text,
-  status text check (status in ('active','canceled','past_due')),
-  amount numeric,
-  coupon_code text,
-  renews_at timestamptz,
-  created_at timestamptz default now()
-);
-
 -- RLS mẫu (áp dụng tương tự cho các bảng còn lại)
 alter table notes enable row level security;
 create policy "user reads own notes" on notes for select using (auth.uid() = user_id);
