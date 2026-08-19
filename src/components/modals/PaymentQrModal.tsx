@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, CheckCircle, ExternalLink, QrCode, Copy, Check, Loader2, Sparkles, ShieldCheck } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { QRPay, VietQRStatus, BankCode } from 'vietnam-qr-pay';
+import { QRPay } from 'vietnam-qr-pay';
 import { Modal } from '../common/Modal';
 import { useApp } from '../../context/AppContext';
 import confetti from 'canvas-confetti';
@@ -42,15 +42,6 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({ isOpen, onClose,
   // Zero Tracking trả qr_data object → build payload hợp lệ với CRC16 đúng
   // (mọi ngân hàng VN chấp nhận — fix lỗi "Không hỗ trợ chuyển tiền với QR này")
   // ============================================================
-
-  /** Map acqId (BIN) từ Zero Tracking sang BankCode enum của thư viện */
-  const bankCodeFromAcqId = (acqId: string): string => {
-    const bin = (acqId || '').trim();
-    if (!bin) return BankCode.VIETCOMBANK;
-    // Tìm trong BankCode enum theo BIN — fallback Vietcombank (970436)
-    const found = Object.entries(BankCode).find(([, v]) => String(v) === bin);
-    return found ? (found[1] as string) : BankCode.VIETCOMBANK;
-  };
 
   /** Dựng payload EMVCo VietQR chuẩn từ qr_data object */
   const buildVietQrString = (): string => {
