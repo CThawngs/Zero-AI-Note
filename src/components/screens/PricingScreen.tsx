@@ -19,9 +19,9 @@ import { useApp } from '../../context/AppContext';
 import { PaymentQrModal } from '../modals/PaymentQrModal';
 
 export const PricingScreen: React.FC = () => {
-  const { user, applyCouponCode, addToast, theme, language, t } = useApp();
+  const { user, applyCouponCode, addToast, addNotification, theme, language, t } = useApp();
   const [couponCode, setCouponCode] = useState('');
-  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountPercent?: number; discountValue?: number; baseAmount?: number; finalAmount?: number } | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountPercent?: number; discountValue?: number; discountType?: 'percent' | 'fixed'; baseAmount?: number; finalAmount?: number } | null>(null);
   const [isApplying, setIsApplying] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
   const [isCreatingInvoice, setIsCreatingInvoice] = useState<string | null>(null);
@@ -126,13 +126,23 @@ export const PricingScreen: React.FC = () => {
     if (res.success) {
       setAppliedCoupon({ 
         code: couponCode.trim().toUpperCase(),
-        discountPercent: res.discountPercent || 20,
+        discountPercent: res.discountPercent,
+        discountValue: res.discountValue,
+        discountType: res.discountType,
         baseAmount: res.baseAmount,
         finalAmount: res.finalAmount
       });
-      addToast(language === 'vi' ? 'Áp dụng mã thành công' : 'Coupon Applied', res.message, 'success');
+      addNotification(
+        language === 'vi' ? 'Kích hoạt mã thành công' : 'Coupon activated',
+        res.message,
+        'success'
+      );
     } else {
-      addToast(language === 'vi' ? 'Mã không hợp lệ' : 'Invalid coupon', res.message, 'error');
+      addNotification(
+        language === 'vi' ? 'Mã giảm giá không hợp lệ' : 'Invalid coupon',
+        res.message,
+        'error'
+      );
     }
   };
 
@@ -345,7 +355,7 @@ export const PricingScreen: React.FC = () => {
             disabled={isApplying || !couponCode.trim()}
             className="px-4 py-2 rounded-xl bg-[var(--accent-primary)] hover:opacity-90 text-[var(--accent-text)] text-xs font-bold cursor-pointer disabled:opacity-50 transition-all shadow-xs"
           >
-            {isApplying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : (language === 'vi' ? 'Áp dụng' : 'Apply')}
+            {isApplying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : (language === 'vi' ? 'Active' : 'Active')}
           </motion.button>
         </form>
         {appliedCoupon && (
