@@ -319,7 +319,71 @@
 
 ---
 
-## 16. References
+## 16. Living Note Architecture & Notes Library Transition (2026-08-19/20)
+
+### Problem
+- Khi người dùng chat trao đổi qua lại với AI trong cùng một chủ đề, mỗi lượt phản hồi trước đây có nguy cơ sinh ra một file Note mới độc lập, gây phân mảnh dữ liệu và làm rác giao diện thư viện ghi chú.
+
+### Decision & Implementation
+1. **1 Phiên Chat = 1 Living Note (`activeArtifactNote`)**:
+   - Duy trì duy nhất một file ghi chú sống động cho mỗi phiên nghiên cứu.
+   - Khi người dùng gửi thêm tin nhắn yêu cầu bổ sung, tóm tắt thêm hoặc hiệu chỉnh nội dung, API `/api/notes/generate` thực hiện **In-place Upsert** (`on conflict (id) do update set content_structured = ...`) vào bản ghi hiện có trên Neon Postgres.
+   - Chỉ tạo bản ghi Note mới khi người dùng chủ động bấm `+ Tạo Note mới` / `+ New Chat & Note`.
+2. **Thư viện Ghi chú (Notes Library)**:
+   - Sidebar item 1 chính thức là `Ghi chú (Notes)`, đóng vai trò là thư viện tổng hợp tri thức học thuật.
+   - Khung `Cuộc trò chuyện gần đây (Recent Chats)` ở thanh điều hướng bên trái được định vị là Fast Switcher để chuyển đổi tức thì giữa các luồng nghiên cứu đang mở.
+
+---
+
+## 17. 30-Day Trash & Archive Lifecycle Management (2026-08-19/20)
+
+### Problem
+- Việc xóa thẳng tay dữ liệu mà không có cơ chế lưu trữ an toàn dễ gây mất mát bài học của người dùng khi lỡ thao tác nhầm.
+
+### Decision & Implementation
+1. **Lưu trữ 30 ngày thay vì xóa ngay**:
+   - Thao tác xóa trong Thư viện Ghi chú chuyển thành đưa vào mục **Thùng rác & Lưu trữ (`Archives`)**.
+   - Hệ thống tính toán chính xác số ngày còn lại (`daysLeft = 30 - elapsedDays`) và hiển thị huy hiệu cảnh báo màu sắc theo mức độ khẩn cấp (Đỏ $\le 5$ ngày, Vàng $\le 15$ ngày, Xám $> 15$ ngày).
+2. **Khôi phục (Restore)**:
+   - Cho phép phục hồi bài ghi chú quay lại Thư viện Ghi chú ngay lập tức và dừng tiến trình đếm ngược xóa.
+3. **Xóa vĩnh viễn (Permanent Delete)**:
+   - Cho phép người dùng chủ động xóa vĩnh viễn trước thời hạn 30 ngày kèm theo hộp thoại xác nhận bảo vệ an toàn dữ liệu.
+
+---
+
+## 18. Master Pricing Matrix & Custom Template Quotas Enforcement (2026-08-20)
+
+### Problem
+- Cần có sự phân cấp tính năng minh bạch, hợp lý theo chi phí vận hành và đồng bộ 100% giữa Landing Page, Trang Nâng cấp (Upgrade Pricing) và Codebase logic.
+
+### Decision & Implementation
+1. **Phân cấp Hạn mức Gói Chuẩn**:
+   - **Gói FREE (0đ)**: Tối đa 20 Notes, 3 templates nền tảng (Cornell, Outline, Tóm tắt nhanh), tối đa 5 Custom Templates, Markdown preview, xuất 3 định dạng cơ bản (.pdf, .docx, .md).
+   - **Gói PRO (99.000đ/tháng)**: Tối đa 50 Notes, 9 templates tiêu chuẩn, tối đa 25 Custom Templates, Static HTML Preview với CSS styling, xuất 4 định dạng (PDF, DOCX, MD, Webpage HTML).
+   - **Gói ULTRA (199.000đ/tháng)**: Không giới hạn Notes ($\infty$), toàn bộ 17 templates, Không giới hạn Custom Templates ($\infty$), Interactive Dynamic HTML Preview (JS, chart hover, animation), Single-file Interactive HTML 100% offline, Checkbox Multi-Export & đóng gói file .ZIP duy nhất.
+2. **Hạn mức Custom Templates (Quota Guard)**:
+   - `TemplatesScreen.tsx` kiểm soát nghiêm ngặt số lượng mẫu tùy chỉnh: 5 (Free), 25 (Pro), $\infty$ (Ultra).
+   - Chặn tạo mới và hiển thị modal điều hướng nâng cấp khi chạm ngưỡng.
+
+---
+
+## 19. Real-Time Dynamic User Plan Badges & Instant State Sync (2026-08-20)
+
+### Problem
+- Sau khi thanh toán VietQR thành công hoặc kích hoạt mã giảm giá 100%, tag gói của người dùng cần được cập nhật tức thì trên giao diện mà không yêu cầu reload trang.
+
+### Decision & Implementation
+1. **Thiết kế Tag gói phân cấp trực quan (`Sidebar.tsx`, `SettingsScreen.tsx`, `Header.tsx`)**:
+   - **FREE**: Huy hiệu xám tối giản, viền tinh tế.
+   - **PRO**: Huy hiệu xanh dương công nghệ `bg-blue-500/20 text-blue-400` kèm icon lấp lánh `✨ Sparkles`.
+   - **ULTRA**: Huy hiệu chuyển màu hoàng gia `bg-gradient-to-r from-amber-500/20 to-purple-500/20 text-amber-400` kèm icon vương miện `👑 Crown`.
+   - **ADMIN**: Huy hiệu xanh lục bảo vệ `bg-emerald-500/20 text-emerald-400` kèm icon khiên `🛡️ Shield`.
+2. **Đồng bộ State tức thì**:
+   - Cập nhật trực tiếp `user.plan` trong `AppContext` ngay khi nhận tín hiệu xác nhận thanh toán hoặc mã giảm giá 100% (0đ), đồng thời cập nhật profile trên Neon Postgres.
+
+---
+
+## 20. References
 - [Neon Documentation](https://neon.tech/docs)
 - [Drizzle ORM](https://orm.drizzle.team)
 - [gitleaks](https://github.com/gitleaks/gitleaks)
@@ -330,3 +394,4 @@
 - [google-auth-library](https://github.com/googleapis/google-auth-library-nodejs)
 - [Google Gen AI SDK](https://github.com/googleapis/genai-js)
 - [Docx JS](https://docx.js.org/)
+- [Vietnam QR Pay](https://github.com/momo-wallet/vietnam-qr-pay)

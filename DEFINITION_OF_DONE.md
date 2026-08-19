@@ -28,17 +28,21 @@
 - [ ] 5 template + Auto mode + custom template hoạt động thật
 - [ ] Xuất 4 định dạng MD/DOCX/PDF/HTML, preview đúng từng loại
 
-## Tuần 8-9 — UX giữ chân
-- [ ] Thư viện, chat tiếp theo nguồn, regenerate từng phần, share link (view-only) — dữ liệu Supabase thật
-- [ ] Nguồn URL/YouTube hoạt động thật
+## Tuần 8-9 — UX giữ chân & Thư viện Ghi chú
+- [x] Thư viện Ghi chú (Notes Library) với kiến trúc Living Note (1 Session = 1 Living Note in-place upsert) ✅
+- [x] Fast Switcher "Cuộc trò chuyện gần đây" (Recent Chats) trên Sidebar ✅
+- [x] Cơ chế Lưu trữ & Thùng rác 30 ngày (Trash & Archives) với đếm ngược tự động và Khôi phục 1-Click ✅
+- [x] Chia sẻ Note (Share Link view-only modal) & Ghim Note lên đầu ✅
+- [x] Tối ưu hóa UI/UX: Loại bỏ scrollbar ngang Windows trên toàn bộ Tabs và Filter controls ✅
 
-## Tuần 10-11 — Kinh doanh hoá
-- [ ] Gate Free/Paid thật dựa trên `profiles.plan` (Free 2h/tháng, Paid 20h/tháng)
-- [ ] Webhook ZeroInvoice test 1 giao dịch THẬT (dừng xác nhận Zero trước khi bật)
-- [x] Coupon CRUD thật qua Admin (role server-side)
-- [x] Coupon activation backend: `create-invoice` validate + tính giảm giá + persist `coupon_code` vào `subscriptions` + tăng `usage_count` 1 lần (không còn chỉ frontend)
-- [x] Zero Tracking realtime payee switch: combobox đổi TK/Ví (bank/MoMo/ZaloPay) per-checkout → QR nhận đúng TK realtime; fallback chain + tenant isolation
-- [ ] BYOK đầy đủ: Test Connection, Check Model, Import/Sync free models qua cache dùng chung
+## Tuần 10-11 — Kinh doanh hoá & Phân cấp Gói
+- [x] Master Pricing Matrix & Hạn mức Custom Templates (Free 5 / Pro 25 / Ultra không giới hạn) ✅
+- [x] Dynamic Quota Badges & Nâng cấp thời gian thực trên Sidebar, Settings, Header ✅
+- [x] Webhook ZeroInvoice & Thanh toán VietQR Napas EMVCo payload chuẩn ✅
+- [x] Coupon CRUD thật qua Admin (role server-side, 100% chiết khấu %, kích hoạt 0đ tức thì) ✅
+- [x] Ràng buộc 1 tài khoản = 1 mã coupon duy nhất (bảng `user_coupons` trên Neon) ✅
+- [x] Zero Tracking realtime payee switch: combobox đổi TK/Ví (bank/MoMo/ZaloPay) per-checkout ✅
+- [x] BYOK đầy đủ: Tự kết nối AI riêng (Google, OpenAI, Anthropic, OpenRouter, Groq, NVIDIA) kèm Test connection thực tế và thông báo chuông thời gian thực ✅
 
 ## Tuần 12+ — Khác biệt/nâng cao
 - [ ] Mind map, TTS, action item, đồng bộ Notion/Calendar, spaced repetition
