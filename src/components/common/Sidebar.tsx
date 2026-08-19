@@ -10,6 +10,8 @@ import {
   Sparkles, 
   Settings, 
   ShieldCheck, 
+  Shield,
+  Crown,
   X,
   ChevronRight,
   Clock,
@@ -278,9 +280,26 @@ export const Sidebar: React.FC = () => {
                 {user.name}
               </p>
               <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="text-[10px] uppercase font-bold px-1.5 py-0.2 rounded font-mono tracking-tight bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]">
-                  {user.plan}
-                </span>
+                {user.role === 'admin' ? (
+                  <span className="text-[9px] uppercase font-black px-1.5 py-0.5 rounded-md font-mono tracking-tight bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-0.5 shadow-xs shrink-0">
+                    <Shield className="w-2.5 h-2.5" />
+                    <span>ADMIN</span>
+                  </span>
+                ) : user.plan === 'ultra' ? (
+                  <span className="text-[9px] uppercase font-black px-1.5 py-0.5 rounded-md font-mono tracking-tight bg-gradient-to-r from-amber-500/20 to-purple-500/20 text-amber-400 border border-amber-500/40 flex items-center gap-0.5 shadow-xs shrink-0">
+                    <Crown className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
+                    <span>ULTRA</span>
+                  </span>
+                ) : user.plan === 'pro' ? (
+                  <span className="text-[9px] uppercase font-black px-1.5 py-0.5 rounded-md font-mono tracking-tight bg-blue-500/20 text-blue-400 border border-blue-500/40 flex items-center gap-0.5 shadow-xs shrink-0">
+                    <Sparkles className="w-2.5 h-2.5 text-blue-400" />
+                    <span>PRO</span>
+                  </span>
+                ) : (
+                  <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-md font-mono tracking-tight bg-[var(--bg-hover)] text-[var(--text-secondary)] border border-[var(--border-color)] shrink-0">
+                    FREE
+                  </span>
+                )}
                 <span className="text-[10px] truncate text-[var(--text-muted)]">
                   {user.email}
                 </span>

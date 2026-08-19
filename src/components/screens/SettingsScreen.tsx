@@ -246,13 +246,25 @@ export const SettingsScreen: React.FC = () => {
                   <h4 className={`text-base font-bold ${isDark ? 'text-[var(--text-primary)]' : 'text-[var(--text-primary)]'}`}>{user.name}</h4>
                   <p className={`text-xs ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>{user.email}</p>
                   <div className="mt-1 flex items-center gap-2">
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded ${
-                      user.plan === 'pro' 
-                        ? 'bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] border border-[var(--accent-primary)]/30' 
-                        : isDark ? 'bg-[var(--bg-hover)] text-[var(--text-secondary)]' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)]'
-                    }`}>
-                      {user.plan === 'pro' ? '★ ' + t('proPlan') : t('freePlan')}
-                    </span>
+                    {user.role === 'admin' ? (
+                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-mono">
+                        ADMIN
+                      </span>
+                    ) : user.plan === 'ultra' ? (
+                      <span className="text-xs font-black px-2.5 py-0.5 rounded-lg bg-gradient-to-r from-amber-500/25 to-purple-500/25 text-amber-400 border border-amber-500/40 flex items-center gap-1 font-mono shadow-xs">
+                        <Crown className="w-3 h-3 fill-amber-400 text-amber-400" />
+                        <span>ULTRA PLAN</span>
+                      </span>
+                    ) : user.plan === 'pro' ? (
+                      <span className="text-xs font-black px-2.5 py-0.5 rounded-lg bg-blue-500/20 text-blue-400 border border-blue-500/40 flex items-center gap-1 font-mono shadow-xs">
+                        <Sparkles className="w-3 h-3 text-blue-400" />
+                        <span>PRO PLAN</span>
+                      </span>
+                    ) : (
+                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-lg bg-[var(--bg-hover)] text-[var(--text-secondary)] border border-[var(--border-color)] font-mono">
+                        FREE PLAN
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -293,9 +305,11 @@ export const SettingsScreen: React.FC = () => {
                     {t('planDetails')}
                   </h3>
                   <p className={`text-xs mt-0.5 ${isDark ? 'text-[var(--text-secondary)]' : 'text-[var(--text-secondary)]'}`}>
-                    {user.plan === 'pro' 
-                      ? (language === 'vi' ? 'Bạn đang sử dụng toàn bộ tính năng cao cấp không giới hạn.' : 'You have active access to unlimited AI power, TTS, and multi-sources.')
-                      : (language === 'vi' ? 'Nâng cấp để mở khóa tính năng AI TTS, Multi-source và không giới hạn lưu trữ.' : 'Upgrade to unlock AI Audio TTS, multi-source extraction, and unlimited storage.')}
+                    {user.plan === 'ultra'
+                      ? (language === 'vi' ? 'Bạn đang sử dụng gói Ultra Toàn Năng (Không giới hạn ghi chú & 17 templates).' : 'You have full Ultra All-Access (Unlimited notes & 17 templates).')
+                      : user.plan === 'pro' 
+                        ? (language === 'vi' ? 'Bạn đang sử dụng gói Pro (50 ghi chú & 9 templates tiêu chuẩn).' : 'You have active Pro access (50 notes & 9 standard templates).')
+                        : (language === 'vi' ? 'Nâng cấp để mở khóa thêm dung lượng ghi chú, templates nâng cao và xuất file cao cấp.' : 'Upgrade to unlock more storage, advanced templates, and premium export formats.')}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">

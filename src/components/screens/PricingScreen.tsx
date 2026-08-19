@@ -26,7 +26,7 @@ import { useApp } from '../../context/AppContext';
 import { PaymentQrModal } from '../modals/PaymentQrModal';
 
 export const PricingScreen: React.FC = () => {
-  const { user, applyCouponCode, addToast, addNotification, theme, language, t } = useApp();
+  const { user, setUser, applyCouponCode, addToast, addNotification, theme, language, t } = useApp();
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<{ 
     code: string; 
@@ -190,9 +190,15 @@ export const PricingScreen: React.FC = () => {
       setBillData(data);
       if (data.autoActivated) {
         setIsPaymentModalOpen(false);
+        setUser(prev => ({ ...prev, plan: planId }));
         addNotification(
           language === 'vi' ? 'Kích hoạt gói thành công (0đ)' : 'Plan activated (0đ)',
           language === 'vi' ? `Đã áp dụng coupon ${data.coupon?.code || ''} và nâng cấp ${planId.toUpperCase()}.` : `Coupon ${data.coupon?.code || ''} applied, ${planId.toUpperCase()} activated.`,
+          'success'
+        );
+        addToast(
+          language === 'vi' ? 'Nâng cấp thành công!' : 'Upgrade Successful!',
+          language === 'vi' ? `Tài khoản của bạn đã được nâng cấp lên gói ${planId.toUpperCase()}.` : `Account upgraded to ${planId.toUpperCase()}.`,
           'success'
         );
       } else {
