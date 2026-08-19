@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, CheckCircle, ExternalLink, QrCode, Copy, Check, Loader2, Sparkles, ShieldCheck } from 'lucide-react';
+import { X, CheckCircle, QrCode, Copy, Check, Loader2, Sparkles, ShieldCheck } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { QRPay } from 'vietnam-qr-pay';
 import { Modal } from '../common/Modal';
@@ -34,6 +34,7 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({ isOpen, onClose,
   const [isCopiedContent, setIsCopiedContent] = useState(false);
   const [isPaidSuccess, setIsPaidSuccess] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
 
   const isDark = theme === 'dark';
 
@@ -70,6 +71,54 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({ isOpen, onClose,
   const qrValue = billData?.qr_data ? buildVietQrString() : '';
   // Fallback (nếu có payment_url): QR redirect tới trang thanh toán
   const qrFallbackUrl = billData?.payment_url || '';
+
+  // Xác nhận đã chuyển khoản — gọi server resolve bill qua Zero Tracking
+  const handleConfirmPaid = async () => {
+    if (!billData || isConfirming) return;
+    setIsConfirming(true);
+    try {
+      const res = await fetch('/api/billing/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ billId: billData.bill_id }),
+      });
+      const data = await res.json();
+      if (data.ok && data.status === 'paid') {
+        setIsPaidSuccess(true);
+        setUser(prev => ({ ...prev, plan: billData.plan }));
+        confetti({
+          particleCount: 120,
+          spread: 70,
+          origin: { y: 0.6 },
+        });
+        addToast(
+          language === 'vi' ? 'Thanh toán thành công!' : 'Payment Successful!',
+          language === 'vi'
+            ? `Tài khoản của bạn đã được nâng cấp lên gói ${billData.plan.toUpperCase()}.`
+            : `Your account has been upgraded to ${billData.plan.toUpperCase()} plan.`,
+          'success'
+        );
+        setTimeout(() => onClose(), 3000);
+      } else {
+        addToast(
+          language === 'vi' ? 'Chưa xác nhận được thanh toán' : 'Payment not confirmed yet',
+          language === 'vi'
+            ? 'Vui lòng thử lại sau vài giây hoặc liên hệ hỗ trợ.'
+            : 'Please try again in a few seconds or contact support.',
+          'warning'
+        );
+      }
+    } catch (err) {
+      console.error('Confirm payment error:', err);
+      addToast(
+        language === 'vi' ? 'Lỗi kết nối' : 'Connection error',
+        language === 'vi' ? 'Không thể xác nhận thanh toán lúc này.' : 'Unable to confirm payment at this time.',
+        'error'
+      );
+    } finally {
+      setIsConfirming(false);
+    }
+  };
 
   // Poll payment status every 3.5 seconds
   useEffect(() => {
@@ -241,23 +290,24 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({ isOpen, onClose,
               </div>
             </div>
 
-            {/* Direct ZeroInvoice payment page button */}
-            <div className="pt-2 flex flex-col gap-2">
-              <a
-                href={billData.payment_url}
-                target="_blank"
-                rel="noreferrer"
-                className="w-full py-2.5 px-4 rounded-xl bg-[var(--accent-primary)] hover:opacity-90 text-[var(--accent-text)] text-xs font-bold flex items-center justify-center gap-2 shadow-md shadow-[var(--accent-primary)]/20 transition-all cursor-pointer text-center"
-              >
-                <span>{language === 'vi' ? 'Mở trang thanh toán ZeroInvoice' : 'Open ZeroInvoice Checkout'}</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-
+            {/* Confirm paid button — minimal, responsive */}
+            <div className="pt-2">
               <button
-                onClick={onClose}
-                className="w-full py-2 rounded-xl text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer text-center"
+                onClick={handleConfirmPaid}
+                disabled={isConfirming || isPaidSuccess}
+                className="w-full py-3 px-4 rounded-xl bg-[var(--accent-primary)] hover:opacity-90 text-[var(--accent-text)] text-sm font-bold flex items-center justify-center gap-2 shadow-md shadow-[var(--accent-primary)]/20 transition-all duration-200 cursor-pointer text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-app)] disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg"
               >
-                {language === 'vi' ? 'Đóng cửa sổ' : 'Close'}
+                {isConfirming ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>{language === 'vi' ? 'Đang xác nhận...' : 'Confirming...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>{language === 'vi' ? 'Tôi đã thanh toán xong' : 'I have paid'}</span>
+                  </>
+                )}
               </button>
             </div>
           </>
