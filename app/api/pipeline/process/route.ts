@@ -39,17 +39,34 @@ export async function POST(request: NextRequest) {
     `;
 
     // Enqueue job qua Inngest — worker sẽ xử lý nền (PRD mục 3.2)
-    await inngest.send({
-      name: 'note/pipeline.process',
-      data: {
+    try {
+      await inngest.send({
+        name: 'note/pipeline.process',
+        data: {
+          jobId,
+          userId: session.sub,
+          sourceKey: key,
+          method,
+          language,
+          model,
+        },
+      });
+    } catch (enqueueError) {
+      // Fail-safe: nếu Inngest chưa được cấu hình (thiếu INNGEST_EVENT_KEY),
+      // đánh dấu job lỗi rõ ràng để client polling nhận được thông báo,
+      // không treo vô hạn ở trạng thái queued.
+      console.error('[pipeline/process] Inngest enqueue failed:', enqueueError);
+      await sql`
+        update jobs
+        set status = 'error', error = 'Inngest chưa được cấu hình trên server. Vui lòng thử lại sau.'
+        where id = ${jobId}
+      `;
+      return ok({
         jobId,
-        userId: session.sub,
-        sourceKey: key,
-        method,
-        language,
-        model,
-      },
-    });
+        status: 'error',
+        message: 'Inngest not configured',
+      });
+    }
 
     return ok({
       jobId,
