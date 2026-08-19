@@ -341,9 +341,18 @@ export async function deleteCoupon(couponId: string): Promise<void> {
  */
 export async function validateCouponForPlan(
   code: string,
-  plan: 'free' | 'pro' | 'ultra'
+  plan: 'free' | 'pro' | 'ultra',
+  userId?: string
 ): Promise<CouponItem | null> {
   const sql = getSql();
+  // Ràng buộc: 1 tài khoản chỉ được nhập đúng 1 mã coupon duy nhất.
+  // Nếu user đã từng sử dụng coupon nào -> từ chối mọi mã mới (kể cả mã cũ).
+  if (userId) {
+    const used = await sql`
+      select 1 from user_coupons where user_id = ${userId} limit 1
+    ` as any[];
+    if (used.length > 0) return null;
+  }
   const rows = (await sql`
     select id, code, discount_type, discount_value, applies_to,
            usage_limit, usage_count, expires_at, status, created_at

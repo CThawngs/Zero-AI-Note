@@ -98,6 +98,13 @@ export async function POST(request: NextRequest) {
     if (appliedCouponCode) {
       try {
         const sql = getSql();
+        // Ghi nhận: 1 tài khoản chỉ được 1 mã coupon duy nhất.
+        // Nếu user đã có bản ghi -> bỏ qua (không ghi đè), coupon vẫn áp dụng cho bill này.
+        await sql`
+          insert into user_coupons (user_id, coupon_code)
+          values (${session.sub}, ${appliedCouponCode})
+          on conflict (user_id) do nothing
+        `;
         await sql`
           update coupons set usage_count = usage_count + 1
           where code = ${appliedCouponCode}

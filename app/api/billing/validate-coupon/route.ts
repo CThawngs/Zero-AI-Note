@@ -36,10 +36,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ valid: false, error: 'Valid plan (pro/ultra) is required' }, { status: 400 });
     }
 
-    const coupon = await validateCouponForPlan(couponCode.trim(), plan);
+    const coupon = await validateCouponForPlan(couponCode.trim(), plan, session.sub);
     if (!coupon) {
+      // Phân biệt nguyên nhân để thông báo chuông chính xác
+      const used = await (await import('@/lib/db')).getSql()`
+        select 1 from user_coupons where user_id = ${session.sub} limit 1
+      ` as any[];
+      const alreadyUsed = used.length > 0;
       return NextResponse.json(
-        { valid: false, error: 'Mã giảm giá không hợp lệ hoặc đã hết hiệu lực' },
+        {
+          valid: false,
+          error: alreadyUsed
+            ? 'Tài khoản này đã sử dụng mã coupon. Mỗi tài khoản chỉ được dùng 1 mã duy nhất.'
+            : 'Mã giảm giá không hợp lệ hoặc đã hết hiệu lực',
+        },
         { status: 404 }
       );
     }
