@@ -45,9 +45,13 @@ export async function POST(request: NextRequest) {
       contentType
     );
 
+    // Public URL để client lưu metadata — KHÔNG import server module ở client
+    const publicUrl = await storageService.getPublicUrl(key);
+
     return ok({
       uploadUrl,
       key,
+      publicUrl,
       uploadId: key.split('/')[1],
       expiresIn: 3600,
     });

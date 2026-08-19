@@ -3,7 +3,6 @@ import { Modal } from '../common/Modal';
 import { Upload, Link as LinkIcon, FileText } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { uploadFileToR2 } from '../../lib/apiClient';
-import { storageService } from '@/lib/storage';
 
 interface AttachSourceModalProps {
   isOpen: boolean;
@@ -24,8 +23,7 @@ export const AttachSourceModal: React.FC<AttachSourceModalProps> = ({ isOpen, on
   const handleFileUpload = async (file: File) => {
     try {
       // Upload file thật lên R2 qua Presigned URL (PRD mục 3.1/4.1)
-      const { key } = await uploadFileToR2(file);
-      const publicUrl = await storageService.getPublicUrl(key);
+      const { publicUrl } = await uploadFileToR2(file);
       
       // Lưu metadata vào Neon DB
       await addSourceFile(file.name, file.size.toString(), file.type.includes('video') ? 'video' : file.type.includes('audio') ? 'audio' : file.type.includes('pdf') ? 'pdf' : 'doc', publicUrl);

@@ -149,7 +149,7 @@ export async function presignUpload(input: {
   fileName: string;
   contentType: string;
   fileSize: number;
-}): Promise<{ uploadUrl: string; key: string; uploadId: string; expiresIn: number }> {
+}): Promise<{ uploadUrl: string; key: string; publicUrl: string; uploadId: string; expiresIn: number }> {
   const res = await fetch('/api/upload/presign', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -188,7 +188,7 @@ export async function confirmUpload(key: string, uploadId: string): Promise<any>
 }
 
 /** One-shot: presign → PUT R2 → confirm — dùng cho client upload file thật */
-export async function uploadFileToR2(file: File): Promise<{ key: string; uploadId: string }> {
+export async function uploadFileToR2(file: File): Promise<{ key: string; uploadId: string; publicUrl: string }> {
   const presign = await presignUpload({
     fileName: file.name,
     contentType: file.type || 'application/octet-stream',
@@ -196,7 +196,7 @@ export async function uploadFileToR2(file: File): Promise<{ key: string; uploadI
   });
   await putFileToR2(presign.uploadUrl, file);
   await confirmUpload(presign.key, presign.uploadId);
-  return { key: presign.key, uploadId: presign.uploadId };
+  return { key: presign.key, uploadId: presign.uploadId, publicUrl: presign.publicUrl };
 }
 
 export async function deleteSource(sourceId: string): Promise<void> {
