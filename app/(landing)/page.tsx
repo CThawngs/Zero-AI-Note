@@ -45,9 +45,54 @@ const content = {
       title: 'Bắt đầu miễn phí, nâng cấp khi cần',
       link: 'Xem đầy đủ bảng giá',
       plans: [
-        { name: 'Miễn phí', desc: 'Trải nghiệm cơ bản cho cá nhân.', price: '0đ', period: '/tháng', features: ['3 giờ xử lý / tháng', 'File tối đa 30 phút', 'Xuất PDF cơ bản'], cta: 'Tạo tài khoản' },
-        { name: 'Pro', desc: 'Dành cho nghiên cứu sinh & chuyên gia.', price: '99.000đ', period: '/tháng', highlight: true, badge: 'Phổ biến', features: ['50 giờ xử lý / tháng', 'File tối đa 2 giờ/phiên', 'Mọi định dạng học thuật', 'Ưu tiên xử lý'], cta: 'Nâng cấp Pro' },
-        { name: 'Ultra', desc: 'Giải pháp tối ưu cho tổ chức.', price: '199.000đ', period: '/tháng', features: ['200 giờ xử lý/tháng', 'Tốc độ cao nhất', 'Xuất DOCX cao cấp', 'Hỗ trợ ưu tiên qua email', 'Phân tích đa file'], cta: 'Nâng cấp Ultra' }
+        { 
+          name: 'Miễn phí', 
+          desc: 'Khám phá & trải nghiệm ghi chú học thuật AI.', 
+          price: '0đ', 
+          period: '/vĩnh viễn', 
+          features: [
+            'Lưu trữ tối đa 20 Notes',
+            '3 templates cơ bản (Cornell, Outline, Tóm tắt)',
+            'Tối đa 5 Custom Templates',
+            'Xem trước Raw / Markdown',
+            'Xuất 3 định dạng (.pdf, .docx, .md)',
+            'Dùng chung Gemini Key / Tự kết nối AI'
+          ], 
+          cta: 'Bắt đầu miễn phí' 
+        },
+        { 
+          name: 'Pro', 
+          desc: 'Dành cho sinh viên, giảng viên & người làm việc hằng ngày.', 
+          price: '99.000đ', 
+          period: '/tháng (~$4)', 
+          highlight: true, 
+          badge: 'Phổ biến nhất', 
+          features: [
+            'Lưu trữ tối đa 50 Notes',
+            '9 templates (Kế thừa Free + Họp, Bài giảng, Q&A, Phân tích,...)',
+            'Tối đa 25 Custom Templates',
+            'Xem trước HTML Tĩnh chuẩn CSS',
+            'Xuất 4 định dạng (PDF, DOCX, MD, Webpage HTML)',
+            'Dùng chung Gemini Key / Tự kết nối AI'
+          ], 
+          cta: 'Nâng cấp Pro' 
+        },
+        { 
+          name: 'Ultra', 
+          desc: 'Chuyên gia nghiên cứu, đề án chuyên ngành & khối lượng lớn.', 
+          price: '199.000đ', 
+          period: '/tháng (~$8)', 
+          features: [
+            'KHÔNG GIỚI HẠN số lượng Note',
+            'Trọn bộ 17 templates (Feynman, Mindmap, Flashcard,...)',
+            'KHÔNG GIỚI HẠN Custom Templates',
+            'Xem trước HTML Tương tác Động (JS, chart hover)',
+            'Single-file Interactive HTML 100% offline',
+            'Checkbox Multi-Export & Đóng gói file .ZIP',
+            'Ưu tiên tốc độ xử lý & hỗ trợ 24/7'
+          ], 
+          cta: 'Nâng cấp Ultra' 
+        }
       ]
     },
     cta: {
@@ -94,9 +139,54 @@ const content = {
       title: 'Start free, upgrade when you need',
       link: 'View full pricing',
       plans: [
-        { name: 'Free', desc: 'Basic experience for individuals.', price: '$0', period: '/month', features: ['3 hours processing / month', 'Max file 30 min', 'Basic PDF export'], cta: 'Create account' },
-        { name: 'Pro', desc: 'For researchers & professionals.', price: '$4', period: '/month', highlight: true, badge: 'Hot', features: ['50 hours processing / month', 'Max file 2 hours/session', 'All academic formats', 'Priority processing'], cta: 'Upgrade to Pro' },
-        { name: 'Ultra', desc: 'Best for organizations.', price: '$8', period: '/month', features: ['200 hours processing/month', 'Highest speed', 'Advanced DOCX export', 'Priority email support', 'Multi-file analysis'], cta: 'Upgrade to Ultra' }
+        { 
+          name: 'Free', 
+          desc: 'Start exploring academic AI notes.', 
+          price: '0₫', 
+          period: '/lifetime', 
+          features: [
+            'Up to 20 Notes storage',
+            '3 foundational templates (Cornell, Outline, Summary)',
+            'Up to 5 Custom Templates',
+            'Raw / Markdown preview',
+            'Export 3 basic formats (.pdf, .docx, .md)',
+            'Shared Gemini Key / Connect Own AI'
+          ], 
+          cta: 'Get Started Free' 
+        },
+        { 
+          name: 'Pro', 
+          desc: 'For students, teachers & daily researchers.', 
+          price: '99,000₫', 
+          period: '/month (~$4)', 
+          highlight: true, 
+          badge: 'Most Popular', 
+          features: [
+            'Up to 50 Notes storage',
+            '9 templates (Free + Meeting, Lecture, Q&A, Analysis,...)',
+            'Up to 25 Custom Templates',
+            'Static HTML Preview with CSS styling',
+            'Export 4 formats (PDF, DOCX, MD, Webpage HTML)',
+            'Shared Gemini Key / Connect Own AI'
+          ], 
+          cta: 'Upgrade to Pro' 
+        },
+        { 
+          name: 'Ultra', 
+          desc: 'For master researchers, thesis projects & heavy workloads.', 
+          price: '199,000₫', 
+          period: '/month (~$8)', 
+          features: [
+            'UNLIMITED Notes storage',
+            'Full 17 templates (Feynman, Mindmap, Flashcard,...)',
+            'UNLIMITED Custom Templates',
+            'Interactive Dynamic HTML Preview (JS, chart hover)',
+            'Single-file Interactive HTML 100% offline',
+            'Checkbox Multi-Export & Single .ZIP bundle',
+            'Priority processing speed & 24/7 support'
+          ], 
+          cta: 'Upgrade to Ultra' 
+        }
       ]
     },
     cta: {

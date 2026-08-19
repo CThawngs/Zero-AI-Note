@@ -193,7 +193,7 @@ export const TemplatesScreen: React.FC = () => {
             )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5 overflow-x-auto no-scrollbar">
+          <div className="flex flex-wrap items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {[
               { id: 'all', label: t('all') },
               { id: 'free', label: 'Free (3)' },

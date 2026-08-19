@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   Check, 
   X, 
@@ -13,7 +13,14 @@ import {
   ShieldCheck,
   Zap,
   Loader2,
-  FileCheck
+  FileCheck,
+  Tag,
+  CheckCircle2,
+  Clock,
+  Layers,
+  Infinity as InfinityIcon,
+  Flame,
+  FileText
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { PaymentQrModal } from '../modals/PaymentQrModal';
@@ -21,7 +28,14 @@ import { PaymentQrModal } from '../modals/PaymentQrModal';
 export const PricingScreen: React.FC = () => {
   const { user, applyCouponCode, addToast, addNotification, theme, language, t } = useApp();
   const [couponCode, setCouponCode] = useState('');
-  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountPercent?: number; discountValue?: number; discountType?: 'percent' | 'fixed'; baseAmount?: number; finalAmount?: number } | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<{ 
+    code: string; 
+    discountPercent?: number; 
+    discountValue?: number; 
+    discountType?: 'percent' | 'fixed'; 
+    baseAmount?: number; 
+    finalAmount?: number 
+  } | null>(null);
   const [isApplying, setIsApplying] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
   const [isCreatingInvoice, setIsCreatingInvoice] = useState<string | null>(null);
@@ -33,15 +47,17 @@ export const PricingScreen: React.FC = () => {
   const plans = [
     {
       id: 'free',
-      name: 'Free',
-      desc: language === 'vi' ? 'Khám phá & trải nghiệm ghi chú học thuật AI' : 'Start exploring academic AI notes',
+      name: language === 'vi' ? 'Gói Miễn Phí' : 'Free Plan',
+      desc: language === 'vi' ? 'Khám phá & trải nghiệm ghi chú học thuật chuẩn AI' : 'Start exploring academic AI notes',
       price: '0đ',
+      rawPrice: 0,
       period: language === 'vi' ? 'vĩnh viễn' : 'lifetime',
-      badge: language === 'vi' ? 'Miễn phí' : 'Free Tier',
+      badge: language === 'vi' ? 'Cơ Bản' : 'Free Tier',
+      icon: <FileText className="w-5 h-5 text-[var(--text-secondary)]" />,
       features: [
         { text: language === 'vi' ? 'Lưu trữ tối đa 20 Notes' : 'Up to 20 Notes storage', highlight: true, included: true },
-        { text: language === 'vi' ? '3 templates nền tảng (Cornell, Outline, Tóm tắt)' : '3 foundational templates (Cornell, Outline, Summary)', included: true },
-        { text: language === 'vi' ? 'Tối đa 5 Custom Templates' : 'Up to 5 Custom Templates', included: true },
+        { text: language === 'vi' ? '3 templates cơ bản (Cornell, Outline, Tóm tắt)' : '3 foundational templates (Cornell, Outline, Summary)', included: true },
+        { text: language === 'vi' ? 'Tối đa 5 Custom Templates' : 'Up to 5 Custom Templates', highlight: true, included: true },
         { text: language === 'vi' ? 'Xem trước Raw / Markdown' : 'Raw / Markdown preview', included: true },
         { text: language === 'vi' ? 'Xuất 3 định dạng cơ bản (.pdf, .docx, .md)' : 'Export 3 basic formats (.pdf, .docx, .md)', included: true },
         { text: language === 'vi' ? 'Dùng chung Gemini Key / Tự kết nối AI' : 'Shared Gemini Key / Connect Own AI', included: true },
@@ -51,17 +67,19 @@ export const PricingScreen: React.FC = () => {
     },
     {
       id: 'pro',
-      name: 'Pro',
-      desc: language === 'vi' ? 'Dành cho sinh viên, giảng viên & người đi làm hằng ngày' : 'For students, teachers & daily researchers',
+      name: language === 'vi' ? 'Gói Pro' : 'Pro Plan',
+      desc: language === 'vi' ? 'Dành cho sinh viên, giảng viên & người làm việc hằng ngày' : 'For students, teachers & daily researchers',
       price: '99.000đ',
+      rawPrice: 99000,
       period: language === 'vi' ? 'tháng (~$4)' : 'month (~$4)',
       popular: true,
-      badge: language === 'vi' ? 'Phổ biến nhất' : 'Most Popular',
+      badge: language === 'vi' ? 'Phổ Biến Nhất' : 'Most Popular',
+      icon: <Sparkles className="w-5 h-5 text-blue-500" />,
       features: [
         { text: language === 'vi' ? 'Lưu trữ tối đa 50 Notes' : 'Up to 50 Notes storage', highlight: true, included: true },
         { text: language === 'vi' ? '9 templates (Kế thừa Free + Họp, Bài giảng, Q&A, Phân tích, Charting, Boxing)' : '9 templates (Free + Meeting, Lecture, Q&A, Analysis, Charting, Boxing)', included: true },
-        { text: language === 'vi' ? 'Tối đa 25 Custom Templates' : 'Up to 25 Custom Templates', included: true },
-        { text: language === 'vi' ? 'Xem trước HTML Tĩnh chuẩn CSS' : 'Static HTML Preview with CSS styling', included: true },
+        { text: language === 'vi' ? 'Tối đa 25 Custom Templates' : 'Up to 25 Custom Templates', highlight: true, included: true },
+        { text: language === 'vi' ? 'Xem trước HTML Tĩnh chuẩn CSS styling' : 'Static HTML Preview with CSS styling', highlight: true, included: true },
         { text: language === 'vi' ? 'Xuất 4 định dạng (PDF, DOCX, MD, Webpage HTML)' : 'Export 4 formats (PDF, DOCX, MD, Webpage HTML)', included: true },
         { text: language === 'vi' ? 'Dùng chung Gemini Key / Tự kết nối AI' : 'Shared Gemini Key / Connect Own AI', included: true },
         { text: language === 'vi' ? 'Xem trước HTML Tương tác Động (JS)' : 'Interactive Dynamic HTML Preview (JS)', included: false },
@@ -70,18 +88,21 @@ export const PricingScreen: React.FC = () => {
     },
     {
       id: 'ultra',
-      name: 'Ultra',
-      desc: language === 'vi' ? 'Chuyên gia nghiên cứu, đề án chuyên ngành & xử lý chuyên sâu' : 'For master researchers, thesis projects & heavy workloads',
+      name: language === 'vi' ? 'Gói Ultra' : 'Ultra Plan',
+      desc: language === 'vi' ? 'Chuyên gia nghiên cứu, đề án chuyên ngành & khối lượng lớn' : 'For master researchers, thesis projects & heavy workloads',
       price: '199.000đ',
+      rawPrice: 199000,
       period: language === 'vi' ? 'tháng (~$8)' : 'month (~$8)',
-      badge: language === 'vi' ? 'Toàn năng' : 'All Access',
+      ultra: true,
+      badge: language === 'vi' ? 'Tối Thượng' : 'All Access',
+      icon: <Crown className="w-5 h-5 text-amber-400 fill-amber-400" />,
       features: [
         { text: language === 'vi' ? 'KHÔNG GIỚI HẠN số lượng Note' : 'UNLIMITED Notes storage', highlight: true, included: true },
         { text: language === 'vi' ? 'Trọn bộ 17 templates (Feynman, First Principles, Mindmap, Flashcard, Syntopical, 5W1H, All-in-One)' : 'Full 17 templates (Feynman, First Principles, Mindmap, Flashcard, Syntopical, 5W1H, All-in-One)', included: true },
-        { text: language === 'vi' ? 'KHÔNG GIỚI HẠN Custom Templates' : 'UNLIMITED Custom Templates', included: true },
-        { text: language === 'vi' ? 'Xem trước HTML Tương tác Động (JS, chart hover, animation)' : 'Interactive Dynamic HTML Preview (JS, chart hover, animation)', included: true },
+        { text: language === 'vi' ? 'KHÔNG GIỚI HẠN Custom Templates' : 'UNLIMITED Custom Templates', highlight: true, included: true },
+        { text: language === 'vi' ? 'Xem trước HTML Tương tác Động (JS, chart hover, animation)' : 'Interactive Dynamic HTML Preview (JS, chart hover, animation)', highlight: true, included: true },
         { text: language === 'vi' ? 'Single-file Interactive HTML độc lập 100% offline' : 'Single-file Interactive HTML 100% offline', included: true },
-        { text: language === 'vi' ? 'Checkbox Multi-Export & Đóng gói 1 file .ZIP' : 'Checkbox Multi-Export & Single .ZIP bundle', highlight: true, included: true },
+        { text: language === 'vi' ? 'Checkbox Multi-Export & Đóng gói 1 file .ZIP duy nhất' : 'Checkbox Multi-Export & Single .ZIP bundle', highlight: true, included: true },
         { text: language === 'vi' ? 'Dùng chung Gemini Key / Tự kết nối AI' : 'Shared Gemini Key / Connect Own AI', included: true },
         { text: language === 'vi' ? 'Ưu tiên tốc độ xử lý & hỗ trợ kỹ thuật 24/7' : 'Priority processing speed & 24/7 support', included: true },
       ]
@@ -90,28 +111,28 @@ export const PricingScreen: React.FC = () => {
 
   const faqs = [
     {
-      q: language === 'vi' ? 'Hạn mức lưu trữ Note được tính như thế nào?' : 'How is note storage quota counted?',
+      q: language === 'vi' ? 'Hạn mức lưu trữ Note & Custom Template được tính như thế nào?' : 'How is note and template quota calculated?',
       a: language === 'vi' 
-        ? 'Gói Miễn phí lưu tối đa 20 Notes, Gói Pro lưu tối đa 50 Notes, Gói Ultra không giới hạn. Bạn luôn có thể xóa các Note cũ trong Thùng rác để giải phóng dung lượng lưu trữ.' 
-        : 'Free plan stores up to 20 Notes, Pro stores up to 50 Notes, Ultra is unlimited. You can always delete old notes in Trash to free up storage.'
+        ? 'Gói Free lưu tối đa 20 Notes và tạo tối đa 5 Custom Templates; Gói Pro lưu tối đa 50 Notes và tạo tối đa 25 Custom Templates; Gói Ultra hoàn toàn không giới hạn. Bạn luôn có thể chuyển các Note cũ vào mục Lưu trữ 30 ngày để tái sử dụng dung lượng.' 
+        : 'Free plan provides up to 20 notes & 5 custom templates; Pro provides 50 notes & 25 custom templates; Ultra has unlimited notes and templates.'
     },
     {
-      q: language === 'vi' ? 'Tính năng Checkbox Multi-Export của Ultra có gì đặc biệt?' : 'What is Ultra Checkbox Multi-Export?',
+      q: language === 'vi' ? 'Tính năng Checkbox Multi-Export & Single .ZIP của Ultra hoạt động ra sao?' : 'How does Ultra Multi-Export & Single .ZIP work?',
       a: language === 'vi' 
-        ? 'Độc quyền Ultra: Hộp thoại xuất file cho phép bạn tick chọn đồng thời bất kỳ định dạng nào (PDF, Word, Markdown, Interactive HTML) để tải song song hoặc đóng gói vào 1 file .ZIP duy nhất.' 
-        : 'Exclusive to Ultra: Select any formats simultaneously (PDF, Word, Markdown, Interactive HTML) to download in parallel or package into a single .ZIP bundle.'
+        ? 'Độc quyền Ultra: Hộp thoại xuất file cho phép bạn tick chọn đồng thời bất kỳ định dạng nào (PDF, Word, Markdown, Interactive HTML) để tải song song hoặc đóng gói tự động vào 1 file .ZIP duy nhất chỉ với 1 click.' 
+        : 'Exclusive to Ultra: Select any format combinations (PDF, Word, Markdown, Interactive HTML) to download simultaneously or packaged into a single .ZIP bundle in one click.'
     },
     {
-      q: language === 'vi' ? 'Tôi có bị giới hạn giờ xử lý AI hay độ dài file không?' : 'Is there an AI processing time limit?',
+      q: language === 'vi' ? 'Tôi có bị giới hạn giờ xử lý AI hay độ dài video/audio không?' : 'Is there an AI processing time limit?',
       a: language === 'vi' 
-        ? 'Không giới hạn giờ xử lý trên lý thuyết cho cả 3 gói. Hệ thống dùng chung Gemini Key. Nếu key quá tải, bạn có thể chuyển sang chế độ "Tự kết nối AI" với API Key của riêng bạn.' 
-        : 'No time limits for all 3 tiers. The system uses a shared Gemini Key pool. If congested, you can seamlessly switch to "Connect Your Own AI" with your own API Key.'
+        ? 'Hệ thống không giới hạn thời lượng trên lý thuyết cho cả 3 gói qua Gemini Key dùng chung hoặc chế độ Tự kết nối AI cá nhân (BYOK API Key).' 
+        : 'No time limits for all 3 tiers. The system uses a shared Gemini Key pool or your own connected BYOK API Key.'
     },
     {
-      q: language === 'vi' ? 'Tôi thanh toán qua cổng nào và có an toàn không?' : 'How do I pay and is it secure?',
+      q: language === 'vi' ? 'Hệ thống thanh toán hoạt động như thế nào?' : 'How does the payment system work?',
       a: language === 'vi' 
-        ? 'Thanh toán trực tiếp qua cổng ZeroInvoice (VietQR tự động). Sau khi chuyển khoản đúng cú pháp, hệ thống sẽ kích hoạt nâng cấp gói ngay lập tức trong vài giây.' 
-        : 'Payments are processed directly via ZeroInvoice VietQR gateway. Your plan is activated automatically within seconds after transferring.'
+        ? 'Thanh toán trực tiếp qua cổng ZeroInvoice (VietQR tự động). Sau khi chuyển khoản đúng cú pháp, hệ thống sẽ tự động kích hoạt tài khoản Pro/Ultra của bạn chỉ sau vài giây.' 
+        : 'Payments are processed via ZeroInvoice VietQR gateway. Plan upgrades activate automatically within seconds after transferring.'
     }
   ];
 
@@ -172,7 +193,6 @@ export const PricingScreen: React.FC = () => {
       const data = await res.json();
       setBillData(data);
       if (data.autoActivated) {
-        // Coupon 100% → đã kích hoạt gói (0đ), không cần QR
         setIsPaymentModalOpen(false);
         addNotification(
           language === 'vi' ? 'Kích hoạt gói thành công (0đ)' : 'Plan activated (0đ)',
@@ -196,102 +216,233 @@ export const PricingScreen: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-y-auto custom-scrollbar p-4 sm:p-6 md:p-10 space-y-10 sm:space-y-12 transition-colors duration-250 bg-[var(--bg-app)] text-[var(--text-primary)]">
-      {/* Header */}
-      <div className="text-center max-w-2xl mx-auto space-y-3">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--accent-subtle)] border border-[var(--accent-primary)]/30 text-[var(--accent-primary)] text-xs font-bold">
+      {/* Top Banner & Header */}
+      <div className="text-center max-w-3xl mx-auto space-y-4 pt-2">
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[var(--accent-subtle)] border border-[var(--accent-primary)]/30 text-[var(--accent-primary)] text-xs font-bold shadow-xs"
+        >
           <Sparkles className="w-3.5 h-3.5" />
-          <span>{language === 'vi' ? 'Bảng Giá Minh Bạch • Không Phí Ẩn' : 'Transparent Pricing • No Hidden Fees'}</span>
-        </div>
-        <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-[var(--text-primary)]">
+          <span>{language === 'vi' ? 'Bảng Giá Minh Bạch • Kích Hoạt Tự Động VietQR' : 'Transparent Pricing • Automatic VietQR Activation'}</span>
+        </motion.div>
+
+        <motion.h1 
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-[var(--text-primary)]"
+        >
           {language === 'vi' ? 'Nâng tầm ghi chú học thuật cùng AI' : 'Elevate Your Research With AI Notes'}
-        </h1>
-        <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed">
+        </motion.h1>
+
+        <motion.p 
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed max-w-2xl mx-auto"
+        >
           {language === 'vi' 
-            ? 'Chọn gói dịch vụ phù hợp với nhu cầu học tập và nghiên cứu của bạn. Nâng cấp hoặc hạ gói bất kỳ lúc nào.' 
-            : 'Choose the ideal plan for your learning workflow. Upgrade or downgrade anytime.'}
-        </p>
+            ? 'Chọn gói dịch vụ phù hợp với nhu cầu học tập và nghiên cứu của bạn. Tự động kích hoạt ngay sau khi quét mã QR.' 
+            : 'Choose the ideal plan for your learning workflow. Instant automatic activation via QR transfer.'}
+        </motion.p>
       </div>
 
+      {/* Coupon Promo Banner Box */}
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.2 }}
+        className="max-w-xl mx-auto w-full p-4 sm:p-5 rounded-3xl border bg-[var(--bg-card)]/90 backdrop-blur-xl border-[var(--border-color)] shadow-xl relative overflow-hidden"
+      >
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1 w-full">
+            <div className="w-9 h-9 rounded-2xl bg-amber-500/15 text-amber-500 flex items-center justify-center shrink-0 border border-amber-500/30">
+              <Tag className="w-4 h-4" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <span className="text-xs font-bold text-[var(--text-primary)] block">
+                {language === 'vi' ? 'Có mã giảm giá ưu đãi?' : 'Have a promo coupon?'}
+              </span>
+              <span className="text-[11px] text-[var(--text-muted)] truncate block">
+                {appliedCoupon 
+                  ? (language === 'vi' ? `Đã áp dụng mã: ${appliedCoupon.code} (-${appliedCoupon.discountPercent}%)` : `Applied: ${appliedCoupon.code} (-${appliedCoupon.discountPercent}%)`)
+                  : (language === 'vi' ? 'Nhập mã để nhận chiết khấu trực tiếp' : 'Enter code for instant discount')}
+              </span>
+            </div>
+          </div>
+
+          {appliedCoupon ? (
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="px-3 py-1.5 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-xs font-extrabold flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>-{appliedCoupon.discountPercent}% OFF</span>
+              </div>
+              <button
+                onClick={handleRemoveCoupon}
+                className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-red-500 cursor-pointer transition-colors"
+              >
+                {language === 'vi' ? 'Gỡ' : 'Remove'}
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleApplyCoupon} className="flex items-center gap-1.5 w-full sm:w-auto">
+              <input
+                type="text"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                placeholder={language === 'vi' ? 'MÃ COUPON' : 'COUPON CODE'}
+                className="w-full sm:w-36 rounded-xl px-3 py-2 text-xs font-mono font-bold uppercase tracking-wider border bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)] placeholder-[var(--text-muted)]"
+              />
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                type="submit"
+                disabled={!couponCode.trim() || isApplying}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-[var(--accent-primary)] text-[var(--accent-text)] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm shrink-0 flex items-center gap-1"
+              >
+                {isApplying && <Loader2 className="w-3 h-3 animate-spin" />}
+                <span>{language === 'vi' ? 'Áp dụng' : 'Apply'}</span>
+              </motion.button>
+            </form>
+          )}
+        </div>
+      </motion.div>
+
       {/* Pricing Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto w-full">
-        {plans.map((plan) => {
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto w-full items-stretch">
+        {plans.map((plan, idx) => {
           const isCurrentPlan = user.plan === plan.id;
           const isPro = plan.id === 'pro';
           const isUltra = plan.id === 'ultra';
 
-          const basePriceNum = isPro ? 99000 : isUltra ? 199000 : 0;
-          const hasDiscount = appliedCoupon && basePriceNum > 0 && (appliedCoupon.discountPercent ?? 0) > 0;
+          const hasDiscount = appliedCoupon && plan.rawPrice > 0 && (appliedCoupon.discountPercent ?? 0) > 0;
           const discountedPrice = hasDiscount 
-            ? Math.max(1000, Math.round(basePriceNum * (1 - (appliedCoupon.discountPercent ?? 0) / 100)))
-            : basePriceNum;
+            ? Math.max(1000, Math.round(plan.rawPrice * (1 - (appliedCoupon.discountPercent ?? 0) / 100)))
+            : plan.rawPrice;
 
           return (
             <motion.div
               key={plan.id}
-              whileHover={{ y: -4 }}
-              className={`relative rounded-3xl p-6 sm:p-8 flex flex-col justify-between border transition-all duration-300 ${
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 * idx, duration: 0.3 }}
+              whileHover={{ y: -6, scale: 1.015 }}
+              className={`relative rounded-3xl p-6 sm:p-8 flex flex-col justify-between border transition-all duration-300 backdrop-blur-xl ${
                 isUltra 
-                  ? 'border-[var(--accent-primary)] bg-[var(--bg-card)] shadow-xl shadow-[var(--accent-primary)]/10 ring-1 ring-[var(--accent-primary)]/30'
+                  ? 'border-[var(--accent-primary)] bg-[var(--bg-card)]/95 shadow-2xl shadow-[var(--accent-primary)]/15 ring-2 ring-[var(--accent-primary)]/40 md:-translate-y-2'
                   : isPro 
-                    ? 'border-blue-500/40 bg-[var(--bg-card)] shadow-lg'
-                    : 'border-[var(--border-color)] bg-[var(--bg-card)] shadow-sm'
+                    ? 'border-blue-500/50 bg-[var(--bg-card)]/95 shadow-xl shadow-blue-500/10'
+                    : 'border-[var(--border-color)] bg-[var(--bg-card)]/90 shadow-sm'
               }`}
             >
-              {/* Badge */}
-              <div className="flex items-center justify-between mb-4">
-                <span className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full border ${
-                  isUltra 
-                    ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] border-[var(--accent-primary)]/40' 
-                    : isPro 
-                      ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30' 
-                      : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
-                }`}>
-                  {plan.badge}
-                </span>
+              {/* Floating Top Badge for Pro / Ultra */}
+              {isUltra && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-amber-500 to-[var(--accent-primary)] text-white text-[10px] font-extrabold uppercase tracking-wider shadow-lg flex items-center gap-1.5 whitespace-nowrap">
+                  <Crown className="w-3.5 h-3.5 fill-white" />
+                  <span>{language === 'vi' ? 'Tối Thượng • Toàn Năng' : 'Ultimate • All Access'}</span>
+                </div>
+              )}
+              {isPro && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[10px] font-extrabold uppercase tracking-wider shadow-lg flex items-center gap-1.5 whitespace-nowrap">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>{language === 'vi' ? 'Khuyên Dùng • Phổ Biến' : 'Most Popular Choice'}</span>
+                </div>
+              )}
 
-                {isCurrentPlan && (
-                  <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[var(--bg-hover)] border border-[var(--border-color)] text-[var(--text-secondary)]">
-                    {language === 'vi' ? 'Gói hiện tại' : 'Current Plan'}
-                  </span>
-                )}
-              </div>
-
+              {/* Card Header */}
               <div>
-                <h3 className="text-xl font-bold text-[var(--text-primary)]">{plan.name}</h3>
-                <p className="text-xs text-[var(--text-secondary)] mt-1 min-h-[32px]">{plan.desc}</p>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center border shadow-xs ${
+                      isUltra 
+                        ? 'bg-[var(--accent-subtle)] border-[var(--accent-primary)]/30' 
+                        : isPro 
+                          ? 'bg-blue-500/15 border-blue-500/30' 
+                          : 'bg-[var(--bg-hover)] border-[var(--border-color)]'
+                    }`}>
+                      {plan.icon}
+                    </div>
+                    <div>
+                      <h3 className="text-lg sm:text-xl font-extrabold text-[var(--text-primary)]">{plan.name}</h3>
+                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${
+                        isUltra 
+                          ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)] border-[var(--accent-primary)]/40' 
+                          : isPro 
+                            ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30' 
+                            : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                      }`}>
+                        {plan.badge}
+                      </span>
+                    </div>
+                  </div>
 
-                <div className="mt-4 mb-6 pb-6 border-b border-[var(--border-color)]">
+                  {isCurrentPlan && (
+                    <span className="text-[10px] font-bold px-2.5 py-1 rounded-xl bg-[var(--bg-hover)] border border-[var(--border-color)] text-[var(--text-secondary)]">
+                      {language === 'vi' ? 'Đang Dùng' : 'Current'}
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-xs text-[var(--text-secondary)] min-h-[32px] leading-relaxed mb-4">
+                  {plan.desc}
+                </p>
+
+                {/* Price Display */}
+                <div className="py-4 border-y border-[var(--border-color)] mb-6">
                   {hasDiscount ? (
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm line-through text-[var(--text-muted)]">{plan.price}</span>
+                        <span className="text-sm line-through text-[var(--text-muted)] font-mono">{plan.price}</span>
                         <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
                           -{appliedCoupon.discountPercent}%
                         </span>
                       </div>
-                      <span className="text-3xl sm:text-4xl font-extrabold text-emerald-600 dark:text-emerald-400">
-                        {discountedPrice.toLocaleString('vi-VN')}đ
-                      </span>
-                      <span className="text-xs text-[var(--text-muted)] ml-1.5">/ {plan.period}</span>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-3xl sm:text-4xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                          {discountedPrice.toLocaleString('vi-VN')}đ
+                        </span>
+                        <span className="text-xs text-[var(--text-muted)]">/ {plan.period}</span>
+                      </div>
                     </div>
                   ) : (
-                    <div>
-                      <span className="text-3xl sm:text-4xl font-extrabold text-[var(--text-primary)]">{plan.price}</span>
-                      <span className="text-xs text-[var(--text-muted)] ml-1.5">/ {plan.period}</span>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-3xl sm:text-4xl font-black text-[var(--text-primary)] font-mono">
+                        {plan.price}
+                      </span>
+                      <span className="text-xs text-[var(--text-muted)]">/ {plan.period}</span>
                     </div>
                   )}
                 </div>
 
-                {/* Features list */}
+                {/* Features List */}
                 <div className="space-y-3 mb-8">
-                  {plan.features.map((feat, idx) => (
-                    <div key={idx} className="flex items-start gap-2.5 text-xs">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] block mb-2">
+                    {language === 'vi' ? 'Quyền lợi & Tính năng' : 'Features & Benefits'}
+                  </span>
+                  {plan.features.map((feat, fIdx) => (
+                    <div 
+                      key={fIdx} 
+                      className={`flex items-start gap-2.5 text-xs leading-relaxed ${
+                        feat.included ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)] line-through opacity-50'
+                      }`}
+                    >
                       {feat.included ? (
-                        <Check className={`w-4 h-4 shrink-0 mt-0.5 ${feat.highlight ? 'text-[var(--accent-primary)] font-bold' : 'text-emerald-500'}`} />
+                        <div className={`w-4 h-4 rounded-md flex items-center justify-center shrink-0 mt-0.5 ${
+                          isUltra 
+                            ? 'bg-[var(--accent-subtle)] text-[var(--accent-primary)]' 
+                            : isPro 
+                              ? 'bg-blue-500/15 text-blue-500' 
+                              : 'bg-emerald-500/15 text-emerald-500'
+                        }`}>
+                          <Check className="w-3 h-3 stroke-[2.8]" />
+                        </div>
                       ) : (
-                        <X className="w-4 h-4 shrink-0 mt-0.5 text-gray-400 opacity-50" />
+                        <div className="w-4 h-4 rounded-md bg-[var(--bg-hover)] text-[var(--text-muted)] flex items-center justify-center shrink-0 mt-0.5">
+                          <X className="w-3 h-3 stroke-[2]" />
+                        </div>
                       )}
-                      <span className={`${feat.included ? (feat.highlight ? 'font-bold text-[var(--text-primary)]' : 'text-[var(--text-primary)]') : 'text-[var(--text-muted)] line-through'}`}>
+                      <span className={feat.highlight ? 'font-bold text-[var(--text-primary)]' : ''}>
                         {feat.text}
                       </span>
                     </div>
@@ -304,35 +455,43 @@ export const PricingScreen: React.FC = () => {
                 {isCurrentPlan ? (
                   <button
                     disabled
-                    className="w-full py-3 rounded-2xl border border-[var(--border-color)] bg-[var(--bg-app)] text-[var(--text-muted)] text-xs font-bold cursor-not-allowed text-center"
+                    className="w-full py-3 px-4 rounded-2xl border text-xs font-bold bg-[var(--bg-hover)] border-[var(--border-color)] text-[var(--text-muted)] cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    {language === 'vi' ? 'Đang sử dụng' : 'Active Plan'}
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>{language === 'vi' ? 'Đang Sử Dụng Gói Này' : 'Currently Active'}</span>
                   </button>
                 ) : plan.id === 'free' ? (
                   <button
                     disabled
-                    className="w-full py-3 rounded-2xl border border-[var(--border-color)] bg-[var(--bg-app)] text-[var(--text-muted)] text-xs font-bold cursor-not-allowed text-center"
+                    className="w-full py-3 px-4 rounded-2xl border text-xs font-bold bg-[var(--bg-hover)] border-[var(--border-color)] text-[var(--text-secondary)] cursor-default flex items-center justify-center gap-2"
                   >
-                    {language === 'vi' ? 'Gói Cơ Bản' : 'Default Plan'}
+                    <span>{language === 'vi' ? 'Gói Cơ Bản Miễn Phí' : 'Free Tier'}</span>
                   </button>
                 ) : (
                   <motion.button
                     whileHover={{ scale: 1.03, y: -1 }}
-                    whileTap={{ scale: 0.95 }}
-                    id={`btn-upgrade-${plan.id}`}
-                    onClick={() => handleCheckout(plan.id as 'pro' | 'ultra')}
+                    whileTap={{ scale: 0.97 }}
                     disabled={isCreatingInvoice === plan.id}
-                    className={`w-full py-3 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer ${
-                      isUltra 
-                        ? 'bg-[var(--accent-primary)] text-[var(--accent-text)] hover:opacity-95 shadow-lg shadow-[var(--accent-primary)]/25'
-                        : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/25'
+                    onClick={() => handleCheckout(plan.id as 'pro' | 'ultra')}
+                    className={`w-full py-3.5 px-4 rounded-2xl text-xs font-extrabold shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-98 ${
+                      isUltra
+                        ? 'bg-[var(--accent-primary)] hover:opacity-95 text-[var(--accent-text)] shadow-[var(--accent-primary)]/25 ring-1 ring-[var(--accent-primary)]'
+                        : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/25'
                     }`}
                   >
                     {isCreatingInvoice === plan.id ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>{language === 'vi' ? 'Đang Khởi Tạo VietQR...' : 'Generating QR...'}</span>
+                      </>
                     ) : (
                       <>
-                        <span>{language === 'vi' ? `Nâng cấp lên ${plan.name}` : `Upgrade to ${plan.name}`}</span>
+                        {isUltra ? <Crown className="w-4 h-4 fill-current" /> : <Rocket className="w-4 h-4" />}
+                        <span>
+                          {language === 'vi' 
+                            ? `Nâng Cấp ${plan.name} Ngay` 
+                            : `Upgrade to ${plan.name}`}
+                        </span>
                         <ArrowRight className="w-3.5 h-3.5" />
                       </>
                     )}
@@ -344,76 +503,81 @@ export const PricingScreen: React.FC = () => {
         })}
       </div>
 
-      {/* Coupon input section */}
-      <div className="max-w-md mx-auto w-full p-5 rounded-3xl border bg-[var(--bg-card)] border-[var(--border-color)] shadow-sm space-y-3">
-        <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-primary)]">
-          <Zap className="w-4 h-4 text-[var(--accent-primary)]" />
-          <span>{language === 'vi' ? 'Bạn có mã giảm giá?' : 'Have a promo coupon?'}</span>
-        </div>
-        <form onSubmit={handleApplyCoupon} className="flex gap-2">
-          <input
-            type="text"
-            value={couponCode}
-            onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-            placeholder={language === 'vi' ? 'Nhập mã (VD: ZERONOTE50)' : 'Enter coupon code...'}
-            className="flex-1 rounded-xl px-3.5 py-2 text-xs border uppercase tracking-wider bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)]"
-          />
-          <motion.button
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.95 }}
-            type="submit"
-            disabled={isApplying || !couponCode.trim()}
-            className="px-4 py-2 rounded-xl bg-[var(--accent-primary)] hover:opacity-90 text-[var(--accent-text)] text-xs font-bold cursor-pointer disabled:opacity-50 transition-all shadow-xs"
-          >
-            {isApplying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : (language === 'vi' ? 'Active' : 'Active')}
-          </motion.button>
-        </form>
-        {appliedCoupon && (
-          <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="font-mono font-extrabold text-xs text-emerald-600 dark:text-emerald-400">
-                {appliedCoupon.code}
-              </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
-                -{appliedCoupon.discountPercent}%
-              </span>
+      {/* Trust & Guarantee Banner */}
+      <div className="max-w-4xl mx-auto w-full grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
+        {[
+          {
+            icon: <Zap className="w-5 h-5 text-amber-500" />,
+            title: language === 'vi' ? 'Kích Hoạt Tức Thì' : 'Instant Activation',
+            desc: language === 'vi' ? 'Xác thực VietQR tự động chỉ sau 3-5 giây' : 'Automated VietQR verified in seconds'
+          },
+          {
+            icon: <ShieldCheck className="w-5 h-5 text-emerald-500" />,
+            title: language === 'vi' ? 'Bảo Mật Cấp Ngân Hàng' : 'Bank-grade Security',
+            desc: language === 'vi' ? 'Không lưu thẻ tín dụng, mã hóa SSL 256-bit' : 'No credit card stored, 256-bit SSL'
+          },
+          {
+            icon: <Clock className="w-5 h-5 text-blue-500" />,
+            title: language === 'vi' ? 'Hỗ Trợ Kỹ Thuật 24/7' : '24/7 Technical Support',
+            desc: language === 'vi' ? 'Đội ngũ hỗ trợ chuyên sâu mọi tình huống' : 'Dedicated support whenever you need'
+          }
+        ].map((item, idx) => (
+          <div key={idx} className="p-4 rounded-2xl border bg-[var(--bg-card)]/80 border-[var(--border-color)] flex items-start gap-3">
+            <div className="p-2 rounded-xl bg-[var(--bg-hover)] shrink-0">
+              {item.icon}
             </div>
-            <button
-              onClick={handleRemoveCoupon}
-              className="text-[11px] font-semibold text-red-500 hover:underline cursor-pointer"
-            >
-              {language === 'vi' ? 'Gỡ bỏ' : 'Remove'}
-            </button>
+            <div>
+              <h4 className="text-xs font-bold text-[var(--text-primary)]">{item.title}</h4>
+              <p className="text-[11px] text-[var(--text-secondary)] mt-0.5 leading-relaxed">{item.desc}</p>
+            </div>
           </div>
-        )}
+        ))}
       </div>
 
-      {/* FAQs */}
-      <div className="max-w-3xl mx-auto w-full space-y-4 pt-4">
-        <h2 className="text-lg font-bold text-center text-[var(--text-primary)]">
-          {language === 'vi' ? 'Câu hỏi thường gặp' : 'Frequently Asked Questions'}
-        </h2>
+      {/* FAQ Accordion Section */}
+      <div className="max-w-3xl mx-auto w-full pt-4 space-y-4">
+        <div className="text-center space-y-1 mb-6">
+          <h2 className="text-lg sm:text-xl font-bold text-[var(--text-primary)]">
+            {language === 'vi' ? 'Câu hỏi thường gặp' : 'Frequently Asked Questions'}
+          </h2>
+          <p className="text-xs text-[var(--text-secondary)]">
+            {language === 'vi' ? 'Giải đáp mọi thắc mắc về bảng giá và phương thức nâng cấp' : 'Everything you need to know about pricing and payments'}
+          </p>
+        </div>
 
         <div className="space-y-3">
-          {faqs.map((faq, idx) => {
-            const isOpen = openFaqIndex === idx;
+          {faqs.map((faq, fIdx) => {
+            const isOpen = openFaqIndex === fIdx;
             return (
-              <div
-                key={idx}
-                className="rounded-2xl border transition-colors bg-[var(--bg-card)] border-[var(--border-color)] overflow-hidden"
+              <div 
+                key={fIdx} 
+                className="rounded-2xl border transition-all overflow-hidden bg-[var(--bg-card)] border-[var(--border-color)]"
               >
                 <button
-                  onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
-                  className="w-full p-4 text-left flex items-center justify-between text-xs sm:text-sm font-semibold text-[var(--text-primary)] cursor-pointer hover:text-[var(--accent-primary)] transition-colors"
+                  onClick={() => setOpenFaqIndex(isOpen ? null : fIdx)}
+                  className="w-full p-4 text-left flex items-center justify-between gap-4 cursor-pointer hover:bg-[var(--bg-hover)] transition-colors"
                 >
-                  <span>{faq.q}</span>
-                  {isOpen ? <ChevronUp className="w-4 h-4 shrink-0" /> : <ChevronDown className="w-4 h-4 shrink-0" />}
+                  <span className="text-xs sm:text-sm font-bold text-[var(--text-primary)]">{faq.q}</span>
+                  {isOpen ? (
+                    <ChevronUp className="w-4 h-4 text-[var(--accent-primary)] shrink-0" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-[var(--text-muted)] shrink-0" />
+                  )}
                 </button>
-                {isOpen && (
-                  <div className="px-4 pb-4 text-xs text-[var(--text-secondary)] leading-relaxed border-t border-[var(--border-color)]/40 pt-3">
-                    {faq.a}
-                  </div>
-                )}
+                <AnimatePresence>
+                  {isOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="p-4 pt-0 text-xs text-[var(--text-secondary)] leading-relaxed border-t border-[var(--border-color)]/50">
+                        {faq.a}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             );
           })}
@@ -421,11 +585,13 @@ export const PricingScreen: React.FC = () => {
       </div>
 
       {/* Payment QR Modal */}
-      <PaymentQrModal
-        isOpen={isPaymentModalOpen}
-        onClose={() => setIsPaymentModalOpen(false)}
-        billData={billData}
-      />
+      {isPaymentModalOpen && billData && (
+        <PaymentQrModal
+          isOpen={isPaymentModalOpen}
+          onClose={() => setIsPaymentModalOpen(false)}
+          billData={billData}
+        />
+      )}
     </div>
   );
 };

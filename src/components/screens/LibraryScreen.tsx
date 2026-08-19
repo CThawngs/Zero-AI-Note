@@ -19,7 +19,6 @@ import {
   Edit3, 
   Clock, 
   Tag,
-  ExternalLink,
   Plus,
   Pin,
   MessageSquare,
@@ -29,7 +28,9 @@ import {
   Calendar,
   Layers,
   RotateCcw,
-  Bot
+  BookOpen,
+  CheckCircle2,
+  ExternalLink
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { ChatSessionItem, NoteItem } from '../../types';
@@ -67,7 +68,7 @@ export const LibraryScreen: React.FC = () => {
   } = useApp();
 
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const [activeHistoryTab, setActiveHistoryTab] = useState<'all' | 'pinned' | 'with-notes' | 'shared'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'pinned' | 'with-notes' | 'shared'>('all');
   const [openMenuSessionId, setOpenMenuSessionId] = useState<string | null>(null);
   const [renameModalSession, setRenameModalSession] = useState<ChatSessionItem | null>(null);
   const [renameTitleInput, setRenameTitleInput] = useState('');
@@ -149,9 +150,9 @@ export const LibraryScreen: React.FC = () => {
 
   // Filter logic
   let filteredSessions = baseSessions.filter(s => {
-    if (activeHistoryTab === 'pinned' && !s.isPinned) return false;
-    if (activeHistoryTab === 'with-notes' && !s.note) return false;
-    if (activeHistoryTab === 'shared' && !s.isShared) return false;
+    if (activeTab === 'pinned' && !s.isPinned) return false;
+    if (activeTab === 'with-notes' && !s.note) return false;
+    if (activeTab === 'shared' && !s.isShared) return false;
 
     if (libraryFilter !== 'all') {
       if (libraryFilter === 'khoa-hoc') return s.category === 'Khoa học' || s.category === 'Science';
@@ -214,29 +215,30 @@ export const LibraryScreen: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden transition-colors bg-[var(--bg-app)] text-[var(--text-primary)]">
-      {/* Top Header & Controls */}
+      {/* Top Header */}
       <div className="p-4 sm:p-6 pb-4 border-b space-y-4 border-[var(--border-color)] bg-[var(--bg-card)]/90 backdrop-blur-md shrink-0">
-        {/* Main Title Row */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-[var(--accent-subtle)] text-[var(--accent-primary)] flex items-center justify-center shrink-0 border border-[var(--accent-primary)]/20 shadow-xs">
               <FileText className="w-5 h-5 stroke-[2.2]" />
             </div>
             <div>
-              <h1 className="text-lg sm:text-xl font-extrabold tracking-tight text-[var(--text-primary)]">
-                {t('notesLibraryTitle') || 'Thư viện Ghi chú'}
+              <h1 className="text-lg sm:text-xl font-black tracking-tight text-[var(--text-primary)]">
+                {language === 'vi' ? 'Thư viện Ghi chú' : 'Notes Library'}
               </h1>
               <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                {t('notesLibrarySubtitle') || 'Quản lý, tìm kiếm và xuất bản các bài ghi chú học thuật AI'}
+                {language === 'vi' 
+                  ? 'Quản lý các bài ghi chú học thuật AI, tiếp tục nghiên cứu và xuất bản tài liệu' 
+                  : 'Manage AI-synthesized academic notes, resume research and export files'}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2.5 self-start sm:self-auto">
             {/* Storage Quota Pill */}
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border bg-[var(--bg-app)] border-[var(--border-color)] text-xs">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border bg-[var(--bg-app)] border-[var(--border-color)] text-xs shadow-2xs">
               <span className="text-[var(--text-secondary)] font-medium">
-                {language === 'vi' ? 'Lưu trữ:' : 'Storage:'}
+                {language === 'vi' ? 'Dung lượng:' : 'Storage:'}
               </span>
               <span className="font-bold text-[var(--text-primary)] font-mono">
                 {baseSessions.length}/{isUltra ? '∞' : noteLimit}
@@ -251,41 +253,40 @@ export const LibraryScreen: React.FC = () => {
               )}
             </div>
 
-            {/* New Chat & Note Button */}
+            {/* Start New Note Button */}
             <motion.button
-              id="btn-history-new-chat"
               whileHover={{ scale: 1.03, y: -1 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => startNewChatNote()}
-              className="flex items-center gap-2 px-4 py-2 bg-[var(--accent-primary)] hover:opacity-90 active:opacity-100 text-[var(--accent-text)] rounded-xl text-xs font-bold shadow-md shadow-[var(--accent-primary)]/20 transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[var(--accent-primary)] hover:opacity-90 text-[var(--accent-text)] text-xs font-bold shadow-md shadow-[var(--accent-primary)]/20 transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4 stroke-[2.5]" />
-              <span>{t('newChatNote') || 'Cuộc trò chuyện & Note mới'}</span>
+              <span>{language === 'vi' ? 'Tạo Note mới' : 'New Note'}</span>
             </motion.button>
           </div>
         </div>
 
-        {/* Tabs & Search Filter Row */}
+        {/* Tabs & Search Controls Row (No Windows horizontal scrollbar bug) */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-1">
-          {/* Segmented Filter Tabs */}
-          <div className="flex p-1 rounded-2xl border bg-[var(--bg-app)] border-[var(--border-color)] self-start overflow-x-auto max-w-full">
+          {/* Segmented Filter Tabs without horizontal scrollbar */}
+          <div className="flex p-1 rounded-2xl border bg-[var(--bg-app)] border-[var(--border-color)] self-start overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden max-w-full">
             <button
-              id="tab-history-all"
-              onClick={() => setActiveHistoryTab('all')}
+              id="tab-library-all"
+              onClick={() => setActiveTab('all')}
               className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer whitespace-nowrap ${
-                activeHistoryTab === 'all'
-                  ? 'bg-[var(--bg-card)] text-[var(--text-primary)] shadow-sm font-extrabold'
+                activeTab === 'all'
+                  ? 'bg-[var(--bg-card)] text-[var(--text-primary)] shadow-sm font-black'
                   : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }`}
             >
               {language === 'vi' ? 'Tất cả' : 'All'} ({totalCount})
             </button>
             <button
-              id="tab-history-pinned"
-              onClick={() => setActiveHistoryTab('pinned')}
+              id="tab-library-pinned"
+              onClick={() => setActiveTab('pinned')}
               className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-                activeHistoryTab === 'pinned'
-                  ? 'bg-[var(--bg-card)] text-amber-500 shadow-sm font-extrabold'
+                activeTab === 'pinned'
+                  ? 'bg-[var(--bg-card)] text-amber-500 shadow-sm font-black'
                   : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }`}
             >
@@ -294,11 +295,11 @@ export const LibraryScreen: React.FC = () => {
               {pinnedCount > 0 && <span className="font-mono opacity-80">({pinnedCount})</span>}
             </button>
             <button
-              id="tab-history-notes"
-              onClick={() => setActiveHistoryTab('with-notes')}
+              id="tab-library-with-notes"
+              onClick={() => setActiveTab('with-notes')}
               className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-                activeHistoryTab === 'with-notes'
-                  ? 'bg-[var(--bg-card)] text-[var(--accent-primary)] shadow-sm font-extrabold'
+                activeTab === 'with-notes'
+                  ? 'bg-[var(--bg-card)] text-[var(--accent-primary)] shadow-sm font-black'
                   : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }`}
             >
@@ -307,33 +308,33 @@ export const LibraryScreen: React.FC = () => {
               {withNotesCount > 0 && <span className="font-mono opacity-80">({withNotesCount})</span>}
             </button>
             <button
-              id="tab-history-shared"
-              onClick={() => setActiveHistoryTab('shared')}
+              id="tab-library-shared"
+              onClick={() => setActiveTab('shared')}
               className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-                activeHistoryTab === 'shared'
-                  ? 'bg-[var(--bg-card)] text-[var(--text-primary)] shadow-sm font-extrabold'
+                activeTab === 'shared'
+                  ? 'bg-[var(--bg-card)] text-[var(--text-primary)] shadow-sm font-black'
                   : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }`}
             >
               <Share2 className="w-3.5 h-3.5" />
-              <span>{t('tabShared') || (language === 'vi' ? 'Được chia sẻ' : 'Shared')}</span>
+              <span>{language === 'vi' ? 'Được chia sẻ' : 'Shared with Me'}</span>
               {sharedCount > 0 && <span className="font-mono opacity-80">({sharedCount})</span>}
             </button>
           </div>
 
-          {/* Search, Filter Dropdowns & View Mode */}
+          {/* Search, Filter & View Mode Controls */}
           <div className="flex flex-wrap items-center gap-2">
             {/* Search Input */}
-            <div className="relative flex-1 sm:w-64 min-w-[200px]">
+            <div className="relative flex-1 sm:w-60 min-w-[190px]">
               <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
               <input
                 ref={searchInputRef}
-                id="history-search-input"
+                id="library-search-input"
                 type="text"
                 value={librarySearchQuery}
                 onChange={(e) => setLibrarySearchQuery(e.target.value)}
-                placeholder={language === 'vi' ? 'Tìm theo chủ đề, chat, file...' : 'Search topics, messages, files...'}
-                className="w-full rounded-xl pl-9 pr-7 py-1.5 text-xs border transition-colors bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)]"
+                placeholder={language === 'vi' ? 'Tìm theo chủ đề, file, nội dung...' : 'Search topics, files, content...'}
+                className="w-full rounded-xl pl-9 pr-7 py-1.5 text-xs border transition-colors bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)] shadow-2xs"
               />
               {librarySearchQuery && (
                 <button
@@ -348,7 +349,7 @@ export const LibraryScreen: React.FC = () => {
             {/* Filter Dropdown */}
             <div className="relative">
               <button
-                id="history-filter-btn"
+                id="library-filter-btn"
                 onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap bg-[var(--bg-app)] border-[var(--border-color)] hover:border-[var(--accent-primary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               >
@@ -366,11 +367,11 @@ export const LibraryScreen: React.FC = () => {
                       className="absolute right-0 mt-1.5 w-48 rounded-2xl shadow-2xl p-1.5 z-30 space-y-1 text-xs border bg-[var(--bg-card)] border-[var(--border-color)]"
                     >
                       {[
-                        { id: 'all', label: t('catAll') || 'Tất cả thể loại' },
-                        { id: 'khoa-hoc', label: t('catScience') || 'Khoa học' },
-                        { id: 'du-an', label: t('catProject') || 'Dự án' },
-                        { id: 'ca-nhan', label: t('catPersonal') || 'Cá nhân' },
-                        { id: 'ngon-ngu', label: t('catLanguage') || 'Ngôn ngữ' },
+                        { id: 'all', label: language === 'vi' ? 'Tất cả thể loại' : 'All categories' },
+                        { id: 'khoa-hoc', label: language === 'vi' ? 'Khoa học' : 'Science' },
+                        { id: 'du-an', label: language === 'vi' ? 'Dự án Alpha' : 'Project Alpha' },
+                        { id: 'ca-nhan', label: language === 'vi' ? 'Cá nhân' : 'Personal' },
+                        { id: 'ngon-ngu', label: language === 'vi' ? 'Học ngôn ngữ' : 'Language' },
                         { id: 'cornell', label: 'Cornell Method' },
                         { id: 'outline', label: 'Outline Framework' },
                         { id: 'feynman', label: 'Feynman Technique' },
@@ -402,7 +403,7 @@ export const LibraryScreen: React.FC = () => {
             {/* Sort Dropdown */}
             <div className="relative">
               <button
-                id="history-sort-btn"
+                id="library-sort-btn"
                 onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap bg-[var(--bg-app)] border-[var(--border-color)] hover:border-[var(--accent-primary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               >
@@ -466,7 +467,7 @@ export const LibraryScreen: React.FC = () => {
                     ? 'bg-[var(--bg-card)] text-[var(--accent-primary)] shadow-xs font-bold' 
                     : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                 }`}
-                title={t('grid') || 'Lưới'}
+                title="Lưới"
               >
                 <LayoutGrid className="w-3.5 h-3.5" />
               </button>
@@ -478,7 +479,7 @@ export const LibraryScreen: React.FC = () => {
                     ? 'bg-[var(--bg-card)] text-[var(--accent-primary)] shadow-xs font-bold' 
                     : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                 }`}
-                title={t('list') || 'Danh sách'}
+                title="Danh sách"
               >
                 <List className="w-3.5 h-3.5" />
               </button>
@@ -499,7 +500,7 @@ export const LibraryScreen: React.FC = () => {
           <motion.div 
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            className="h-80 flex flex-col items-center justify-center text-center p-8 border border-dashed rounded-3xl border-[var(--border-color)] bg-[var(--bg-card)]/50 backdrop-blur-xs max-w-xl mx-auto my-8"
+            className="h-84 flex flex-col items-center justify-center text-center p-8 border border-dashed rounded-3xl border-[var(--border-color)] bg-[var(--bg-card)]/50 backdrop-blur-xs max-w-xl mx-auto my-8"
           >
             <div className="w-14 h-14 rounded-3xl bg-[var(--accent-subtle)] text-[var(--accent-primary)] flex items-center justify-center mb-4 border border-[var(--accent-primary)]/20 shadow-sm">
               <FileText className="w-7 h-7 stroke-[1.8]" />
@@ -518,7 +519,7 @@ export const LibraryScreen: React.FC = () => {
                   onClick={() => {
                     setLibrarySearchQuery('');
                     setLibraryFilter('all');
-                    setActiveHistoryTab('all');
+                    setActiveTab('all');
                   }}
                   className="px-4 py-2 bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs font-semibold rounded-xl transition-colors cursor-pointer"
                 >
@@ -539,10 +540,6 @@ export const LibraryScreen: React.FC = () => {
           /* GRID VIEW */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
             {filteredSessions.map((session) => {
-              const lastMsg = session.messages && session.messages.length > 0 
-                ? session.messages[session.messages.length - 1] 
-                : null;
-              
               const isPinned = !!session.isPinned;
 
               return (
@@ -556,7 +553,7 @@ export const LibraryScreen: React.FC = () => {
                   }`}
                 >
                   <div>
-                    {/* Card Header: Badges & Dropdown */}
+                    {/* Card Header: Badges & Menu */}
                     <div className="flex items-center justify-between gap-2 mb-3">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         {isPinned && (
@@ -650,15 +647,18 @@ export const LibraryScreen: React.FC = () => {
 
                     {/* Session Title */}
                     <h3 
-                      onClick={() => resumeChatSession(session.id)}
+                      onClick={() => {
+                        if (session.note) openNoteDetail(session.note);
+                        else resumeChatSession(session.id);
+                      }}
                       className="text-sm sm:text-base font-extrabold tracking-tight line-clamp-2 text-[var(--text-primary)] hover:text-[var(--accent-primary)] transition-colors cursor-pointer mb-2"
                     >
                       {session.title}
                     </h3>
 
-                    {/* Message Preview Snippet */}
+                    {/* Summary Snippet */}
                     <p className="text-xs text-[var(--text-secondary)] line-clamp-2 leading-relaxed mb-3">
-                      {lastMsg?.text || (session.note?.summary) || (language === 'vi' ? 'Phiên làm việc nghiên cứu cùng AI...' : 'AI research session...')}
+                      {session.note?.summary || session.messages?.[session.messages.length - 1]?.text || (language === 'vi' ? 'Bài ghi chú học thuật được tổng hợp bởi AI...' : 'AI-synthesized academic note...')}
                     </p>
 
                     {/* Sources attached */}
@@ -681,39 +681,9 @@ export const LibraryScreen: React.FC = () => {
                         )}
                       </div>
                     )}
-
-                    {/* Note Artifact Link Banner */}
-                    {session.note && (
-                      <div 
-                        onClick={() => openNoteDetail(session.note!)}
-                        className="flex items-center justify-between p-2.5 rounded-2xl border transition-all cursor-pointer bg-[var(--accent-subtle)]/40 border-[var(--accent-primary)]/30 hover:border-[var(--accent-primary)] group/note mb-3"
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <FileText className="w-3.5 h-3.5 text-[var(--accent-primary)] shrink-0" />
-                          <div className="min-w-0">
-                            <span className="text-[11px] font-bold text-[var(--text-primary)] truncate block group-hover/note:text-[var(--accent-primary)]">
-                              {session.note.title}
-                            </span>
-                            <span className="text-[9px] text-[var(--text-muted)]">
-                              98% AI Precision • {session.note.content?.sections?.length || 3} mục cấu trúc
-                            </span>
-                          </div>
-                        </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPreviewNote(session.note!);
-                          }}
-                          className="p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--accent-primary)] hover:bg-[var(--bg-card)] cursor-pointer"
-                          title="Xem nhanh Note"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    )}
                   </div>
 
-                  {/* Card Footer: Metadata & Actions */}
+                  {/* Card Footer */}
                   <div className="pt-3 border-t flex items-center justify-between border-[var(--border-color)]">
                     <div className="flex items-center gap-2 text-[11px] text-[var(--text-muted)] font-medium">
                       <span className="flex items-center gap-1 font-mono">
@@ -731,21 +701,33 @@ export const LibraryScreen: React.FC = () => {
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setArchiveConfirmSession(session)}
                         className="p-1.5 rounded-xl border border-[var(--border-color)] hover:border-amber-500/50 hover:bg-amber-500/10 text-[var(--text-muted)] hover:text-amber-500 transition-all cursor-pointer"
-                        title={language === 'vi' ? 'Chuyển vào Lưu trữ (30 ngày)' : 'Move to Archives (30d)'}
+                        title={language === 'vi' ? 'Lưu trữ (30 ngày)' : 'Archive (30d)'}
                       >
                         <Archive className="w-3.5 h-3.5" />
                       </motion.button>
 
-                      {/* Resume Chat Button */}
-                      <motion.button
-                        whileHover={{ scale: 1.04 }}
-                        whileTap={{ scale: 0.96 }}
-                        onClick={() => resumeChatSession(session.id)}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-bold shadow-xs bg-[var(--accent-primary)] hover:opacity-90 text-[var(--accent-text)] cursor-pointer"
-                      >
-                        <span>{language === 'vi' ? 'Tiếp tục' : 'Resume'}</span>
-                        <ArrowRight className="w-3 h-3" />
-                      </motion.button>
+                      {/* Detail Button */}
+                      {session.note ? (
+                        <motion.button
+                          whileHover={{ scale: 1.04 }}
+                          whileTap={{ scale: 0.96 }}
+                          onClick={() => openNoteDetail(session.note!)}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-bold shadow-xs bg-[var(--accent-primary)] hover:opacity-90 text-[var(--accent-text)] cursor-pointer"
+                        >
+                          <BookOpen className="w-3 h-3" />
+                          <span>{language === 'vi' ? 'Xem Note' : 'View Note'}</span>
+                        </motion.button>
+                      ) : (
+                        <motion.button
+                          whileHover={{ scale: 1.04 }}
+                          whileTap={{ scale: 0.96 }}
+                          onClick={() => resumeChatSession(session.id)}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-bold shadow-xs bg-[var(--accent-primary)] hover:opacity-90 text-[var(--accent-text)] cursor-pointer"
+                        >
+                          <span>{language === 'vi' ? 'Tiếp tục' : 'Resume'}</span>
+                          <ArrowRight className="w-3 h-3" />
+                        </motion.button>
+                      )}
                     </div>
                   </div>
                 </motion.div>
@@ -759,11 +741,10 @@ export const LibraryScreen: React.FC = () => {
               <table className="w-full text-left text-xs min-w-[760px]">
                 <thead className="border-b font-bold uppercase text-xs tracking-wider bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-secondary)]">
                   <tr>
-                    <th className="px-5 py-3.5">{language === 'vi' ? 'Chủ Đề Phiên Hội Thoại' : 'Session Topic'}</th>
+                    <th className="px-5 py-3.5">{language === 'vi' ? 'Tiêu Đề Bài Ghi Chú' : 'Note Title'}</th>
                     <th className="px-4 py-3.5">{language === 'vi' ? 'Mô Hình & Phương Pháp' : 'AI Model & Method'}</th>
-                    <th className="px-4 py-3.5">{language === 'vi' ? 'File Note Kèm Theo' : 'Attached Note'}</th>
-                    <th className="px-4 py-3.5">{language === 'vi' ? 'Tin Nhắn' : 'Messages'}</th>
-                    <th className="px-4 py-3.5">{language === 'vi' ? 'Thời Gian' : 'Date'}</th>
+                    <th className="px-4 py-3.5">{language === 'vi' ? 'Số Tin Nhắn' : 'Messages'}</th>
+                    <th className="px-4 py-3.5">{language === 'vi' ? 'Ngày Cập Nhật' : 'Date'}</th>
                     <th className="px-4 py-3.5 text-right">{language === 'vi' ? 'Thao Tác' : 'Actions'}</th>
                   </tr>
                 </thead>
@@ -782,7 +763,10 @@ export const LibraryScreen: React.FC = () => {
                           <div className="flex items-center gap-2">
                             {isPinned && <Pin className="w-3.5 h-3.5 text-amber-500 shrink-0 fill-amber-500" />}
                             <span 
-                              onClick={() => resumeChatSession(session.id)}
+                              onClick={() => {
+                                if (session.note) openNoteDetail(session.note);
+                                else resumeChatSession(session.id);
+                              }}
                               className="font-bold text-sm text-[var(--text-primary)] hover:text-[var(--accent-primary)] transition-colors cursor-pointer truncate"
                               title={session.title}
                             >
@@ -803,23 +787,6 @@ export const LibraryScreen: React.FC = () => {
                           </div>
                         </td>
 
-                        {/* Note Link */}
-                        <td className="px-4 py-3.5 whitespace-nowrap">
-                          {session.note ? (
-                            <button
-                              onClick={() => openNoteDetail(session.note!)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[var(--bg-app)] border border-[var(--border-color)] hover:border-[var(--accent-primary)] text-[var(--accent-primary)] cursor-pointer"
-                            >
-                              <FileText className="w-3.5 h-3.5" />
-                              <span className="truncate max-w-[150px]">{session.note.title}</span>
-                            </button>
-                          ) : (
-                            <span className="text-[11px] text-[var(--text-muted)] italic">
-                              {language === 'vi' ? 'Chưa tạo' : 'None'}
-                            </span>
-                          )}
-                        </td>
-
                         {/* Message Count */}
                         <td className="px-4 py-3.5 font-mono text-xs whitespace-nowrap">
                           <span className="font-bold text-[var(--text-primary)]">{session.messages?.length || 1}</span>
@@ -830,15 +797,24 @@ export const LibraryScreen: React.FC = () => {
                           {session.createdAt ? new Date(session.createdAt).toLocaleDateString('vi-VN') : '—'}
                         </td>
 
-                        {/* Action buttons */}
+                        {/* Actions */}
                         <td className="px-4 py-3.5 text-right whitespace-nowrap">
                           <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              onClick={() => resumeChatSession(session.id)}
-                              className="px-3 py-1 rounded-lg text-xs font-bold bg-[var(--accent-primary)] text-[var(--accent-text)] cursor-pointer hover:opacity-90 active:scale-95"
-                            >
-                              {language === 'vi' ? 'Tiếp tục' : 'Resume'}
-                            </button>
+                            {session.note ? (
+                              <button
+                                onClick={() => openNoteDetail(session.note!)}
+                                className="px-3 py-1 rounded-lg text-xs font-bold bg-[var(--accent-primary)] text-[var(--accent-text)] cursor-pointer hover:opacity-90 active:scale-95"
+                              >
+                                {language === 'vi' ? 'Xem Note' : 'View'}
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => resumeChatSession(session.id)}
+                                className="px-3 py-1 rounded-lg text-xs font-bold bg-[var(--accent-primary)] text-[var(--accent-text)] cursor-pointer hover:opacity-90 active:scale-95"
+                              >
+                                {language === 'vi' ? 'Tiếp tục' : 'Resume'}
+                              </button>
+                            )}
                             <button
                               onClick={() => handleOpenRename(session)}
                               className="p-1.5 rounded-lg border border-[var(--border-color)] hover:border-[var(--accent-primary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
@@ -849,7 +825,7 @@ export const LibraryScreen: React.FC = () => {
                             <button
                               onClick={() => setArchiveConfirmSession(session)}
                               className="p-1.5 rounded-lg border border-[var(--border-color)] hover:border-amber-500/50 hover:bg-amber-500/10 text-[var(--text-muted)] hover:text-amber-500 cursor-pointer"
-                              title={language === 'vi' ? 'Lưu trữ (30 ngày)' : 'Archive (30d)'}
+                              title="Lưu trữ"
                             >
                               <Archive className="w-3.5 h-3.5" />
                             </button>
@@ -865,13 +841,13 @@ export const LibraryScreen: React.FC = () => {
         )}
       </div>
 
-      {/* RENAME SESSION MODAL */}
+      {/* RENAME MODAL */}
       {renameModalSession && (
         <Modal
           isOpen={true}
           onClose={() => setRenameModalSession(null)}
-          title={language === 'vi' ? 'Đổi Tên Cuộc Trò Chuyện & Ghi Chú' : 'Rename Session & Note'}
-          subtitle={language === 'vi' ? 'Cập nhật tiêu đề hiển thị trong lịch sử' : 'Update display title in history'}
+          title={language === 'vi' ? 'Đổi Tên Bài Ghi Chú' : 'Rename Note'}
+          subtitle={language === 'vi' ? 'Cập nhật tiêu đề hiển thị trong Thư viện' : 'Update note title'}
           maxWidth="max-w-md"
         >
           <form onSubmit={handleSaveRename} className="space-y-4">
@@ -924,15 +900,15 @@ export const LibraryScreen: React.FC = () => {
                   {language === 'vi' ? 'Lưu ý thời hạn 30 ngày:' : '30-day retention notice:'}
                 </span>
                 {language === 'vi' 
-                  ? 'Phiên hội thoại & ghi chú này sẽ được lưu trong mục Thùng rác & Lưu trữ trong 30 ngày. Quá 30 ngày, hệ thống sẽ tự động xóa vĩnh viễn không thể khôi phục.' 
-                  : 'This conversation and attached note will remain in Trash & Archives for 30 days before being automatically purged forever.'}
+                  ? 'Ghi chú này sẽ được lưu trong mục Thùng rác & Lưu trữ trong 30 ngày. Quá 30 ngày, hệ thống sẽ tự động xóa vĩnh viễn không thể khôi phục.' 
+                  : 'This note will remain in Trash & Archives for 30 days before being automatically purged forever.'}
               </div>
             </div>
 
             <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
               {language === 'vi' 
                 ? `Bạn có muốn chuyển "${archiveConfirmSession.title}" vào mục Lưu trữ? Bạn có thể khôi phục lại bất kỳ lúc nào trước khi hết 30 ngày.`
-                : `Move "${archiveConfirmSession.title}" to Archives? You can restore it to History anytime within 30 days.`}
+                : `Move "${archiveConfirmSession.title}" to Archives? You can restore it anytime within 30 days.`}
             </p>
 
             <div className="flex justify-end gap-2 pt-2">
@@ -956,55 +932,7 @@ export const LibraryScreen: React.FC = () => {
         </Modal>
       )}
 
-      {/* QUICK PREVIEW NOTE MODAL */}
-      {previewNote && (
-        <Modal
-          isOpen={true}
-          onClose={() => setPreviewNote(null)}
-          title={previewNote.title}
-          subtitle={`${previewNote.method.toUpperCase()} • ${previewNote.category} • 98% AI Precision`}
-          maxWidth="max-w-3xl"
-        >
-          <div className="max-h-[60vh] overflow-y-auto space-y-4 pr-1 custom-scrollbar">
-            {previewNote.summary && (
-              <div className="p-3.5 rounded-2xl bg-[var(--accent-subtle)] border border-[var(--accent-primary)]/30">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--accent-primary)] block mb-1">
-                  {language === 'vi' ? 'Tóm Tắt Cốt Lõi' : 'Core Summary'}
-                </span>
-                <p className="text-xs leading-relaxed text-[var(--text-primary)] font-medium">
-                  {previewNote.summary}
-                </p>
-              </div>
-            )}
-
-            <div className="prose prose-sm dark:prose-invert max-w-none text-xs leading-relaxed">
-              <pre className="p-4 rounded-2xl bg-[var(--bg-app)] text-[var(--text-primary)] overflow-x-auto font-mono text-[11px] whitespace-pre-wrap">
-                {previewNote.rawMarkdown || JSON.stringify(previewNote.content, null, 2)}
-              </pre>
-            </div>
-
-            <div className="flex justify-between items-center pt-3 border-t border-[var(--border-color)]">
-              <button
-                onClick={() => {
-                  openNoteDetail(previewNote);
-                  setPreviewNote(null);
-                }}
-                className="px-4 py-2 rounded-xl bg-[var(--accent-primary)] text-[var(--accent-text)] text-xs font-bold cursor-pointer hover:opacity-90"
-              >
-                {language === 'vi' ? 'Mở Chi Tiết Đầy Đủ' : 'Open Full Detail'}
-              </button>
-              <button
-                onClick={() => setPreviewNote(null)}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
-              >
-                {t('cancel')}
-              </button>
-            </div>
-          </div>
-        </Modal>
-      )}
-
-      {/* SHARE NOTE MODAL */}
+      {/* SHARE MODAL */}
       {sharingNote && (
         <ShareNoteModal
           isOpen={true}
