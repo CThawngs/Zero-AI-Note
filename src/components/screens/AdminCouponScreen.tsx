@@ -197,7 +197,7 @@ export const AdminCouponScreen: React.FC = () => {
     setFormValue(20);
     setFormAppliedTo('all');
     setFormUsageLimit('100');
-    setFormExpiryDate('31/12/2026');
+    setFormExpiryDate('2026-12-31');
     setFormStatus('active');
     setIsCreateModalOpen(true);
   };
@@ -205,11 +205,24 @@ export const AdminCouponScreen: React.FC = () => {
   const openEditModal = (coupon: CouponItem) => {
     setEditingCoupon(coupon);
     setFormCode(coupon.code);
-    setFormType(coupon.discount_type ?? 'percent');
-    setFormValue(coupon.discount_value ?? 0);
+    setFormType('percent');
+    setFormValue(Math.min(100, Math.max(1, Number(coupon.discount_value) || 20)));
     setFormAppliedTo(coupon.applies_to ?? 'all');
-    setFormUsageLimit(coupon.usage_limit !== null ? String(coupon.usage_limit) : '');
-    setFormExpiryDate(coupon.expires_at ?? '');
+    setFormUsageLimit(coupon.usage_limit !== null && coupon.usage_limit !== undefined ? String(coupon.usage_limit) : '');
+    
+    // Format date string to YYYY-MM-DD for <input type="date" />
+    let expStr = '';
+    if (coupon.expires_at) {
+      try {
+        const d = new Date(coupon.expires_at);
+        if (!isNaN(d.getTime())) {
+          expStr = d.toISOString().split('T')[0];
+        }
+      } catch {
+        expStr = '';
+      }
+    }
+    setFormExpiryDate(expStr);
     setFormStatus(coupon.status);
     setIsCreateModalOpen(true);
   };
@@ -218,7 +231,29 @@ export const AdminCouponScreen: React.FC = () => {
     e.preventDefault();
     if (!formCode.trim()) return;
 
-    const limitVal = formUsageLimit.trim() ? parseInt(formUsageLimit, 10) : null;
+    let limitVal: number | null = null;
+    if (formUsageLimit && formUsageLimit.trim()) {
+      const parsed = parseInt(formUsageLimit.replace(/[^0-9]/g, ''), 10);
+      if (!isNaN(parsed) && parsed > 0) {
+        limitVal = Math.min(2147483647, parsed);
+      }
+    }
+
+    let safeExpiry: string | null = null;
+    if (formExpiryDate && formExpiryDate.trim()) {
+      const raw = formExpiryDate.trim();
+      if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(raw)) {
+        const [d, m, y] = raw.split('/');
+        safeExpiry = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}T23:59:59Z`;
+      } else if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+        safeExpiry = `${raw}T23:59:59Z`;
+      } else {
+        const d = new Date(raw);
+        if (!isNaN(d.getTime())) {
+          safeExpiry = d.toISOString();
+        }
+      }
+    }
 
     try {
       const response = await fetch('/api/admin/coupons', {
@@ -227,11 +262,11 @@ export const AdminCouponScreen: React.FC = () => {
         body: JSON.stringify({
           id: editingCoupon?.id,
           code: formCode.trim().toUpperCase(),
-          discount_type: formType,
-          discount_value: Number(formValue),
+          discount_type: 'percent',
+          discount_value: Math.min(100, Math.max(1, Number(formValue) || 10)),
           applies_to: formAppliedTo,
           usage_limit: limitVal,
-          expires_at: formExpiryDate.trim() || null,
+          expires_at: safeExpiry,
           status: formStatus
         }),
       });
@@ -246,7 +281,7 @@ export const AdminCouponScreen: React.FC = () => {
       setIsCreateModalOpen(false);
       addToast(
         language === 'vi' ? 'Lưu coupon thành công' : 'Coupon Saved',
-        language === 'vi' ? `Mã "${formCode.toUpperCase()}" đã sẵn sàng áp dụng.` : `Coupon "${formCode.toUpperCase()}" is ready.`,
+        language === 'vi' ? `Mã "${formCode.toUpperCase()}" giảm ${Math.min(100, Math.max(1, Number(formValue)))}% đã sẵn sàng áp dụng.` : `Coupon "${formCode.toUpperCase()}" (${formValue}%) is ready.`,
         'success'
       );
     } catch (err) {
@@ -1367,35 +1402,25 @@ export const AdminCouponScreen: React.FC = () => {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold mb-1 text-[var(--text-primary)]">
-                  {language === 'vi' ? 'Loại Giảm Giá' : 'Discount Type'}
+                  {language === 'vi' ? 'Mức Giảm Giá (%)' : 'Discount Percentage (%)'} <span className="text-red-500">*</span>
                 </label>
-                <select
-                  value={formType}
-                  onChange={(e) => setFormType(e.target.value as any)}
-                  className="w-full rounded-xl px-3 py-2 text-xs border bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] outline-none"
-                >
-                  <option value="percent">{language === 'vi' ? 'Phần trăm (%)' : 'Percentage (%)'}</option>
-                  <option value="fixed">{language === 'vi' ? 'Số tiền cố định (VNĐ)' : 'Fixed Amount (VND)'}</option>
-                </select>
+                <div className="relative">
+                  <input
+                    type="number"
+                    required
+                    min={1}
+                    max={100}
+                    value={formValue}
+                    onChange={(e) => setFormValue(Math.min(100, Math.max(1, Number(e.target.value))))}
+                    placeholder="20"
+                    className="w-full rounded-xl pl-3.5 pr-8 py-2.5 text-xs font-bold border bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-extrabold text-[var(--accent-primary)] pointer-events-none">
+                    %
+                  </span>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold mb-1 text-[var(--text-primary)]">
-                  {language === 'vi' ? 'Giá Trị Giảm' : 'Value'} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  required
-                  min={1}
-                  max={formType === 'percent' ? 100 : 10000000}
-                  value={formValue}
-                  onChange={(e) => setFormValue(Number(e.target.value))}
-                  className="w-full rounded-xl px-3 py-2 text-xs border bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold mb-1 text-[var(--text-primary)]">
                   {language === 'vi' ? 'Gói Áp Dụng' : 'Target Plan'}
@@ -1403,14 +1428,15 @@ export const AdminCouponScreen: React.FC = () => {
                 <select
                   value={formAppliedTo}
                   onChange={(e) => setFormAppliedTo(e.target.value as any)}
-                  className="w-full rounded-xl px-3 py-2 text-xs border bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] outline-none"
+                  className="w-full rounded-xl px-3 py-2.5 text-xs border bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] outline-none"
                 >
                   <option value="all">{language === 'vi' ? 'Tất cả các gói' : 'All Plans'}</option>
-                  <option value="pro">Pro Plan</option>
-                  <option value="paid">{language === 'vi' ? 'Các gói trả phí' : 'Paid Tiers'}</option>
+                  <option value="paid">{language === 'vi' ? 'Gói trả phí (Pro & Ultra)' : 'Paid Plans (Pro & Ultra)'}</option>
                 </select>
               </div>
+            </div>
 
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold mb-1 text-[var(--text-primary)]">
                   {language === 'vi' ? 'Giới Hạn Lượt Dùng' : 'Usage Limit'}
@@ -1420,39 +1446,36 @@ export const AdminCouponScreen: React.FC = () => {
                   value={formUsageLimit}
                   onChange={(e) => setFormUsageLimit(e.target.value)}
                   placeholder={language === 'vi' ? 'Để trống = Không giới hạn' : 'Blank = Unlimited'}
-                  className="w-full rounded-xl px-3 py-2 text-xs border bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+                  className="w-full rounded-xl px-3.5 py-2.5 text-xs border bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
                 />
               </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold mb-1 text-[var(--text-primary)]">
                   {language === 'vi' ? 'Ngày Hết Hạn' : 'Expiry Date'}
                 </label>
                 <input
-                  type="text"
+                  type="date"
                   value={formExpiryDate}
                   onChange={(e) => setFormExpiryDate(e.target.value)}
-                  placeholder="31/12/2026"
-                  className="w-full rounded-xl px-3 py-2 text-xs border bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+                  className="w-full rounded-xl px-3.5 py-2.5 text-xs border bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
                 />
               </div>
+            </div>
 
-              <div>
-                <label className="block text-xs font-semibold mb-1 text-[var(--text-primary)]">
-                  {language === 'vi' ? 'Trạng Thái' : 'Status'}
-                </label>
-                <select
-                  value={formStatus}
-                  onChange={(e) => setFormStatus(e.target.value as any)}
-                  className="w-full rounded-xl px-3 py-2 text-xs border bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] outline-none"
-                >
-                  <option value="active">{language === 'vi' ? 'Hoạt động' : 'Active'}</option>
-                  <option value="disabled">{language === 'vi' ? 'Tạm tắt' : 'Disabled'}</option>
-                  <option value="expired">{language === 'vi' ? 'Hết hạn' : 'Expired'}</option>
-                </select>
-              </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1 text-[var(--text-primary)]">
+                {language === 'vi' ? 'Trạng Thái' : 'Status'}
+              </label>
+              <select
+                value={formStatus}
+                onChange={(e) => setFormStatus(e.target.value as any)}
+                className="w-full rounded-xl px-3.5 py-2.5 text-xs border bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] outline-none"
+              >
+                <option value="active">{language === 'vi' ? 'Đang hoạt động (Active)' : 'Active'}</option>
+                <option value="disabled">{language === 'vi' ? 'Tạm tắt (Disabled)' : 'Disabled'}</option>
+                <option value="expired">{language === 'vi' ? 'Hết hạn (Expired)' : 'Expired'}</option>
+              </select>
             </div>
 
             <div className="flex justify-end gap-2 pt-2">

@@ -124,11 +124,22 @@ export const PricingScreen: React.FC = () => {
     setIsApplying(false);
 
     if (res.success) {
-      setAppliedCoupon({ code: couponCode.trim().toUpperCase() });
+      setAppliedCoupon({ 
+        code: couponCode.trim().toUpperCase(),
+        discountPercent: res.discountPercent || 20,
+        baseAmount: res.baseAmount,
+        finalAmount: res.finalAmount
+      });
       addToast(language === 'vi' ? 'Áp dụng mã thành công' : 'Coupon Applied', res.message, 'success');
     } else {
       addToast(language === 'vi' ? 'Mã không hợp lệ' : 'Invalid coupon', res.message, 'error');
     }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode('');
+    addToast(language === 'vi' ? 'Đã gỡ mã giảm giá' : 'Coupon removed', '', 'info');
   };
 
   const handleCheckout = async (planId: 'pro' | 'ultra') => {
@@ -188,6 +199,12 @@ export const PricingScreen: React.FC = () => {
           const isPro = plan.id === 'pro';
           const isUltra = plan.id === 'ultra';
 
+          const basePriceNum = isPro ? 99000 : isUltra ? 199000 : 0;
+          const hasDiscount = appliedCoupon && basePriceNum > 0 && (appliedCoupon.discountPercent ?? 0) > 0;
+          const discountedPrice = hasDiscount 
+            ? Math.max(1000, Math.round(basePriceNum * (1 - (appliedCoupon.discountPercent ?? 0) / 100)))
+            : basePriceNum;
+
           return (
             <motion.div
               key={plan.id}
@@ -224,8 +241,25 @@ export const PricingScreen: React.FC = () => {
                 <p className="text-xs text-[var(--text-secondary)] mt-1 min-h-[32px]">{plan.desc}</p>
 
                 <div className="mt-4 mb-6 pb-6 border-b border-[var(--border-color)]">
-                  <span className="text-3xl sm:text-4xl font-extrabold text-[var(--text-primary)]">{plan.price}</span>
-                  <span className="text-xs text-[var(--text-muted)] ml-1.5">/ {plan.period}</span>
+                  {hasDiscount ? (
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm line-through text-[var(--text-muted)]">{plan.price}</span>
+                        <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                          -{appliedCoupon.discountPercent}%
+                        </span>
+                      </div>
+                      <span className="text-3xl sm:text-4xl font-extrabold text-emerald-600 dark:text-emerald-400">
+                        {discountedPrice.toLocaleString('vi-VN')}đ
+                      </span>
+                      <span className="text-xs text-[var(--text-muted)] ml-1.5">/ {plan.period}</span>
+                    </div>
+                  ) : (
+                    <div>
+                      <span className="text-3xl sm:text-4xl font-extrabold text-[var(--text-primary)]">{plan.price}</span>
+                      <span className="text-xs text-[var(--text-muted)] ml-1.5">/ {plan.period}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Features list */}
@@ -262,14 +296,16 @@ export const PricingScreen: React.FC = () => {
                     {language === 'vi' ? 'Gói Cơ Bản' : 'Default Plan'}
                   </button>
                 ) : (
-                  <button
+                  <motion.button
+                    whileHover={{ scale: 1.03, y: -1 }}
+                    whileTap={{ scale: 0.95 }}
                     id={`btn-upgrade-${plan.id}`}
                     onClick={() => handleCheckout(plan.id as 'pro' | 'ultra')}
                     disabled={isCreatingInvoice === plan.id}
-                    className={`w-full py-3 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 shadow-md transition-all duration-200 cursor-pointer hover:scale-[1.02] active:scale-95 ${
+                    className={`w-full py-3 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer ${
                       isUltra 
-                        ? 'bg-[var(--accent-primary)] text-[var(--accent-text)] hover:opacity-90 hover:shadow-lg hover:shadow-[var(--accent-primary)]/25'
-                        : 'bg-blue-600 hover:bg-blue-500 text-white hover:shadow-lg hover:shadow-blue-600/25'
+                        ? 'bg-[var(--accent-primary)] text-[var(--accent-text)] hover:opacity-95 shadow-lg shadow-[var(--accent-primary)]/25'
+                        : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/25'
                     }`}
                   >
                     {isCreatingInvoice === plan.id ? (
@@ -280,7 +316,7 @@ export const PricingScreen: React.FC = () => {
                         <ArrowRight className="w-3.5 h-3.5" />
                       </>
                     )}
-                  </button>
+                  </motion.button>
                 )}
               </div>
             </motion.div>
@@ -302,18 +338,33 @@ export const PricingScreen: React.FC = () => {
             placeholder={language === 'vi' ? 'Nhập mã (VD: ZERONOTE50)' : 'Enter coupon code...'}
             className="flex-1 rounded-xl px-3.5 py-2 text-xs border uppercase tracking-wider bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)]"
           />
-          <button
+          <motion.button
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.95 }}
             type="submit"
             disabled={isApplying || !couponCode.trim()}
-            className="px-4 py-2 rounded-xl bg-[var(--accent-primary)] hover:opacity-90 text-[var(--accent-text)] text-xs font-bold cursor-pointer disabled:opacity-50 transition-all active:scale-95"
+            className="px-4 py-2 rounded-xl bg-[var(--accent-primary)] hover:opacity-90 text-[var(--accent-text)] text-xs font-bold cursor-pointer disabled:opacity-50 transition-all shadow-xs"
           >
             {isApplying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : (language === 'vi' ? 'Áp dụng' : 'Apply')}
-          </button>
+          </motion.button>
         </form>
         {appliedCoupon && (
-          <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-            ✓ {language === 'vi' ? `Đã áp dụng mã: ${appliedCoupon.code}` : `Applied coupon: ${appliedCoupon.code}`}
-          </p>
+          <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="font-mono font-extrabold text-xs text-emerald-600 dark:text-emerald-400">
+                {appliedCoupon.code}
+              </span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                -{appliedCoupon.discountPercent}%
+              </span>
+            </div>
+            <button
+              onClick={handleRemoveCoupon}
+              className="text-[11px] font-semibold text-red-500 hover:underline cursor-pointer"
+            >
+              {language === 'vi' ? 'Gỡ bỏ' : 'Remove'}
+            </button>
+          </div>
         )}
       </div>
 

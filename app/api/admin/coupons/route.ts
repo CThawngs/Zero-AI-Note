@@ -5,6 +5,50 @@ import { ok, fail } from '@/lib/auth/http';
 
 export const runtime = 'nodejs';
 
+function sanitizeCouponInput(body: any) {
+  const code = (body.code ?? '').trim().toUpperCase();
+  const discount_type = 'percent'; // Discount Type is ALWAYS percentage (%)
+  
+  const rawVal = Number(body.discount_value);
+  const discount_value = isNaN(rawVal) ? 10 : Math.min(100, Math.max(1, Math.round(rawVal)));
+  
+  let applies_to = body.applies_to ?? 'all';
+  if (applies_to !== 'all' && applies_to !== 'paid') {
+    applies_to = 'all';
+  }
+
+  let usage_limit: number | null = null;
+  if (body.usage_limit !== null && body.usage_limit !== undefined && String(body.usage_limit).trim() !== '') {
+    const parsedLimit = parseInt(String(body.usage_limit).replace(/[^0-9]/g, ''), 10);
+    if (!isNaN(parsedLimit) && parsedLimit > 0) {
+      usage_limit = Math.min(2147483647, parsedLimit);
+    }
+  }
+
+  let expires_at: string | null = null;
+  if (body.expires_at && typeof body.expires_at === 'string' && body.expires_at.trim()) {
+    const raw = body.expires_at.trim();
+    if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(raw)) {
+      const [d, m, y] = raw.split('/');
+      expires_at = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}T23:59:59Z`;
+    } else if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+      expires_at = `${raw}T23:59:59Z`;
+    } else {
+      const d = new Date(raw);
+      if (!isNaN(d.getTime())) {
+        expires_at = d.toISOString();
+      }
+    }
+  }
+
+  let status = body.status ?? 'active';
+  if (!['active', 'disabled', 'expired'].includes(status)) {
+    status = 'active';
+  }
+
+  return { code, discount_type, discount_value, applies_to, usage_limit, expires_at, status };
+}
+
 // GET /api/admin/coupons — list all coupons (admin only)
 export async function GET(request: NextRequest) {
   if (!await isAdmin(request)) {
@@ -22,7 +66,7 @@ export async function GET(request: NextRequest) {
     return ok({ coupons: rows as unknown as any[] });
   } catch (err) {
     console.error('getCoupons failed:', err);
-    return fail('Internal server error', 500);
+    return fail(err instanceof Error ? err.message : 'Internal server error', 500);
   }
 }
 
@@ -34,19 +78,16 @@ export async function POST(request: NextRequest) {
   
   try {
     const body = await request.json();
-    const { code, discount_type, discount_value, applies_to, usage_limit, expires_at, status } = body;
+    const clean = sanitizeCouponInput(body);
     
-    if (!code || !discount_type || discount_value === undefined) {
-      return fail('Missing required fields', 400);
+    if (!clean.code) {
+      return fail('Coupon code is required', 400);
     }
-    
-    // Normalize discount_type to match DB constraint ('percent' | 'fixed')
-    const normType = discount_type === 'percentage' ? 'percent' : discount_type;
     
     const sql = getSql();
     const rows = await sql`
       insert into coupons (code, discount_type, discount_value, applies_to, usage_limit, expires_at, status)
-      values (${code.toUpperCase()}, ${normType}, ${discount_value}, ${applies_to ?? 'all'}, ${usage_limit ?? null}, ${expires_at ?? null}, ${status ?? 'active'})
+      values (${clean.code}, ${clean.discount_type}, ${clean.discount_value}, ${clean.applies_to}, ${clean.usage_limit}, ${clean.expires_at}, ${clean.status})
       returning *
     `;
     const coupon = (rows as unknown as any[])[0];
@@ -58,7 +99,7 @@ export async function POST(request: NextRequest) {
       return fail('Coupon code already exists', 409);
     }
     console.error('createCoupon failed:', err);
-    return fail('Internal server error', 500);
+    return fail(msg || 'Internal server error', 500);
   }
 }
 
@@ -70,27 +111,24 @@ export async function PUT(request: NextRequest) {
   
   try {
     const body = await request.json();
-    const { id, code, discount_type, discount_value, applies_to, usage_limit, expires_at, status } = body;
+    const { id } = body;
     
     if (!id) {
       return fail('Missing coupon ID', 400);
     }
     
+    const clean = sanitizeCouponInput(body);
     const sql = getSql();
-    const normType = (discount_type === 'percentage' ? 'percent' : discount_type) ?? 'percent';
-    const safeCode = (code ?? '').toUpperCase();
-    const safeApplies = applies_to ?? 'all';
-    const safeStatus = status ?? 'active';
     
     const rows = await sql`
       update coupons set
-        code = ${safeCode},
-        discount_type = ${normType},
-        discount_value = ${discount_value ?? 0},
-        applies_to = ${safeApplies},
-        usage_limit = ${usage_limit ?? null},
-        expires_at = ${expires_at ?? null},
-        status = ${safeStatus}
+        code = ${clean.code},
+        discount_type = ${clean.discount_type},
+        discount_value = ${clean.discount_value},
+        applies_to = ${clean.applies_to},
+        usage_limit = ${clean.usage_limit},
+        expires_at = ${clean.expires_at},
+        status = ${clean.status}
       where id = ${id}
       returning *
     `;
@@ -103,7 +141,7 @@ export async function PUT(request: NextRequest) {
     return ok({ coupon: row });
   } catch (err) {
     console.error('updateCoupon failed:', err);
-    return fail('Internal server error', 500);
+    return fail(err instanceof Error ? err.message : 'Internal server error', 500);
   }
 }
 
@@ -125,6 +163,6 @@ export async function DELETE(request: NextRequest) {
     return ok({ success: true });
   } catch (err) {
     console.error('deleteCoupon failed:', err);
-    return fail('Internal server error', 500);
+    return fail(err instanceof Error ? err.message : 'Internal server error', 500);
   }
 }

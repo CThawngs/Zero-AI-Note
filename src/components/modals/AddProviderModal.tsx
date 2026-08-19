@@ -149,8 +149,8 @@ export const AddProviderModal: React.FC<AddProviderModalProps> = ({ isOpen, onCl
       endpointUrl: endpointUrl.trim(),
       defaultModel: defaultModel.trim(),
       models: addedModels,
+      logoUrl: currentPreset.logoUrl,
       logoEmoji: currentPreset.logoEmoji,
-      logoColor: currentPreset.logoColor,
       apiKeyMasked: apiKey.trim() ? `${apiKey.trim().substring(0, 6)}••••••••••••` : 'None (No Auth)',
       useForNewChats,
       autoDiscoverModels,
@@ -189,10 +189,10 @@ export const AddProviderModal: React.FC<AddProviderModalProps> = ({ isOpen, onCl
                 }`}
               >
                 <span
-                  className="w-5 h-5 rounded-lg flex items-center justify-center text-[11px] font-bold shrink-0"
-                  style={{ backgroundColor: p.logoColor + '22', color: p.logoColor }}
+                  className="w-5 h-5 rounded-lg flex items-center justify-center text-[11px] font-bold shrink-0 bg-[var(--bg-hover)] overflow-hidden"
                 >
-                  {p.logoEmoji}
+                  <img src={p.logoUrl} alt={p.name} className="w-4 h-4 object-contain" onError={(e) => { (e.currentTarget.style.display = 'none'); (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'inline'; }} />
+                  <span className="hidden">{p.logoEmoji}</span>
                 </span>
                 <span className="truncate">{p.name.split(' ')[0]}</span>
               </button>

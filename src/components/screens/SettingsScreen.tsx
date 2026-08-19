@@ -669,10 +669,10 @@ export const SettingsScreen: React.FC = () => {
                       <div className="space-y-1">
                         <div className="flex items-center gap-2.5">
                           <span
-                            className="w-7 h-7 rounded-xl flex items-center justify-center text-[13px] font-bold shrink-0"
-                            style={{ backgroundColor: (prov.logoColor || '#6B7280') + '22', color: prov.logoColor || '#6B7280' }}
+                            className="w-7 h-7 rounded-xl flex items-center justify-center text-[13px] font-bold shrink-0 bg-[var(--bg-hover)] overflow-hidden"
                           >
-                            {prov.logoEmoji || '✦'}
+                            <img src={prov.logoUrl} alt={prov.name} className="w-5 h-5 object-contain" onError={(e) => { (e.currentTarget.style.display = 'none'); (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'inline'; }} />
+                            <span className="hidden">{prov.logoEmoji || '✦'}</span>
                           </span>
                           <h4 className={`text-sm font-bold ${isDark ? 'text-[var(--text-primary)]' : 'text-[var(--text-primary)]'}`}>{prov.name}</h4>
                           <span className={`text-xs font-bold px-2 py-0.5 rounded ${

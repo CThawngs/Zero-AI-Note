@@ -141,7 +141,7 @@ interface AppContextType {
     addCoupon: (coupon: Omit<CouponItem, 'id' | 'usage_count'>) => void;
   updateCoupon: (couponId: string, data: Partial<CouponItem>) => void;
   deleteCoupon: (couponId: string) => void;
-  applyCouponCode: (code: string) => Promise<{ success: boolean; message: string; discountPercent?: number }>;
+  applyCouponCode: (code: string) => Promise<{ success: boolean; message: string; discountPercent?: number; baseAmount?: number; finalAmount?: number }>;
   removeAppliedCoupon: () => void;
 
   // Payments

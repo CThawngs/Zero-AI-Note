@@ -148,8 +148,8 @@ export interface AIProviderItem {
   /** Danh sách model bổ sung (ngoài defaultModel) user đã add + test thành công */
   models?: string[];
   /** Brand avatar (chính chủ, local) */
+  logoUrl?: string;
   logoEmoji?: string;
-  logoColor?: string;
   apiKeyMasked: string;
   status: 'active' | 'inactive';
   latencyMs: number;
