@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { 
   ScreenType, 
@@ -353,6 +353,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [templates, setTemplates] = useState<TemplateItem[]>(initialTemplates);
   const [files, setFiles] = useState<SourceFileItem[]>(EMPTY_FILES);
   const [coupons, setCoupons] = useState<CouponItem[]>(EMPTY_COUPONS);
+  // Lưu yêu cầu take note chờ xác nhận user (guard AI flow thông minh)
+  const pendingNoteRef = useRef<{
+    text: string;
+    sources: { type: 'pdf' | 'youtube' | 'doc'; name: string }[];
+    method: string;
+  } | null>(null);
   const [aiProviders, setAIProviders] = useState<AIProviderItem[]>(EMPTY_AI_PROVIDERS);
   const [paymentHistory, setPaymentHistory] = useState<PaymentRecord[]>(EMPTY_PAYMENTS);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -1341,24 +1347,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     window.location.href = '/';
   };
 
-  const sendChatMessage = async (text: string, attachedSources?: { type: 'pdf' | 'youtube' | 'doc'; name: string }[]) => {
-    if (!text.trim()) return;
-    if (!user.id) {
-      addToast(
-        language === 'vi' ? 'Chưa đăng nhập' : 'Not logged in',
-        language === 'vi' ? 'Vui lòng đăng nhập để tạo ghi chú.' : 'Please log in to create notes.',
-        'error'
-      );
-      return;
-    }
-
+  const executeTakeNote = async (
+    text: string,
+    attachedSources: { type: 'pdf' | 'youtube' | 'doc'; name: string }[] | undefined,
+    methodOverride?: string,
+    originalUserText?: string
+  ) => {
     const userPlan = (user.plan || 'free').toLowerCase();
     const isUltra = userPlan === 'ultra' || user.role === 'admin';
     const noteLimit = isUltra ? Infinity : (userPlan === 'pro' ? 50 : 20);
     if (notes.length >= noteLimit) {
       addToast(
         language === 'vi' ? 'Đã đạt giới hạn lưu trữ ghi chú' : 'Note Storage Limit Reached',
-        language === 'vi' 
+        language === 'vi'
           ? `Bạn đã đạt giới hạn tối đa ${noteLimit} ghi chú của gói ${userPlan.toUpperCase()}. Vui lòng nâng cấp hoặc dọn dẹp ghi chú cũ.`
           : `Note limit of ${noteLimit} reached for ${userPlan.toUpperCase()}. Please upgrade or delete old notes.`,
         'warning'
@@ -1370,58 +1371,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const userMsgId = 'msg_user_' + Date.now();
     const nowTime = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
 
-    // Explicit manual method override from user prompt if detected
-    let currentMethod = selectedMethod;
-    const lower = text.toLowerCase();
-    if (lower.includes('cornell')) {
-      currentMethod = 'cornell';
-      setSelectedMethod('cornell');
-    } else if (lower.includes('outline') || lower.includes('dàn ý') || lower.includes('dan y')) {
-      currentMethod = 'outline';
-      setSelectedMethod('outline');
-    } else if (lower.includes('flashcard')) {
-      currentMethod = 'flashcard';
-      setSelectedMethod('flashcard');
-    } else if (lower.includes('q&a') || lower.includes('hỏi đáp') || lower.includes('hoi dap') || lower.includes('qa')) {
-      currentMethod = 'qa';
-      setSelectedMethod('qa');
-    } else if (lower.includes('tóm tắt') || lower.includes('tom tat') || lower.includes('summary')) {
-      currentMethod = 'quick-summary';
-      setSelectedMethod('quick-summary');
-    }
+    let currentMethod = methodOverride || selectedMethod;
+    const lower = (originalUserText || text).toLowerCase();
+    if (lower.includes('cornell')) currentMethod = 'cornell';
+    else if (lower.includes('outline') || lower.includes('dàn ý') || lower.includes('dan y')) currentMethod = 'outline';
+    else if (lower.includes('flashcard')) currentMethod = 'flashcard';
+    else if (lower.includes('q&a') || lower.includes('hỏi đáp') || lower.includes('hoi dap') || lower.includes('qa')) currentMethod = 'qa';
+    else if (lower.includes('tóm tắt') || lower.includes('tom tat') || lower.includes('summary')) currentMethod = 'quick-summary';
 
     const isAuto = currentMethod === 'auto';
-    
     const newUserMsg: ChatMessage = {
       id: userMsgId,
       sender: 'user',
-      text,
+      text: originalUserText || text,
       timestamp: nowTime,
       attachments: attachedSources
     };
-
     setChatMessages(prev => [...prev, newUserMsg]);
     setIsProcessingChat(true);
     setProcessingStep(1);
 
     const isEn = language === 'en';
-
-    const activeProvider = aiProviders.find(p => 
-      p.defaultModel === selectedModel || 
-      p.name === selectedModel || 
-      p.models?.includes(selectedModel) ||
-      p.providerId === selectedModel
+    const activeProvider = aiProviders.find(p =>
+      p.defaultModel === selectedModel || p.name === selectedModel || p.models?.includes(selectedModel) || p.providerId === selectedModel
     );
 
     try {
       setTimeout(() => setProcessingStep(2), 600);
-
       const res = await fetch('/api/notes/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           noteId: activeArtifactNote?.id,
-          prompt: text,
+          prompt: originalUserText || text,
           method: currentMethod,
           language: isEn ? 'en' : 'vi',
           model: selectedModel || 'gemini-2.5-flash',
@@ -1431,43 +1413,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           sources: attachedSources || [],
         }),
       });
-
       setProcessingStep(3);
-
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to generate note');
-      }
-
+      if (!res.ok) throw new Error('generate failed');
+      if (data.error) throw new Error(data.error);
       const generatedNote: NoteItem = data.note;
-
-      // Update state with generated note
       setNotes(prev => [generatedNote, ...prev.filter(n => n.id !== generatedNote.id)]);
       setActiveArtifactNote(generatedNote);
       setIsArtifactOpen(true);
       setProcessingStep(4);
-
       const aiDoneMsg: ChatMessage = {
         id: 'msg_ai_done_' + Date.now(),
         sender: 'ai',
-        text: isEn 
-          ? (isAuto 
-              ? `AI analyzed your source and auto-selected ${generatedNote.method.toUpperCase()} method as the optimal structure! You can view and export it in the Artifact Panel on the right.`
-              : `I have completed structuring the note with ${generatedNote.method.toUpperCase()} method! You can view and export it in the Artifact Panel on the right.`)
-          : (isAuto
-              ? `AI đã phân tích nội dung và tự động chọn phương pháp ${generatedNote.method.toUpperCase()} phù hợp nhất! Bạn có thể xem và tải về ở Artifact Panel bên phải.`
-              : `Tôi đã hoàn thành cấu trúc ghi chú theo phương pháp ${generatedNote.method.toUpperCase()}! Bạn có thể xem và tải về ở Artifact Panel bên phải.`),
+        text: isEn
+          ? (isAuto ? `AI analyzed your source and auto-selected ${generatedNote.method.toUpperCase()} method! View it in the Artifact Panel.` : `Note structured with ${generatedNote.method.toUpperCase()} method! View in Artifact Panel.`)
+          : (isAuto ? `AI đã phân tích và tự động chọn phương pháp ${generatedNote.method.toUpperCase()}! Xem ở Artifact Panel bên phải.` : `Tôi đã hoàn thành take note theo phương pháp ${generatedNote.method.toUpperCase()}! Xem và tải ở Artifact Panel.`),
         timestamp: nowTime,
         noteResultId: generatedNote.id
       };
-
       const updatedHistory = [...chatMessages, newUserMsg, aiDoneMsg];
       setChatMessages(updatedHistory);
-
-      // Create / Update ChatSessionItem
       const currentSessionId = activeSessionId || generatedNote.id;
       setActiveSessionId(currentSessionId);
-      
       const newSessionItem: ChatSessionItem = {
         id: currentSessionId,
         title: generatedNote.title,
@@ -1482,34 +1449,82 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         sources: attachedSources?.map(s => ({ type: s.type as any, name: s.name })),
         isPinned: false
       };
-
       setChatSessions(prev => [newSessionItem, ...prev.filter(s => s.id !== currentSessionId)]);
-
-      addToast(
-        isEn ? 'Note Generated' : 'Tạo ghi chú thành công', 
-        isEn ? `"${generatedNote.title}" is ready.` : `Ghi chú "${generatedNote.title}" đã sẵn sàng.`, 
-        'success'
-      );
+      addToast(isEn ? 'Note Generated' : 'Tạo ghi chú thành công', isEn ? `"${generatedNote.title}" is ready.` : `Ghi chú "${generatedNote.title}" đã sẵn sàng.`, 'success');
     } catch (err) {
       console.error('Note generation failed:', err);
       const errMsg = err instanceof Error ? err.message : 'Error generating note';
-      setChatMessages(prev => [
-        ...prev,
-        {
-          id: 'msg_ai_err_' + Date.now(),
-          sender: 'ai',
-          text: isEn ? `Error: ${errMsg}` : `Lỗi: ${errMsg}`,
-          timestamp: nowTime,
-        }
-      ]);
-      addToast(
-        isEn ? 'Generation Error' : 'Lỗi tạo ghi chú',
-        errMsg,
-        'error'
-      );
+      setChatMessages(prev => [...prev, { id: 'msg_ai_err_' + Date.now(), sender: 'ai', text: isEn ? `Error: ${errMsg}` : `Lỗi: ${errMsg}`, timestamp: nowTime }]);
+      addToast(isEn ? 'Generation Error' : 'Lỗi tạo ghi chú', errMsg, 'error');
     } finally {
       setIsProcessingChat(false);
     }
+  };
+
+  const sendChatMessage = async (text: string, attachedSources?: { type: 'pdf' | 'youtube' | 'doc'; name: string }[]) => {
+    if (!text.trim()) return;
+    if (!user.id) {
+      addToast(
+        language === 'vi' ? 'Chưa đăng nhập' : 'Not logged in',
+        language === 'vi' ? 'Vui lòng đăng nhập để tạo ghi chú.' : 'Please log in to create notes.',
+        'error'
+      );
+      return;
+    }
+
+    const isEn = language === 'en';
+    const nowTime = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+
+    // --- GUARD 1: đang chờ xác nhận take note ---
+    if (pendingNoteRef.current) {
+      const t = text.toLowerCase();
+      const isConfirm = t.includes('có') || t.includes('co') || t.includes('ok') || t.includes('yes') || t.includes('xác nhận') || t.includes('xac nhan') || t.includes('thực hiện') || t.includes('thuc hien') || t.includes('đồng ý') || t.includes('dong y');
+      if (isConfirm) {
+        const pending = pendingNoteRef.current;
+        pendingNoteRef.current = null;
+        return executeTakeNote(pending.text, pending.sources, pending.method, pending.text);
+      } else {
+        // user không xác nhận → hủy, coi như tin nhắn thường
+        pendingNoteRef.current = null;
+      }
+    }
+
+    const userMsgId = 'msg_user_' + Date.now();
+    const newUserMsg: ChatMessage = {
+      id: userMsgId,
+      sender: 'user',
+      text,
+      timestamp: nowTime,
+      attachments: attachedSources
+    };
+    setChatMessages(prev => [...prev, newUserMsg]);
+
+    // --- GUARD 2: thiếu nguồn đính kèm ---
+    if (!attachedSources || attachedSources.length === 0) {
+      const askMsg: ChatMessage = {
+        id: 'msg_ai_ask_' + Date.now(),
+        sender: 'ai',
+        text: isEn
+          ? 'You have not attached any document, file, or YouTube link yet. Did you forget to upload? Or do you want me to advise/summarize from the text you typed? Please clarify so I can help accurately.'
+          : 'Bạn chưa đính kèm tài liệu, file hay link YouTube nào. Bạn có quên upload không? Hay ý bạn là muốn tôi tư vấn/tóm tắt từ nội dung bạn vừa gõ? Hãy cho tôi biết để hỗ trợ chính xác.',
+        timestamp: nowTime
+      };
+      setChatMessages(prev => [...prev, askMsg]);
+      return;
+    }
+
+    // --- GUARD 3: có nguồn → xác nhận take note trước khi tạo ---
+    const methodLabel = selectedMethod === 'auto' ? (isEn ? 'Auto (best-fit)' : 'Tự động (phù hợp nhất)') : selectedMethod;
+    pendingNoteRef.current = { text, sources: attachedSources, method: selectedMethod };
+    const confirmMsg: ChatMessage = {
+      id: 'msg_ai_confirm_' + Date.now(),
+      sender: 'ai',
+      text: isEn
+        ? `I have ${attachedSources.length} source(s) and will create a take note using the ${methodLabel} method. Do you want me to proceed? (reply "yes" to confirm)`
+        : `Tôi đã nhận ${attachedSources.length} nguồn và sẽ tạo take note theo phương pháp ${methodLabel}. Bạn có muốn thực hiện không? (trả lời "có" để xác nhận)`,
+      timestamp: nowTime
+    };
+    setChatMessages(prev => [...prev, confirmMsg]);
   };
 
   return (
