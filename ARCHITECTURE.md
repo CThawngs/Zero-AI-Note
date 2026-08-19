@@ -62,6 +62,8 @@
   - Fallback chain: body override → `apps.payment_account_id` → TK default user → profile. Tenant isolation: account phải thuộc user sở hữu app.
   - `subscriptions.payment_account_id` snapshot để trace (migration `docs/migrations/add_subscriptions_payment_account.sql`).
 - **Coupon backend (không còn chỉ frontend):** `validate-coupon` chỉ validate read-only (KHÔNG tăng `usage_count`). `create-invoice` validate → tính giảm giá → tạo bill → lưu `subscriptions` (`coupon_code` + `payment_account_id`) → tăng `usage_count` đúng 1 lần khi bill thành công. `applyCouponCode` (UI) gọi `validate-coupon` preview, không đổi plan, không redeem.
+- **Deploy / verify (2026-08-19):** Zero-AI-Note gọi Zero Tracking qua `ZEROINVOICE_BASE_URL` (mặc định `https://zeroinvoice-silk.vercel.app`, đã set `https://zero-tracking-ai.vercel.app` trong `.env.local` theo `TRACKING_API.md`). Khi verify thực tế, deploy live `zero-tracking-ai.vercel.app` từng báo `DEPLOYMENT_NOT_FOUND` → luồng payee switch không thể test end-to-end cho tới khi Zero Tracking được redeploy. Cần: (1) redeploy Zero Tracking (`vercel --prod`), (2) chạy migration `supabase/payment-accounts.sql` (thêm `bills.payee_payment_account_id`), (3) `ZEROINVOICE_BASE_URL` trỏ đúng host live.
+- **Secrets:** `.env.local` được git-ignore; `ZEROINVOICE_API_KEY` (app key `zi_...`) chỉ nằm server-side, không lộ client. Không commit credential.
 
 ### Nguyên tắc bất biến
 1. `content_structured` (JSON) là nguồn DUY NHẤT cho Preview + mọi export (MD/DOCX/PDF/HTML)
