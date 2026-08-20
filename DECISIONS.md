@@ -443,7 +443,31 @@
 
 ---
 
-## 23. References
+## 23. Complete File & Document Extraction Pipeline for Attached Sources (2026-08-20)
+
+### Problem
+- Khi người dùng đính kèm các tệp văn bản (.txt, .md, .csv, .json, .py, .ts,...), dán văn bản trực tiếp (Raw Text), hoặc gửi link bài viết/video YouTube, hệ thống trước đây chỉ gửi metadata tên tệp mà chưa trích xuất đầy đủ nội dung chữ vào ngữ cảnh của AI LLM.
+- AI không thể đọc được nội dung thực tế bên trong tệp nếu không có dữ liệu văn bản được trích xuất.
+
+### Decision & Implementation
+1. **Trích Xuất Nội Dung Tệp Trực Tiếp Phía Client (`AttachSourceModal.tsx`, `ChatScreen.tsx`)**:
+   - Sử dụng `file.text()` để đọc toàn bộ nội dung văn bản ngay khi người dùng chọn hoặc kéo thả tệp mã nguồn, tài liệu, ghi chép (.txt, .md, .json, .csv, .js, .ts, .py, .html, .css).
+   - Truyền toàn bộ nội dung chữ vào thuộc tính `content` của cấu trúc `ChatAttachment`.
+   - Đối với Tab "Dán văn bản", truyền trực tiếp nội dung văn bản dán vào `content`.
+   - Đối với Tab "Dán link", tự động phát hiện liên kết YouTube / Web và truyền thuộc tính `url`.
+2. **Đóng Gói Ngữ Cảnh Tệp Vào AI Prompt (`/api/notes/generate/route.ts`)**:
+   - Khối `inputText` gửi tới AI được định dạng cấu trúc rõ ràng:
+     - Tên và loại tệp (`[Tệp/Nguồn 1: DOC] "filename.txt"`).
+     - Đường dẫn / URL (`- Đường dẫn/URL: https://...`).
+     - Toàn bộ nội dung trích xuất nguyên bản từ tệp.
+   - Bổ sung chỉ dẫn hệ thống bắt buộc AI Agent đọc và phân tích kỹ lưỡng nội dung tệp trước khi trả lời hoặc tổng hợp ghi chú.
+3. **Mở Rộng Kiểu Dữ Liệu `ChatAttachment` & `NoteItem.sources` (`types/index.ts`)**:
+   - Hỗ trợ đầy đủ các loại tệp: `pdf | youtube | audio | doc | image | video | text`.
+   - Lưu trữ an toàn metadata và nội dung tệp trong `sources` của Note và ChatSession.
+
+---
+
+## 24. References
 - [Neon Documentation](https://neon.tech/docs)
 - [Drizzle ORM](https://orm.drizzle.team)
 - [gitleaks](https://github.com/gitleaks/gitleaks)

@@ -47,7 +47,7 @@ const i18n = {
     heroSub: 'Hướng dẫn đầy đủ về cách sử dụng, kiến trúc kỹ thuật, hạn mức gói cước và tích hợp API của Zero AI Note.',
     cta: 'Bắt đầu miễn phí',
     ctaReady: 'Sẵn sàng dùng thử?',
-    sections: ['Giới thiệu', 'Bắt đầu nhanh', 'Thư viện Ghi chú', 'Bảng giá & Hạn mức', 'Phương pháp ghi chú', 'Lưu trữ 30 ngày', 'Kiến trúc kỹ thuật', 'Bảo mật', 'Routing', 'API Endpoints', 'Liên kết'],
+    sections: ['Giới thiệu', 'Bắt đầu nhanh', 'AI Agent & Trích xuất File', 'Thư viện Ghi chú', 'Bảng giá & Hạn mức', 'Phương pháp ghi chú', 'Lưu trữ 30 ngày', 'Kiến trúc kỹ thuật', 'Bảo mật', 'Routing', 'API Endpoints', 'Liên kết'],
     intro: {
       title: 'Giới thiệu',
       p1: 'Zero AI Note là nền tảng ghi chú AI học thuật nguồn mở, chuyển đổi video, audio, PDF, YouTube thành các bài ghi chú cấu trúc cao theo các phương pháp chuẩn quốc tế.',
@@ -57,11 +57,21 @@ const i18n = {
       title: 'Bắt đầu nhanh',
       steps: [
         { text: 'Đăng ký tài khoản miễn phí', sub: 'Không cần thẻ tín dụng', linkText: 'Tạo tài khoản' },
-        { text: 'Kéo thả file hoặc dán link YouTube vào khung chat', sub: 'Hỗ trợ video, audio, PDF, DOCX' },
+        { text: 'Kéo thả file hoặc dán link YouTube vào khung chat', sub: 'Hỗ trợ video, audio, PDF, DOCX, TXT, MD, Code' },
         { text: 'Chọn phương pháp ghi chú', sub: 'Cornell, Outline, Q&A, Flashcard, Feynman, Tóm tắt nhanh' },
         { text: 'Tương tác & Xem kết quả trong Artifact Panel', sub: 'Cập nhật trực tiếp nội dung trong cùng phiên chat' },
         { text: 'Quản lý trong Thư viện Ghi chú (Notes)', sub: 'Xem chi tiết, tiếp tục chat, đổi tên, ghim, chia sẻ, lưu trữ' },
       ],
+    },
+    agent: {
+      title: 'AI Agent Đa Chế Độ & Trích Xuất File Toàn Diện',
+      desc: 'Hệ thống AI Agent thông minh tích hợp sâu đa mô hình LLM với khả năng tư duy và đọc hiểu tài liệu thực tế:',
+      items: [
+        { title: 'Trí Tuệ Hội Thoại & Lập Trình UI/UX', desc: 'AI tự nhận thức danh tính, mô hình đang chạy (Gemini, Claude, GPT, Groq,...), trả lời chuyên sâu và lập trình Frontend / UI-UX chuẩn clean code với Markdown & Code Blocks.' },
+        { title: 'Tự Động Thu Thập Thông Tin (Autonomous Gathering)', desc: 'Khi người dùng yêu cầu tạo note nhưng thiếu tài liệu hoặc chủ đề, AI chủ động hỏi thăm và hướng dẫn bổ sung thông tin trước khi bắt đầu tạo.' },
+        { title: 'Đọc Hiểu & Trích Xuất Tệp Đa Định Dạng', desc: 'Đọc trực tiếp nội dung từ file text, code, markdown (.txt, .md, .json, .py, .ts,...), tài liệu PDF, DOCX, video/audio transcripts và web/YouTube links.' },
+        { title: 'Thanh Toán VietQR Tự Động 100% Zero-Click', desc: 'Quét mã VietQR Napas EMVCo qua app ngân hàng, hệ thống tự động nhận diện và nâng cấp gói cước sau 2-3s mà không cần nút xác nhận thủ công.' }
+      ]
     },
     history: {
       title: 'Thư viện Ghi chú & Kiến trúc Living Note',
@@ -197,7 +207,7 @@ const i18n = {
     heroSub: 'Comprehensive guide to features, technical architecture, plan quotas, and API integration for Zero AI Note.',
     cta: 'Get started free',
     ctaReady: 'Ready to try it?',
-    sections: ['Introduction', 'Quick Start', 'Notes Library', 'Pricing & Quotas', 'Note Methods', '30-Day Retention', 'Tech Architecture', 'Security', 'Routing', 'API Endpoints', 'Links'],
+    sections: ['Introduction', 'Quick Start', 'AI Agent & File Ingestion', 'Notes Library', 'Pricing & Quotas', 'Note Methods', '30-Day Retention', 'Tech Architecture', 'Security', 'Routing', 'API Endpoints', 'Links'],
     intro: {
       title: 'Introduction',
       p1: 'Zero AI Note is an open-source AI note-taking platform that transforms video, audio, PDF, and YouTube into interactive chat sessions and highly structured academic notes.',
@@ -207,11 +217,21 @@ const i18n = {
       title: 'Quick Start',
       steps: [
         { text: 'Create a free account', sub: 'No credit card required', linkText: 'Sign up' },
-        { text: 'Drag & drop files or paste a YouTube link', sub: 'Supports video, audio, PDF, DOCX' },
+        { text: 'Drag & drop files or paste a YouTube link', sub: 'Supports video, audio, PDF, DOCX, TXT, MD, Code' },
         { text: 'Choose a note-taking method', sub: 'Cornell, Outline, Q&A, Flashcard, Feynman, Quick Summary' },
         { text: 'Interact & View results in Artifact Panel', sub: 'In-place updates within the same chat session' },
         { text: 'Manage in Notes Library', sub: 'Open details, resume chat, rename, pin, share, archive' },
       ],
+    },
+    agent: {
+      title: 'Dual-Mode AI Agent & Full Document Extraction',
+      desc: 'Intelligent AI Agent architecture powered by multi-LLM integration with deep contextual comprehension:',
+      items: [
+        { title: 'Conversational Intelligence & UI/UX Engineering', desc: 'Self-aware of active model (Gemini, Claude, GPT, Groq,...), provides in-depth technical explanations and clean frontend code with interactive Markdown code blocks.' },
+        { title: 'Autonomous Information Gathering', desc: 'Proactively asks clarifying questions to gather missing topics or source materials before synthesizing structured notes.' },
+        { title: 'Full Multi-Format File Ingestion', desc: 'Direct text extraction from code, markdown, text files (.txt, .md, .json, .py, .ts,...), PDF/Word documents, audio/video transcripts, and YouTube/Web URLs.' },
+        { title: 'Zero-Click Automatic VietQR Payments', desc: 'Scan VietQR Napas EMVCo via mobile banking; the system auto-activates the upgrade in 2-3 seconds with zero manual confirmation.' }
+      ]
     },
     history: {
       title: 'Notes Library & Living Note Architecture',
@@ -340,7 +360,7 @@ const i18n = {
   },
 };
 
-const sectionIds = ['intro', 'quickstart', 'history', 'pricing', 'methods', 'archives', 'tech', 'security', 'routing', 'api', 'links'];
+const sectionIds = ['intro', 'quickstart', 'ai-agent', 'history', 'pricing', 'methods', 'archives', 'tech', 'security', 'routing', 'api', 'links'];
 
 const methodColor: Record<string, string> = {
   POST: 'text-emerald-400 bg-emerald-400/10',
@@ -695,7 +715,26 @@ export default function DocsPage() {
               </div>
             </section>
 
-            {/* ── 3. Notes Library & Living Note ────────────────────────── */}
+            {/* ── 3. AI Agent & Document Ingestion ───────────────────────── */}
+            <section id="ai-agent" className="mb-10 sm:mb-12 scroll-mt-20">
+              <h2 ref={(el) => observe(el, 0)} style={reveal} className={`text-lg sm:text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-black'}`}>{t.agent.title}</h2>
+              <p className={`text-xs sm:text-sm mb-4 leading-relaxed ${muted}`}>{t.agent.desc}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                {t.agent.items.map((item, i) => (
+                  <div
+                    key={i}
+                    ref={(el) => observe(el, i * 60)}
+                    style={reveal}
+                    className={`p-4 sm:p-5 rounded-2xl border transition-all duration-200 ${surface} ${border}`}
+                  >
+                    <h3 className={`text-sm font-bold mb-1.5 ${isDark ? 'text-white' : 'text-black'}`}>{item.title}</h3>
+                    <p className={`text-xs sm:text-sm leading-relaxed ${muted}`}>{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* ── 4. Notes Library & Living Note ────────────────────────── */}
             <section id="history" className="mb-10 sm:mb-12 scroll-mt-20">
               <h2 ref={(el) => observe(el, 0)} style={reveal} className={`text-lg sm:text-xl font-bold mb-4 ${isDark ? 'text-white' : 'text-black'}`}>{t.history.title}</h2>
               <p className={`text-xs sm:text-sm mb-4 leading-relaxed ${muted}`}>{t.history.desc}</p>

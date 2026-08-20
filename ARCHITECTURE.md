@@ -100,6 +100,21 @@
   - Mục điều hướng chính: `📝 Ghi chú (Notes)`.
   - Mục `Hội thoại gần đây (Recent Chats)` ở sidebar đóng vai trò là Quick Switcher để nhảy nhanh vào các phiên làm việc đang dang dở.
 
+### Dual-Mode AI Agent Engine & Full Document Extraction (2026-08-20)
+- **Kiến trúc AI Agent Đa Chế Độ (`lib/ai/gemini.ts`, `lib/ai/dispatcher.ts`, `/api/notes/generate`):**
+  - **Conversational Reasoning & Clean Coding:** AI Agent tự nhận thức danh tính (*Zero AI Note Agent*), mô hình đang kích hoạt (`model`), trả lời câu hỏi chuyên sâu, viết code Frontend/UI-UX chuẩn TypeScript/React/Tailwind CSS và hỗ trợ render Markdown toàn diện kèm Code Blocks có nút Sao Chép 1-Click (`MarkdownView.tsx`).
+  - **Autonomous Information Gathering:** Tự động phát hiện khi người dùng yêu cầu tạo note nhưng thiếu tài liệu/chủ đề cụ thể, chủ động hỏi thăm và hướng dẫn bổ sung thông tin thay vì từ chối hay phản hồi máy móc.
+  - **Autonomous Academic Note Synthesis:** Khi có đầy đủ tài liệu/nội dung, AI vừa phản hồi thân thiện trong chat (`replyText`), vừa đồng thời kiến tạo bản ghi chú học thuật chuẩn hóa chuyên sâu (`note` artifact theo 17 phương pháp) cập nhật trực tiếp vào Artifact Panel bên phải.
+- **Trích Xuất & Đọc Hiểu Tài Liệu Đa Định Dạng (`AttachSourceModal.tsx`, `ChatScreen.tsx`):**
+  - Đọc trực tiếp nội dung văn bản (`file.text()`) từ các file mã nguồn, text, markdown (.txt, .md, .json, .csv, .js, .ts, .py, .html, .css).
+  - Tải lên lưu trữ an toàn cho tài liệu PDF, DOCX, video/audio transcripts và web/YouTube links, đóng gói đầy đủ nội dung vào prompt cho AI xử lý.
+
+### Zero-Click VietQR Napas EMVCo Automatic Billing Flow (2026-08-20)
+- **100% Zero-Click Confirmation:** Loại bỏ toàn bộ các nút bấm xác nhận thủ công trong modal thanh toán (`PaymentQrModal.tsx`).
+- **Real-time Polling Engine:** Modal tự động polling kiểm tra trạng thái bill mỗi 2.5s qua `/api/billing/check-status`.
+- **Instant Client Activation:** Ngay khi nhận được tiền, hệ thống tự động bắn pháo hoa Confetti, nâng cấp tức thì `user.plan` trong AppContext, hiển thị màn hình thành công và tự động đóng modal sau 2.5s.
+- **Bảo Vệ Độc Quyền Admin Portal:** Cổng quản trị Admin (`/api/admin/*` và `admin-coupons`) được bảo vệ nghiêm ngặt chỉ cho phép email chỉ định (`ADMIN_EMAIL`), không mở theo role tự phong.
+
 ### Nguyên tắc bất biến
 1. `content_structured` (JSON) là nguồn DUY NHẤT cho Preview + mọi export (MD/DOCX/PDF/HTML)
 2. Billing fail-closed; tracking/analytics fail-open
@@ -111,11 +126,13 @@
 8. Không mock/fake data ở UI — mọi dữ liệu query Neon thật
 9. Discount Type của Coupons luôn luôn là phần trăm (`%`) từ 1-100% (không hỗ trợ VND cố định).
 10. Mỗi phiên chat là một luồng nghiên cứu độc lập gắn liền với Note Artifact trong trang Lịch sử.
+11. Toàn bộ tin nhắn chat và tài liệu đính kèm đều được gửi trực tiếp tới AI Engine thực tế, không dùng hardcode blockers.
 
 ### Pipeline xử lý file (PRD mục 3.2)
 ```
-Upload → Enqueue job → Phase 1: Transcribe (STT chunk + map-reduce, ưu tiên phụ đề YouTube)
-→ Phase 2: Structure theo method (Cornell/Outline/Q&A/Flashcard/... hoặc Auto)
-→ Phase 3: Sinh content_structured → Preview + Export
-→ Notify user (email/in-app)
+Upload / Attach → Trích xuất nội dung văn bản + Presigned R2
+→ Enqueue job / Call AI Agent Engine
+→ Dual-Mode Dispatch: Conversational Markdown Response + Structured Academic Note (17 methods)
+→ Cập nhật đè trực tiếp Living Note trong Artifact Panel + DB Upsert
+→ Render Markdown/Code blocks + Preview (Raw/Static/Interactive HTML) + Export đa định dạng
 ```

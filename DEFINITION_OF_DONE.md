@@ -23,10 +23,12 @@
 - [x] Copy/Download hoạt động thật (DOCX thật qua docx package, PDF chuẩn print, Markdown, HTML — không placeholder)
 - [x] `content_structured` là nguồn DUY NHẤT để render Preview và sinh mọi file export (MD/DOCX/PDF/HTML)
 
-## Tuần 5-7 — Mở rộng đầu vào/đầu ra
-- [ ] Multi-file multi-định dạng qua pipeline chunk
-- [ ] 5 template + Auto mode + custom template hoạt động thật
-- [ ] Xuất 4 định dạng MD/DOCX/PDF/HTML, preview đúng từng loại
+## Tuần 5-7 — Mở rộng đầu vào/đầu ra & AI Agent Engine
+- [x] Đọc hiểu & Trích xuất nội dung đa định dạng: Tệp mã nguồn, text, markdown (.txt, .md, .json, .py, .ts,...), PDF, DOCX, Video/Audio transcripts và link YouTube/Web ✅
+- [x] Trực quan hóa Markdown phong phú & Khối mã nguồn CodeBlock chuyên nghiệp kèm nút Sao chép 1-Click (`MarkdownView.tsx`) ✅
+- [x] Kiến trúc Dual-Mode AI Agent: Hội thoại suy luận sâu, lập trình Frontend / UI-UX sạch đẹp, tự động thu thập thông tin và kiến tạo Note chuyên sâu ✅
+- [x] Hệ thống 17 templates học thuật chuẩn hóa + Auto Mode + Hạn mức Custom Templates phân cấp rõ ràng ✅
+- [x] Xuất 4 định dạng MD/DOCX/PDF/HTML, preview chuẩn từng cấp độ (Raw / Static HTML / Interactive HTML JS) ✅
 
 ## Tuần 8-9 — UX giữ chân & Thư viện Ghi chú
 - [x] Thư viện Ghi chú (Notes Library) với kiến trúc Living Note (1 Session = 1 Living Note in-place upsert) ✅
@@ -39,6 +41,8 @@
 - [x] Master Pricing Matrix & Hạn mức Custom Templates (Free 5 / Pro 25 / Ultra không giới hạn) ✅
 - [x] Dynamic Quota Badges & Nâng cấp thời gian thực trên Sidebar, Settings, Header ✅
 - [x] Webhook ZeroInvoice & Thanh toán VietQR Napas EMVCo payload chuẩn ✅
+- [x] Thanh toán VietQR Tự Động 100% Zero-Click: Polling 2.5s, không cần nút xác nhận thủ công, kích hoạt tức thì ✅
+- [x] Cổng quản trị Admin Coupon bảo vệ nghiêm ngặt chỉ cho phép email chỉ định (`ADMIN_EMAIL`) ✅
 - [x] Coupon CRUD thật qua Admin (role server-side, 100% chiết khấu %, kích hoạt 0đ tức thì) ✅
 - [x] Ràng buộc 1 tài khoản = 1 mã coupon duy nhất (bảng `user_coupons` trên Neon) ✅
 - [x] Zero Tracking realtime payee switch: combobox đổi TK/Ví (bank/MoMo/ZaloPay) per-checkout ✅
