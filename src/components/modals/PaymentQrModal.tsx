@@ -219,7 +219,11 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({
 
   // Intercept close request from X button, backdrop or Escape
   const handleRequestClose = () => {
-    if (isPaidSuccess || isSubmittingConfirm) return;
+    if (isPaidSuccess) {
+      onClose();
+      return;
+    }
+    if (isSubmittingConfirm) return;
     setShowExitWarning(true);
   };
 
@@ -248,7 +252,7 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={handleRequestClose}
-      disableClose={isPaidSuccess || isSubmittingConfirm}
+      disableClose={isSubmittingConfirm}
       title={
         isPaidSuccess
           ? (language === 'vi' ? '🎉 Nâng Cấp Thành Công!' : '🎉 Upgrade Completed!')
@@ -310,7 +314,7 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({
         </AnimatePresence>
 
         {isPaidSuccess ? (
-          <div className="py-8 text-center space-y-4">
+          <div className="py-6 text-center space-y-4">
             <motion.div 
               initial={{ scale: 0.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -328,6 +332,15 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({
                   ? `Đặc quyền gói ${billData.plan.toUpperCase()} đã sẵn sàng để bạn sử dụng.` 
                   : `All ${billData.plan.toUpperCase()} features are now unlocked for you.`}
               </p>
+            </div>
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-full py-3 px-6 rounded-xl font-bold text-sm bg-emerald-500 hover:bg-emerald-600 text-white transition-all cursor-pointer active:scale-95 shadow-md shadow-emerald-500/20 flex items-center justify-center gap-2"
+              >
+                <span>{language === 'vi' ? 'Bắt Đầu Trải Nghiệm Ngay' : 'Get Started Now'}</span>
+              </button>
             </div>
           </div>
         ) : (
