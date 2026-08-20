@@ -40,7 +40,8 @@ export async function POST(request: NextRequest) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-webhook-secret': ZT_WEBHOOK_SECRET,
+          ...(ZT_WEBHOOK_SECRET ? { 'x-webhook-secret': ZT_WEBHOOK_SECRET } : {}),
+          ...(process.env.ZEROINVOICE_API_KEY ? { 'Authorization': `Bearer ${process.env.ZEROINVOICE_API_KEY}` } : {}),
         },
         body: JSON.stringify({
           transaction_id: `user_confirm_${Date.now()}`,

@@ -7,7 +7,7 @@
 - **Local path:** `C:/Users/nguye/OneDrive/Documents/Projects/Zero-AI-Note`
 - **Stack:** Next.js 16 (App Router) + React 19 + Tailwind v4 + TypeScript + Drizzle ORM
 - **DB:** Neon Postgres (serverless) + RLS; **Storage:** Cloudflare R2 (backup, S3-compatible)
-- **AI:** Google Gemini 2.0 Flash via `@google/genai`; BYOK 8 providers (Google, OpenAI, Anthropic, OpenRouter, Groq, NVIDIA NIM, Local Ollama, Custom Endpoint)
+- **AI:** Google Gemini 3.7 Flash (primary) + failover 2.5/2.0 via `@google/genai`; **runtime model = user-selected from AppContext** (BYOK); BYOK 8 providers (Google, OpenAI, Anthropic, OpenRouter, Groq, NVIDIA NIM, Local Ollama, Custom Endpoint)
 - **Billing:** Zero Tracking (a SEPARATE project using Supabase) via REST + `ZEROINVOICE_API_KEY`. App talks to Zero Tracking over HTTP only — never shares DB.
 - **Deploy target:** Vercel (auto-deploy on `main`)
 
@@ -25,7 +25,7 @@
 - Security: gitleaks scan clean (no real secret ever committed), fail-closed secrets, Google OAuth sig verification fixed
 
 ## DANGLING WORK QUEUE (the backlog)
-1. **Tuần 1-2:** Inngest background job queue — not yet tested (only 1 simulated job)
+1. **Tuần 1-2:** Inngest background job queue — not yet tested (only 1 simulated job). **Trigger.dev đã loại bỏ** (chỉ dùng Inngest).
 2. **Tuần 5-7:** Multi-file/multi-format pipeline via chunk — **DESIGNED & LOCKED in PRD (2026-08-20)**: server-cloud 7-step (R2 presign → Inngest worker demux `-c:a copy` streaming + segment 30–60p → FFmpeg keyframe <2h → Gemini STT per chunk w/ overlap 10–15s+silence-detection for lossless → YouTube caption client-side (youtubei.js) → map-reduce → content_structured → Neon; Stepper3 + sub-progress + email Resend; cap free 2GB/5h). **Model = user-selected from AppContext combobox + failover cascade 3.7→2.5→2.0; non-Gemini → transcription-first then synthesis.** BUILD PENDING (handoff @tech). Also: 5 templates + Auto + custom template; preview of 4 export formats
 3. **Tuần 12+:** Mind map, TTS, action items, Notion/Calendar sync, spaced repetition
 4. **Launch:** Vercel production deploy; run full real flow (signup → upload → note → upgrade → pay)

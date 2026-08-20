@@ -16,7 +16,7 @@
 - [x] Tạo Neon project + migrate schema thật + cập nhật `.env.local` `NEON_DATABASE_URL`
 - [x] `/api/health` trả kết nối DB thật (verified 200 OK)
 - [x] Gate Free/Paid/Ultra bằng `profiles.plan` + `processing_minutes_used`/`processing_minutes_limit` (Free=120, Pro=1200, Ultra=6000/phút)
-- [ ] Hàng đợi job nền (Inngest/Trigger.dev) dựng xong, test 1 job giả lập chạy được
+- [ ] Hàng đợi job nền **Inngest** (Trigger.dev đã loại bỏ) dựng xong, test 1 job giả lập chạy được
 
 ## Tuần 3-4 — MVP lõi
 - [x] 1 file thật / prompt → transcribe & phân tích thật bằng **Gemini 3.7 Flash (primary) + failover 2.5/2.0** → note Cornell/tóm tắt nhanh → Artifact Panel (commit mới)
