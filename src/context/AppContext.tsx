@@ -483,6 +483,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
+  // Global listener for background payment confirmation (even if modal was closed with X)
+  useEffect(() => {
+    if (!mounted) return;
+    const handlePaymentSuccess = async (e: any) => {
+      const bill = e.detail;
+      if (!bill) return;
+      try {
+        const res = await fetch('/api/auth/session');
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.user) {
+            setUser(data.user);
+          }
+        }
+        addToast(
+          language === 'vi' ? 'Thanh toán thành công!' : 'Payment Received!',
+          language === 'vi' 
+            ? `Hệ thống đã tự động nhận diện thanh toán thành công cho hóa đơn ${bill.bill_id || ''}. Tài khoản của bạn đã được nâng cấp!`
+            : `Payment detected for ${bill.bill_id || ''}. Your account has been upgraded!`,
+          'success'
+        );
+      } catch (_) {}
+    };
+
+    window.addEventListener('zero-tracking:payment-success', handlePaymentSuccess);
+    window.addEventListener('zero-tracking:bill-paid', handlePaymentSuccess);
+    return () => {
+      window.removeEventListener('zero-tracking:payment-success', handlePaymentSuccess);
+      window.removeEventListener('zero-tracking:bill-paid', handlePaymentSuccess);
+    };
+  }, [mounted, language, setUser]);
+
   const triggerScreenLoading = () => {
     setIsLoadingScreen(true);
     setTimeout(() => {

@@ -1,5 +1,5 @@
 const ZEROINVOICE_API_KEY = process.env.ZEROINVOICE_API_KEY;
-const ZEROINVOICE_BASE_URL = process.env.ZEROINVOICE_BASE_URL || 'https://zeroinvoice-silk.vercel.app';
+const ZEROINVOICE_BASE_URL = process.env.ZEROINVOICE_BASE_URL || 'https://zero-tracking-ai.vercel.app';
 
 // Fail-closed: nếu thiếu API key → crash rõ ràng, không fallback yếu
 if (!ZEROINVOICE_API_KEY) {
@@ -59,7 +59,7 @@ export async function createZeroInvoiceBill(params: {
 }
 
 export function getZeroInvoiceBaseUrl(): string {
-  return process.env.ZEROINVOICE_BASE_URL || 'https://zeroinvoice-silk.vercel.app';
+  return process.env.ZEROINVOICE_BASE_URL || 'https://zero-tracking-ai.vercel.app';
 }
 
 export async function checkZeroInvoiceBillStatus(billId: string): Promise<{
