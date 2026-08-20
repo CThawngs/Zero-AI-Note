@@ -1,5 +1,15 @@
 const ZEROINVOICE_API_KEY = process.env.ZEROINVOICE_API_KEY;
-const ZEROINVOICE_BASE_URL = process.env.ZEROINVOICE_BASE_URL || 'https://zero-tracking-ai.vercel.app';
+
+export function getZeroInvoiceBaseUrl(): string {
+  let url = process.env.ZEROINVOICE_BASE_URL || process.env.ZERO_TRACKING_BASE_URL || 'https://zero-tracking-ai.vercel.app';
+  // Tự động chuyển đổi nếu env cũ vẫn còn trỏ về zeroinvoice-silk
+  if (!url || url.includes('zeroinvoice-silk.vercel.app') || url.includes('zeroinvoice-silk')) {
+    url = 'https://zero-tracking-ai.vercel.app';
+  }
+  return url.replace(/\/+$/, '');
+}
+
+const ZEROINVOICE_BASE_URL = getZeroInvoiceBaseUrl();
 
 // Fail-closed: nếu thiếu API key → crash rõ ràng, không fallback yếu
 if (!ZEROINVOICE_API_KEY) {
@@ -56,10 +66,6 @@ export async function createZeroInvoiceBill(params: {
 
   const json: ZeroInvoiceBillResponse = await res.json();
   return json;
-}
-
-export function getZeroInvoiceBaseUrl(): string {
-  return process.env.ZEROINVOICE_BASE_URL || 'https://zero-tracking-ai.vercel.app';
 }
 
 export async function checkZeroInvoiceBillStatus(billId: string): Promise<{

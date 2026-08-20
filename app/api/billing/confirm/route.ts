@@ -3,6 +3,8 @@ import { getSession } from '@/lib/auth/session';
 import { getSql } from '@/lib/db';
 import { upgradeUserPlan } from '@/lib/neon/queries';
 
+import { getZeroInvoiceBaseUrl } from '@/lib/billing/zeroinvoice';
+
 export const runtime = 'nodejs';
 
 /**
@@ -28,7 +30,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing billId' }, { status: 400 });
     }
 
-    const ZT_BASE = process.env.ZEROINVOICE_BASE_URL || 'https://zeroinvoice-silk.vercel.app';
+    const ZT_BASE = getZeroInvoiceBaseUrl();
     const ZT_WEBHOOK_SECRET = process.env.ZEROINVOICE_WEBHOOK_SECRET || process.env.VIETQR_WEBHOOK_SECRET;
 
     // 1) Resolve bill trên Zero Tracking (xác nhận đã thanh toán)
