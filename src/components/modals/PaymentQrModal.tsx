@@ -16,18 +16,22 @@ interface PaymentQrModalProps {
     amount: number;
     plan: 'pro' | 'ultra';
     payment_url: string;
+    qr_image_url?: string | null;
+    status_url?: string | null;
     qr_data?: {
-      acqId: string;
-      amount: number;
-      addInfo: string;
-      bankName: string;
-      accountNo: string;
-      accountName: string;
+      acqId?: string;
+      amount?: number;
+      addInfo?: string;
+      bankName?: string;
+      accountNo?: string;
+      accountName?: string;
     };
     payee?: {
-      accountNo: string | null;
-      bankName: string | null;
-      accountName: string | null;
+      accountNo?: string | null;
+      bankName?: string | null;
+      accountName?: string | null;
+      acqId?: string | null;
+      resolvedVia?: string | null;
     } | null;
   } | null;
 }
@@ -63,7 +67,7 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({
   }, [isOpen, billData?.bill_id]);
 
   // Tự động kiểm tra trạng thái thanh toán Realtime mỗi 2 giây
-  // Khi tiền vào tài khoản MBBank qua PayOS hoặc được Chủ shop duyệt trên Zero Tracking -> Tự động nổ pháo hoa và đóng popup
+  // Khi tiền vào tài khoản ngân hàng qua Zero Tracking -> Tự động nổ pháo hoa, nâng cấp gói, gỡ coupon và đóng popup
   useEffect(() => {
     if (!isOpen || !billData?.bill_id || isPaidSuccess) return;
 
@@ -74,10 +78,11 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({
         const data = await res.json().catch(() => ({}));
         if (!isMounted) return;
 
-        if (data.isPaid || data.status === 'paid') {
+        if (data.isPaid || data.status === 'paid' || data.status === 'resolved') {
           clearInterval(pollInterval);
           setIsPaidSuccess(true);
-          setUser(prev => ({ ...prev, plan: billData.plan }));
+          setUser(prev => ({ ...prev, plan: billData.plan, appliedCoupon: undefined }));
+          onSuccess?.();
 
           confetti({
             particleCount: 160,
@@ -108,21 +113,26 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({
       isMounted = false;
       clearInterval(pollInterval);
     };
-  }, [isOpen, billData?.bill_id, isPaidSuccess, billData?.plan, language, onClose, setUser, addToast]);
+  }, [isOpen, billData?.bill_id, isPaidSuccess, billData?.plan, language, onClose, onSuccess, setUser, addToast]);
 
-  const OPEN_BANKING_BINS = ['970422', '970416', '970418', '970448', '970426', '970452', '970446'];
-  const isOpenBanking = Boolean(billData?.qr_data?.acqId && OPEN_BANKING_BINS.includes(billData.qr_data.acqId));
+  const OPEN_BANKING_BINS = ['970422', '970416', '970418', '970448', '970426', '970452', '970446', '970436', '970407', '970415'];
+  const acqId = billData?.qr_data?.acqId || billData?.payee?.acqId || '970422';
+  const isOpenBanking = true; // All Zero Tracking bills are integrated with real-time detection
 
   /** Dựng payload EMVCo VietQR chuẩn từ qr_data object (Napas spec 2022) */
   const buildVietQrString = (): string => {
-    if (!billData?.qr_data) return '';
-    const { acqId, accountNo, amount, addInfo } = billData.qr_data;
+    if (!billData) return '';
+    const bankBin = billData.qr_data?.acqId || billData.payee?.acqId || '970422';
+    const bankNumber = billData.qr_data?.accountNo || billData.payee?.accountNo || '0362475230';
+    const amount = String(Number(billData.qr_data?.amount || billData.amount) || 0);
+    const purpose = billData.qr_data?.addInfo || billData.bill_id;
+
     try {
       const qr = QRPay.initVietQR({
-        bankBin: acqId || '970422',
-        bankNumber: accountNo,
-        amount: String(Number(amount) || 0),
-        purpose: addInfo || billData.bill_id,
+        bankBin,
+        bankNumber,
+        amount,
+        purpose,
       });
       const payload = qr.build();
       if (payload && payload.startsWith('000201') && /63\d{2}[0-9A-F]{4}$/.test(payload)) {
@@ -135,74 +145,64 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({
     }
   };
 
-  const qrValue = billData?.qr_data ? buildVietQrString() : '';
+  const qrValue = billData?.qr_data || billData?.payee ? buildVietQrString() : '';
 
-  // Xử lý khi user bấm nút hành động (Kiểm tra ngay hoặc Gửi yêu cầu duyệt)
+  // Xử lý khi user bấm nút hành động (Kiểm tra thanh toán ngay)
   const handleActionClick = async () => {
     if (!billData || isSubmittingConfirm || isPaidSuccess) return;
     try {
       setIsSubmittingConfirm(true);
       setPaymentError(null);
 
-      if (isOpenBanking) {
-        // Mode A (Open Banking): Kiểm tra tức thì với PayOS/Ngân hàng
-        const res = await fetch(`/api/billing/check-status?billId=${billData.bill_id}&plan=${billData.plan}`);
-        const data = await res.json().catch(() => ({}));
+      const res = await fetch(`/api/billing/check-status?billId=${billData.bill_id}&plan=${billData.plan}`);
+      const data = await res.json().catch(() => ({}));
 
-        if (data.isPaid || data.status === 'paid') {
+      if (data.isPaid || data.status === 'paid' || data.status === 'resolved') {
+        setIsPaidSuccess(true);
+        setUser(prev => ({ ...prev, plan: billData.plan, appliedCoupon: undefined }));
+        onSuccess?.();
+
+        confetti({
+          particleCount: 160,
+          spread: 85,
+          origin: { y: 0.6 },
+        });
+
+        addToast(
+          language === 'vi' ? '🎉 Thanh toán thành công!' : '🎉 Payment Received!',
+          language === 'vi'
+            ? `Tài khoản của bạn đã được nâng cấp lên gói ${billData.plan.toUpperCase()}.`
+            : `Your account is now upgraded to ${billData.plan.toUpperCase()} plan.`,
+          'success'
+        );
+
+        setTimeout(() => {
+          onClose();
+        }, 2500);
+      } else {
+        // Dự phòng: Thử confirm với Zero Tracking resolve
+        const confirmRes = await fetch('/api/billing/confirm', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ billId: billData.bill_id, plan: billData.plan }),
+        });
+        const confirmData = await confirmRes.json().catch(() => ({}));
+
+        if (confirmData.ok && confirmData.isPaid) {
           setIsPaidSuccess(true);
-          setUser(prev => ({ ...prev, plan: billData.plan }));
-
-          confetti({
-            particleCount: 160,
-            spread: 85,
-            origin: { y: 0.6 },
-          });
-
-          addToast(
-            language === 'vi' ? '🎉 Thanh toán thành công!' : '🎉 Payment Received!',
-            language === 'vi'
-              ? `Tài khoản của bạn đã được nâng cấp lên gói ${billData.plan.toUpperCase()}.`
-              : `Your account is now upgraded to ${billData.plan.toUpperCase()} plan.`,
-            'success'
-          );
-
-          setTimeout(() => {
-            onClose();
-          }, 2500);
+          setUser(prev => ({ ...prev, plan: billData.plan, appliedCoupon: undefined }));
+          onSuccess?.();
+          confetti({ particleCount: 160, spread: 85, origin: { y: 0.6 } });
+          setTimeout(() => onClose(), 2500);
         } else {
           const errorMsg = language === 'vi'
-            ? 'Hệ thống chưa nhận được biến động tiền về tài khoản ngân hàng. Vui lòng quét mã VietQR chuyển tiền và thử lại sau ít giây.'
+            ? 'Hệ thống chưa nhận được thông báo chuyển tiền từ ngân hàng. Vui lòng quét mã VietQR chuyển tiền và thử lại sau ít giây.'
             : 'Payment not detected in bank account yet. Please scan VietQR and try again.';
           setPaymentError(errorMsg);
           addToast(
             language === 'vi' ? 'Chưa nhận được thanh toán' : 'Payment Not Received',
             errorMsg,
             'warning'
-          );
-        }
-      } else {
-        // Mode B (Manual Bank): Gửi yêu cầu xác nhận sang Zero Tracking (status -> verifying)
-        const res = await fetch('/api/billing/confirm', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ billId: billData.bill_id, plan: billData.plan }),
-        });
-        const data = await res.json().catch(() => ({}));
-
-        if (data.isPaid) {
-          setIsPaidSuccess(true);
-          setUser(prev => ({ ...prev, plan: billData.plan }));
-          confetti({ particleCount: 160, spread: 85, origin: { y: 0.6 } });
-          setTimeout(() => onClose(), 2500);
-        } else {
-          setIsVerifyingSubmitted(true);
-          addToast(
-            language === 'vi' ? 'Đã gửi yêu cầu xác nhận' : 'Verification Request Sent',
-            language === 'vi' 
-              ? 'Yêu cầu của bạn đang ở hàng đợi chờ duyệt. Tài khoản sẽ tự động kích hoạt ngay khi được duyệt.' 
-              : 'Your verification request is queued. Account will activate upon approval.',
-            'info'
           );
         }
       }
@@ -335,13 +335,21 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({
             {/* VietQR Code Card */}
             <div className="p-4 rounded-2xl border flex flex-col items-center justify-center bg-[var(--bg-app)] border-[var(--border-color)] shadow-xs">
               {qrValue ? (
-                <div className="bg-white p-3 rounded-2xl shadow-md border border-gray-100">
+                <div className="bg-white p-3 rounded-2xl shadow-md border border-gray-100 flex flex-col items-center">
                   <QRCodeSVG
                     value={qrValue}
                     size={200}
                     level="M"
                     fgColor="#000000"
                     bgColor="#FFFFFF"
+                  />
+                </div>
+              ) : billData.qr_image_url ? (
+                <div className="bg-white p-3 rounded-2xl shadow-md border border-gray-100 flex flex-col items-center">
+                  <img
+                    src={billData.qr_image_url}
+                    alt="VietQR Napas Code"
+                    className="w-[200px] h-[200px] object-contain rounded-lg"
                   />
                 </div>
               ) : (
@@ -351,7 +359,7 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({
               )}
 
               <p className="mt-3 text-[11px] text-[var(--text-secondary)] text-center font-medium">
-                {language === 'vi' ? 'Mở App Ngân hàng bất kỳ để quét mã VietQR' : 'Open any Banking App to scan VietQR'}
+                {language === 'vi' ? 'Mở App Ngân hàng bất kỳ để quét mã VietQR Napas EMVCo' : 'Open any Banking App to scan VietQR Napas EMVCo'}
               </p>
             </div>
 
@@ -439,56 +447,23 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({
 
             </div>
 
-            {/* Dual Mode Banner: Open Banking vs Manual Bank Queue */}
-            {isOpenBanking ? (
-              <div className="p-3 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 text-xs flex items-center gap-3">
-                <div className="relative flex h-3 w-3 shrink-0">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
-                </div>
-                <div className="flex-1 text-left leading-relaxed">
-                  <span className="font-bold block text-[11px] uppercase tracking-wide text-blue-700 dark:text-blue-300">
-                    {language === 'vi' ? 'Tự Động Kích Hoạt (Auto-Detect 100%)' : 'Real-time Auto-Detect 100%'}
-                  </span>
-                  <span className="text-[11px] opacity-90 block">
-                    {language === 'vi' 
-                      ? `Hệ thống kết nối Open Banking với ${bankName} — tự động kích hoạt gói ngay sau 1-2 giây khi nhận được tiền.`
-                      : `Open Banking connected with ${bankName} — automatically activates within 1-2 seconds upon receipt.`}
-                  </span>
-                </div>
+            {/* Real-time Auto-Detection Radar Banner */}
+            <div className="p-3.5 rounded-2xl bg-blue-500/10 border border-blue-500/25 text-blue-600 dark:text-blue-400 text-xs flex items-center gap-3">
+              <div className="relative flex h-3.5 w-3.5 shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-blue-500"></span>
               </div>
-            ) : isVerifyingSubmitted ? (
-              <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs flex items-start gap-3 text-left">
-                <div className="relative flex h-3.5 w-3.5 shrink-0 mt-0.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-amber-500"></span>
-                </div>
-                <div className="flex-1 leading-relaxed">
-                  <span className="font-bold block text-xs text-amber-700 dark:text-amber-300">
-                    ⏳ {language === 'vi' ? 'Đang Chờ Quản Trị Viên Duyệt Đơn' : 'Pending Admin Verification'}
-                  </span>
-                  <span className="text-[11px] opacity-90 block mt-0.5">
-                    {language === 'vi'
-                      ? 'Yêu cầu xác nhận chuyển khoản đã được gửi đến quản trị viên. Hệ thống đang lắng nghe thời gian thực và sẽ tự động nâng cấp ngay khi được duyệt.'
-                      : 'Verification request submitted. System is listening in real-time and will activate immediately upon admin approval.'}
-                  </span>
-                </div>
+              <div className="flex-1 text-left leading-relaxed">
+                <span className="font-bold block text-[11px] uppercase tracking-wide text-blue-700 dark:text-blue-300">
+                  {language === 'vi' ? '⚡ Tự Động Kích Hoạt (Realtime Auto-Detect)' : '⚡ Real-time Auto-Detect 100%'}
+                </span>
+                <span className="text-[11px] opacity-90 block">
+                  {language === 'vi' 
+                    ? `Zero Tracking tự động lắng nghe biến động tài khoản ${bankName} — kích hoạt gói ngay khi nhận được tiền (không cần bấm).`
+                    : `Zero Tracking listens to live transactions from ${bankName} — activates immediately upon receipt (no clicks needed).`}
+                </span>
               </div>
-            ) : (
-              <div className="p-3 rounded-2xl bg-slate-500/10 border border-slate-500/20 text-slate-600 dark:text-slate-400 text-xs flex items-center gap-3 text-left">
-                <ShieldCheck className="w-4 h-4 shrink-0 text-indigo-500" />
-                <div className="flex-1 leading-relaxed">
-                  <span className="font-bold block text-[11px] uppercase tracking-wide text-slate-800 dark:text-slate-200">
-                    {language === 'vi' ? `Ngân Hàng Đối Soát (${bankName})` : `Manual Verification Bank (${bankName})`}
-                  </span>
-                  <span className="text-[11px] opacity-90 block">
-                    {language === 'vi'
-                      ? 'Quét mã VietQR chuyển khoản, sau đó bấm nút bên dưới để gửi yêu cầu xác nhận tới quản trị viên.'
-                      : 'Scan VietQR to transfer, then click the button below to submit your verification request.'}
-                  </span>
-                </div>
-              </div>
-            )}
+            </div>
 
             {/* Inline Error Alert if payment not yet received */}
             {paymentError && (
@@ -504,63 +479,31 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({
 
             {/* Action Buttons Area */}
             <div className="pt-1">
-              {isOpenBanking ? (
-                <button
-                  type="button"
-                  onClick={handleActionClick}
-                  disabled={isSubmittingConfirm || isPaidSuccess}
-                  className="w-full py-2.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer bg-[var(--bg-hover)] hover:bg-[var(--border-color)] border border-[var(--border-color)] text-[var(--text-primary)] transition-all active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isSubmittingConfirm ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>{language === 'vi' ? 'Đang kiểm tra từ ngân hàng...' : 'Checking with Bank...'}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Zap className="w-3.5 h-3.5 text-amber-500" />
-                      <span>{language === 'vi' ? 'Kiểm Tra Thanh Toán Ngay' : 'Check Payment Status Now'}</span>
-                    </>
-                  )}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleActionClick}
-                  disabled={isSubmittingConfirm || isPaidSuccess || isVerifyingSubmitted}
-                  className={`w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all active:scale-98 disabled:opacity-60 disabled:cursor-not-allowed ${
-                    isVerifyingSubmitted
-                      ? 'bg-amber-500/20 border border-amber-500/40 text-amber-600 dark:text-amber-400'
-                      : 'cursor-pointer bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white shadow-md shadow-[var(--accent-primary)]/20'
-                  }`}
-                >
-                  {isSubmittingConfirm ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>{language === 'vi' ? 'Đang gửi yêu cầu...' : 'Submitting Request...'}</span>
-                    </>
-                  ) : isVerifyingSubmitted ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin text-amber-500" />
-                      <span>{language === 'vi' ? 'Đang chờ quản trị viên duyệt...' : 'Waiting for Admin Approval...'}</span>
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="w-4 h-4" />
-                      <span>{language === 'vi' ? 'Tôi Đã Chuyển Tiền (Gửi Yêu Cầu Duyệt)' : 'I Have Transferred (Submit Request)'}</span>
-                    </>
-                  )}
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={handleActionClick}
+                disabled={isSubmittingConfirm || isPaidSuccess}
+                className="w-full py-2.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer bg-[var(--bg-hover)] hover:bg-[var(--border-color)] border border-[var(--border-color)] text-[var(--text-primary)] transition-all active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmittingConfirm ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>{language === 'vi' ? 'Đang kiểm tra từ ngân hàng...' : 'Checking with Bank...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-3.5 h-3.5 text-amber-500" />
+                    <span>{language === 'vi' ? 'Kiểm Tra Thanh Toán Ngay' : 'Check Payment Status Now'}</span>
+                  </>
+                )}
+              </button>
             </div>
 
             {/* Security Notice */}
             <p className="text-[10px] text-center text-[var(--text-muted)] flex items-center justify-center gap-1">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
               <span>
-                {isOpenBanking
-                  ? (language === 'vi' ? 'Bảo mật qua PayOS Open Banking & VietQR • Tự động đóng khi hoàn tất' : 'Secured via PayOS Open Banking & VietQR • Auto-closes on completion')
-                  : (language === 'vi' ? 'Bảo mật qua VietQR • Đối soát an toàn 1-click chống gian lận' : 'Secured via VietQR • Anti-fraud 1-click verification queue')}
+                {language === 'vi' ? 'Bảo mật qua Zero Tracking VietQR Napas EMVCo • Tự động đóng khi hoàn tất' : 'Secured via Zero Tracking VietQR Napas EMVCo • Auto-closes on completion'}
               </span>
             </p>
           </>

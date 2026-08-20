@@ -19,15 +19,18 @@ export async function GET(request: NextRequest) {
     await sql`select 1`;
     const dbLatencyMs = Date.now() - startDb;
 
-    // 2. Check ZeroInvoice API status
-    const zeroInvoiceApiKey = process.env.ZEROINVOICE_API_KEY || 'zi_17762c7f1f650f2833f268e692573e5fa5e250b29b7a82de';
-    const ziBase = process.env.ZEROINVOICE_BASE_URL?.includes('zeroinvoice-silk') ? 'https://zero-tracking-ai.vercel.app' : (process.env.ZEROINVOICE_BASE_URL || 'https://zero-tracking-ai.vercel.app');
+    // 2. Check Zero Tracking API status
+    const zeroInvoiceApiKey = process.env.ZEROINVOICE_API_KEY || '';
+    const ziBase = (await import('@/lib/billing/zeroinvoice')).getZeroInvoiceBaseUrl();
     let zeroInvoiceStatus = 'unknown';
     let zeroInvoiceLatencyMs = 0;
     try {
       const startZi = Date.now();
       const ziRes = await fetch(`${ziBase}/api/bills?limit=1`, {
-        headers: { 'Authorization': `Bearer ${zeroInvoiceApiKey}` }
+        headers: {
+          'Authorization': `Bearer ${zeroInvoiceApiKey}`,
+          'x-api-key': zeroInvoiceApiKey,
+        },
       });
       zeroInvoiceLatencyMs = Date.now() - startZi;
       zeroInvoiceStatus = ziRes.ok ? 'connected' : `http_${ziRes.status}`;

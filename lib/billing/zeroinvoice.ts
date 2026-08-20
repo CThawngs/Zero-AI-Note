@@ -23,8 +23,8 @@ export interface ZeroInvoiceBillResponse {
   data: {
     bill_id: string;
     amount: number;
-    status: 'pending' | 'paid' | 'expired' | 'failed' | 'resolved';
-    /** Zero Tracking trả OBJECT EMVCo fields (xác minh thực tế 2026-08-19) */
+    status: 'pending' | 'paid' | 'expired' | 'failed' | 'resolved' | 'verifying';
+    /** Zero Tracking trả OBJECT EMVCo fields (xác minh thực tế 2026-08-21) */
     qr_data?: {
       acqId: string;
       amount: number;
@@ -34,8 +34,18 @@ export interface ZeroInvoiceBillResponse {
       accountName: string;
     };
     payment_url: string;
+    qr_image_url?: string;
+    status_url?: string;
     expires_at: string;
     created_at: string;
+    payment_account_id?: string;
+    payee?: {
+      account_no?: string;
+      account_holder?: string;
+      acq_id?: string;
+      bank_name?: string;
+      resolved_via?: string;
+    };
   } | null;
   error: string | null;
 }
@@ -69,18 +79,32 @@ export async function createZeroInvoiceBill(params: {
 
 export async function checkZeroInvoiceBillStatus(billId: string): Promise<{
   bill_id: string;
-  status: 'pending' | 'paid' | 'expired' | 'failed' | 'resolved';
+  status: 'pending' | 'paid' | 'expired' | 'failed' | 'resolved' | 'verifying';
   amount: number;
 }> {
-  const res = await fetch(`${getZeroInvoiceBaseUrl()}/api/bills/${billId}`, {
+  const baseUrl = getZeroInvoiceBaseUrl();
+
+  // Try status-specific endpoint first, fallback to standard bill endpoint
+  let res = await fetch(`${baseUrl}/api/bills/${billId}/status`, {
     headers: {
       'Authorization': `Bearer ${ZEROINVOICE_API_KEY}`,
-      'x-api-key': ZEROINVOICE_API_KEY,
+      'x-api-key': ZEROINVOICE_API_KEY || '',
     },
-  });
+    cache: 'no-store',
+  }).catch(() => null);
+
+  if (!res || !res.ok) {
+    res = await fetch(`${baseUrl}/api/bills/${billId}`, {
+      headers: {
+        'Authorization': `Bearer ${ZEROINVOICE_API_KEY}`,
+        'x-api-key': ZEROINVOICE_API_KEY || '',
+      },
+      cache: 'no-store',
+    });
+  }
 
   if (!res.ok) {
-    throw new Error(`ZeroInvoice get bill failed (${res.status})`);
+    throw new Error(`ZeroInvoice get bill status failed (${res.status})`);
   }
 
   const json = (await res.json()) as {
@@ -102,12 +126,12 @@ export async function checkZeroInvoiceBillStatus(billId: string): Promise<{
   };
 
   // Zero Tracking trả GET /api/bills/:id với cấu trúc { data: { bill: {...} } }
-  // (đã xác minh thực tế 2026-08-18). Hỗ trợ cả dạng cũ data.bill_id cho tương thích.
+  // và GET /api/bills/:id/status với { data: { status, is_paid } }
   const bill = json.data?.bill || json.data || json.bill || json;
 
   return {
     bill_id: bill.bill_id || billId,
-    status: (bill.status || 'pending') as 'pending' | 'paid' | 'expired' | 'failed' | 'resolved',
+    status: (bill.status || 'pending') as 'pending' | 'paid' | 'expired' | 'failed' | 'resolved' | 'verifying',
     amount: bill.amount || 0,
   };
 }

@@ -132,12 +132,15 @@ export async function POST(request: NextRequest) {
       plan,
       billingCycle,
       payment_url: bill.payment_url,
+      qr_image_url: bill.qr_image_url || null,
+      status_url: bill.status_url || null,
       qr_data: bill.qr_data,
       payee: {
-        accountNo: bill.qr_data?.accountNo ?? null,
-        bankName: bill.qr_data?.bankName ?? null,
-        accountName: bill.qr_data?.accountName ?? null,
-        resolvedVia: 'app-fixed',
+        accountNo: bill.qr_data?.accountNo || bill.payee?.account_no || null,
+        bankName: bill.qr_data?.bankName || bill.payee?.bank_name || null,
+        accountName: bill.qr_data?.accountName || bill.payee?.account_holder || null,
+        acqId: bill.qr_data?.acqId || bill.payee?.acq_id || null,
+        resolvedVia: bill.payee?.resolved_via || 'app-fixed',
       },
       coupon: appliedCouponCode
         ? { code: appliedCouponCode, baseAmount, finalAmount }
