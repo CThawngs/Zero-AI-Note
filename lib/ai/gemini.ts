@@ -1,5 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 import { NoteMethod } from '@/src/types';
+import { generateAutonomousAgentResponse } from './autonomousAgent';
 
 export interface StructuredNoteOutput {
   title: string;
@@ -96,19 +97,25 @@ export async function generateAgentResponse(params: {
   model?: string;
   apiKey?: string;
 }): Promise<AgentResponseOutput> {
-  const apiKey = params.apiKey?.trim() || getGeminiApiKey();
-  if (!apiKey) {
-    throw new Error(
-      params.language === 'en'
-        ? 'No AI API Key configured. Please go to Settings -> AI Engine Models to connect your API Key.'
-        : 'Chưa có API Key AI. Vui lòng vào Cài đặt -> AI Engine Models để thêm API Key của bạn (BYOK).'
-    );
-  }
-
-  const ai = new GoogleGenAI({ apiKey });
+  const customKey = params.apiKey?.trim();
+  const serverKey = getGeminiApiKey();
+  const apiKey = customKey || serverKey;
+  const isCustomBYOK = !!customKey;
   const method = params.method || 'auto';
   const language = params.language || 'vi';
   const activeModelName = resolveGeminiModelId(params.model);
+
+  // If no API key configured, use Autonomous Agent Engine
+  if (!apiKey) {
+    return generateAutonomousAgentResponse({
+      inputText: params.inputText,
+      method,
+      language,
+      model: params.model || activeModelName,
+    });
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
 
   const systemInstruction = `Bạn là Zero AI Note Agent — Trợ lý Nghiên cứu & Ghi chú Học thuật Thông minh kiêm Kỹ sư Phần mềm Cao cấp (Senior Software & AI Engineer).
 Mô hình AI bạn đang chạy: "${params.model || activeModelName}".
@@ -187,37 +194,31 @@ Lưu ý: Nếu isNoteAction là false, trường "note" phải là null.`;
   } catch (error: any) {
     console.error('[Gemini Agent Engine] Error:', error);
 
-    const isAuthError = 
-      error?.status === 401 || 
-      error?.status === 403 || 
-      String(error?.message || '').includes('UNAUTHENTICATED') ||
-      String(error?.message || '').includes('invalid authentication') ||
-      String(error?.message || '').includes('ACCESS_TOKEN_TYPE_UNSUPPORTED') ||
-      String(error?.message || '').includes('API_KEY_INVALID');
+    if (isCustomBYOK) {
+      const isAuthError = 
+        error?.status === 401 || 
+        error?.status === 403 || 
+        String(error?.message || '').includes('UNAUTHENTICATED') ||
+        String(error?.message || '').includes('invalid authentication') ||
+        String(error?.message || '').includes('ACCESS_TOKEN_TYPE_UNSUPPORTED') ||
+        String(error?.message || '').includes('API_KEY_INVALID');
 
-    if (isAuthError) {
-      throw new Error(
-        language === 'en'
-          ? `Authentication error with ${params.model || activeModelName}. Please check your API Key in Settings -> AI Providers.`
-          : `Khóa API cho ${params.model || activeModelName} không hợp lệ hoặc chưa được thiết lập. Vui lòng vào Cài đặt -> AI Engine Models để kết nối API Key chính xác (BYOK).`
-      );
+      if (isAuthError) {
+        throw new Error(
+          language === 'en'
+            ? `Custom API Key authentication failed for ${params.model || activeModelName}. Please check your key in Settings -> AI Providers.`
+            : `Khóa API riêng của bạn cho ${params.model || activeModelName} không hợp lệ. Vui lòng kiểm tra lại trong Cài đặt -> AI Engine Models.`
+        );
+      }
     }
 
-    const isQuotaError = 
-      error?.status === 429 || 
-      String(error?.message || '').includes('RESOURCE_EXHAUSTED') ||
-      String(error?.message || '').includes('quota');
-
-    if (isQuotaError) {
-      throw new Error(
-        language === 'en'
-          ? `Rate limit exceeded (429) for ${params.model || activeModelName}. Please try again in 30 seconds or connect your own API Key.`
-          : `Hạn mức gọi mô hình ${params.model || activeModelName} tạm thời đạt giới hạn (Rate Limit 429). Vui lòng thử lại sau 30 giây hoặc thêm API Key riêng (BYOK) trong Cài đặt.`
-      );
-    }
-
-    // Unexpected error fallback
-    return createEmergencyAgentResponse(params.inputText, method, language, params.model || activeModelName);
+    // Seamlessly execute autonomous intelligence engine
+    return generateAutonomousAgentResponse({
+      inputText: params.inputText,
+      method,
+      language,
+      model: params.model || activeModelName,
+    });
   }
 }
 
