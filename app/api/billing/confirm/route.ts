@@ -1,20 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth/session';
-import { getSql } from '@/lib/db';
-import { upgradeUserPlan } from '@/lib/neon/queries';
-import { getZeroInvoiceBaseUrl } from '@/lib/billing/zeroinvoice';
+import { getZeroInvoiceBaseUrl, checkZeroInvoiceBillStatus } from '@/lib/billing/zeroinvoice';
 
 export const runtime = 'nodejs';
 
 /**
- * POST /api/billing/confirm — Native Zero Tracking Instant Payment Resolution
- *
- * User clicks "Tôi Đã Chuyển Tiền Thành Công".
- * 1. Zero AI Note securely calls Zero Tracking's native resolve endpoint:
- *    POST ${ZT_BASE}/api/bills/${billId}/resolve with server-side x-webhook-secret
- * 2. Zero Tracking verifies the bill and marks status = 'paid' (triggering Supabase Realtime update on Zero Tracking dashboard).
- * 3. Zero AI Note updates user profile (plan = 'pro' | 'ultra') and subscriptions table.
- * 4. Returns { ok: true, isPaid: true, status: 'paid', plan } to trigger client-side celebration and auto-close.
+ * POST /api/billing/confirm — Submit Payment Verification Request
+ * 
+ * Khách hàng bấm gửi yêu cầu xác nhận chuyển khoản cho ngân hàng thủ công.
+ * 1. Kiểm tra xem bill đã được PayOS hoặc hệ thống đánh dấu 'paid' chưa.
+ * 2. Nếu chưa, gửi verify-request sang Zero Tracking để chuyển status -> 'verifying' (Chờ duyệt).
+ * 3. Tuyệt đối KHÔNG tự ý nâng cấp tài khoản khi chưa có xác nhận từ ngân hàng hoặc chủ shop.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -31,58 +27,37 @@ export async function POST(request: NextRequest) {
     }
 
     const ZT_BASE = getZeroInvoiceBaseUrl();
-    const ZT_WEBHOOK_SECRET = process.env.VIETQR_WEBHOOK_SECRET || process.env.ZEROINVOICE_WEBHOOK_SECRET || 'zinews-vq-2026-secret';
 
-    // 1) Resolve and mark bill = 'paid' natively on Zero Tracking
-    let resolveRes;
+    // 1) Kiểm tra trạng thái hiện tại trên Zero Tracking
+    const currentBill = await checkZeroInvoiceBillStatus(billId);
+    if (currentBill.status === 'paid' || currentBill.status === 'resolved') {
+      return NextResponse.json({
+        ok: true,
+        isPaid: true,
+        status: 'paid',
+        plan: plan || 'pro',
+      });
+    }
+
+    // 2) Gửi yêu cầu xác nhận sang Zero Tracking (chuyển sang 'verifying')
     try {
-      resolveRes = await fetch(`${ZT_BASE}/api/bills/${billId}/resolve`, {
+      await fetch(`${ZT_BASE}/api/bills/${billId}/verify-request`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(ZT_WEBHOOK_SECRET ? { 'x-webhook-secret': ZT_WEBHOOK_SECRET } : {}),
-          ...(process.env.ZEROINVOICE_API_KEY ? { 'Authorization': `Bearer ${process.env.ZEROINVOICE_API_KEY}` } : {}),
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          transaction_id: `user_confirm_${Date.now()}`,
+          user_id: session.sub,
+          note: `Khách hàng gửi yêu cầu xác nhận gói ${plan || 'pro'}`,
         }),
       });
     } catch (e) {
-      console.error('[billing/confirm] Zero Tracking resolve error:', e);
-      return NextResponse.json({ error: 'Cannot reach Zero Tracking server' }, { status: 502 });
-    }
-
-    const resolveJson = await resolveRes.json().catch(() => ({}));
-    const bill = resolveJson?.bill || resolveJson?.data?.bill || resolveJson?.data;
-
-    if (!resolveRes.ok && !bill) {
-      return NextResponse.json(
-        { error: resolveJson?.error || 'Không tìm thấy hóa đơn trên Zero Tracking' },
-        { status: resolveRes.status || 400 }
-      );
-    }
-
-    // 2) Nâng cấp quyền lợi tài khoản trong Neon DB
-    const targetPlan = plan || 'pro';
-    const amount = bill?.amount || (targetPlan === 'ultra' ? 199000 : 99000);
-    await upgradeUserPlan(session.sub, targetPlan, billId, amount);
-
-    try {
-      const sql = getSql();
-      await sql`
-        update subscriptions
-        set status = 'paid', paid_at = now(), renews_at = now() + interval '30 days'
-        where bill_id = ${billId}
-      `;
-    } catch (e) {
-      console.warn('Subscription record update warn:', e);
+      console.warn('[billing/confirm] Zero Tracking verify-request notice:', e);
     }
 
     return NextResponse.json({
       ok: true,
-      isPaid: true,
-      status: 'paid',
-      plan: targetPlan,
+      isPaid: false,
+      status: 'verifying',
+      message: 'Yêu cầu của bạn đã được gửi. Chủ hệ thống sẽ kiểm tra và kích hoạt đơn.',
     });
   } catch (error) {
     console.error('[POST /api/billing/confirm] error:', error);
