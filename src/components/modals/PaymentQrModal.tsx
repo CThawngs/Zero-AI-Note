@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, CheckCircle, QrCode, Copy, Check, Loader2, Sparkles, ShieldCheck } from 'lucide-react';
+import { X, CheckCircle, QrCode, Copy, Check, Loader2, Sparkles } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { QRPay } from 'vietnam-qr-pay';
 import { Modal } from '../common/Modal';
@@ -44,7 +44,6 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({
   const [isCopiedContent, setIsCopiedContent] = useState(false);
   const [isPaidSuccess, setIsPaidSuccess] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
-  const [isConfirming, setIsConfirming] = useState(false);
 
   const isDark = theme === 'dark';
 
@@ -98,53 +97,8 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({
 
   // App đã gắn cố định 1 tài khoản ngân hàng trên Zero Tracking → không cần switch payee.
 
-  // Xác nhận đã chuyển khoản — gọi server resolve bill qua Zero Tracking
-  const handleConfirmPaid = async () => {
-    if (!billData || isConfirming) return;
-    setIsConfirming(true);
-    try {
-      const res = await fetch('/api/billing/confirm', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ billId: billData.bill_id }),
-      });
-      const data = await res.json();
-      if (data.ok && data.status === 'paid') {
-        setIsPaidSuccess(true);
-        setUser(prev => ({ ...prev, plan: billData.plan }));
-        confetti({
-          particleCount: 120,
-          spread: 70,
-          origin: { y: 0.6 },
-        });
-        addToast(
-          language === 'vi' ? 'Thanh toán thành công!' : 'Payment Successful!',
-          language === 'vi'
-            ? `Tài khoản của bạn đã được nâng cấp lên gói ${billData.plan.toUpperCase()}.`
-            : `Your account has been upgraded to ${billData.plan.toUpperCase()} plan.`,
-          'success'
-        );
-        setTimeout(() => onClose(), 3000);
-      } else {
-        addToast(
-          language === 'vi' ? 'Chưa xác nhận được thanh toán' : 'Payment not confirmed yet',
-          language === 'vi'
-            ? 'Vui lòng thử lại sau vài giây hoặc liên hệ hỗ trợ.'
-            : 'Please try again in a few seconds or contact support.',
-          'warning'
-        );
-      }
-    } catch (err) {
-      console.error('Confirm payment error:', err);
-      addToast(
-        language === 'vi' ? 'Lỗi kết nối' : 'Connection error',
-        language === 'vi' ? 'Không thể xác nhận thanh toán lúc này.' : 'Unable to confirm payment at this time.',
-        'error'
-      );
-    } finally {
-      setIsConfirming(false);
-    }
-  };
+  // Auto-tracking: polling phát hiện bill paid (Zero Tracking webhook set paid khi tiền vào)
+  // → KHÔNG cần button xác nhận thủ công. Xem useEffect phía dưới.
 
   // Poll payment status every 3.5 seconds
   useEffect(() => {
@@ -317,26 +271,8 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({
               </div>
             </div>
 
-            {/* Confirm paid button — minimal, responsive */}
-            <div className="pt-2">
-              <button
-                onClick={handleConfirmPaid}
-                disabled={isConfirming || isPaidSuccess}
-                className="w-full py-3 px-4 rounded-xl bg-[var(--accent-primary)] hover:opacity-90 text-[var(--accent-text)] text-sm font-bold flex items-center justify-center gap-2 shadow-md shadow-[var(--accent-primary)]/20 transition-all duration-200 cursor-pointer text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-app)] disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg"
-              >
-                {isConfirming ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>{language === 'vi' ? 'Đang xác nhận...' : 'Confirming...'}</span>
-                  </>
-                ) : (
-                  <>
-                    <ShieldCheck className="w-4 h-4" />
-                    <span>{language === 'vi' ? 'Tôi đã thanh toán xong' : 'I have paid'}</span>
-                  </>
-                )}
-              </button>
-            </div>
+            {/* Auto-tracking: webhook Zero Tracking tự động set paid khi tiền vào — không cần nút xác nhận thủ công */}
+
           </>
         )}
       </div>
