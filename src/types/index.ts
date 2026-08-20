@@ -72,10 +72,11 @@ export interface NoteItem {
   date: string;
   updatedAt: string;
   sources: {
-    type: 'pdf' | 'youtube' | 'audio' | 'doc' | 'image';
+    type: 'pdf' | 'youtube' | 'audio' | 'doc' | 'image' | 'video' | 'text';
     name: string;
     size?: string;
     url?: string;
+    content?: string;
   }[];
   keywords: string[];
   coreQuestions: string[];
@@ -194,15 +195,20 @@ export interface ToastMessage {
   type: 'success' | 'error' | 'info' | 'warning';
 }
 
+export interface ChatAttachment {
+  type: 'pdf' | 'youtube' | 'audio' | 'doc' | 'video' | 'image' | 'text';
+  name: string;
+  url?: string;
+  content?: string;
+  size?: string;
+}
+
 export interface ChatMessage {
   id: string;
   sender: 'ai' | 'user';
   text: string;
   timestamp: string;
-  attachments?: {
-    type: 'pdf' | 'youtube' | 'doc';
-    name: string;
-  }[];
+  attachments?: ChatAttachment[];
   processingStatus?: {
     isProcessing: boolean;
     currentStep: number; // 1, 2, 3

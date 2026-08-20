@@ -34,17 +34,34 @@ export async function POST(request: NextRequest) {
       providerId?: string;
       endpointUrl?: string;
       apiKey?: string;
-      sources: { type: 'pdf' | 'youtube' | 'audio' | 'doc' | 'image'; name: string; url?: string }[];
+      sources: { 
+        type: 'pdf' | 'youtube' | 'audio' | 'doc' | 'image' | 'video' | 'text'; 
+        name: string; 
+        url?: string; 
+        content?: string;
+        size?: string;
+      }[];
     };
 
     if (!prompt && (!sources || sources.length === 0)) {
       return fail('Vui lòng nhập nội dung hoặc đính kèm tài liệu để trò chuyện hoặc tạo ghi chú.', 400);
     }
 
-    // Combine prompt and source information
+    // Combine prompt and full source information with extracted text
     let inputText = prompt || '';
     if (sources && sources.length > 0) {
-      inputText += '\n\n[Tài liệu đính kèm]:\n' + sources.map(s => `- [${s.type.toUpperCase()}] ${s.name}`).join('\n');
+      inputText += '\n\n=== TÀI LIỆU & TỆP ĐÍNH KÈM TỪ NGƯỜI DÙNG ===\n';
+      sources.forEach((s, idx) => {
+        inputText += `\n[Tệp/Nguồn ${idx + 1}: ${s.type.toUpperCase()}] "${s.name}"\n`;
+        if (s.url) {
+          inputText += `- Đường dẫn/URL: ${s.url}\n`;
+        }
+        if (s.content) {
+          inputText += `- Nội dung trích xuất từ tệp:\n"""\n${s.content}\n"""\n`;
+        }
+      });
+      inputText += '\n============================================\n';
+      inputText += 'HƯỚNG DẪN: Hãy đọc và phân tích kỹ lưỡng toàn bộ nội dung của các tệp đính kèm ở trên để trả lời câu hỏi của người dùng hoặc tạo bản ghi chú học thuật chuẩn xác theo đúng nội dung tệp.\n';
     }
 
     let userId: string | null = null;

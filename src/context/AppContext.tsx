@@ -14,6 +14,7 @@ import {
   ToastMessage, 
   NoteMethod, 
   ChatMessage,
+  ChatAttachment,
   ChatSessionItem,
   ColorPalette,
   AppNotification
@@ -174,7 +175,7 @@ interface AppContextType {
   isProcessingChat: boolean;
   processingStep: number;
   startNewChatNote: (customPrompt?: string) => void;
-  sendChatMessage: (text: string, attachedSources?: { type: 'pdf' | 'youtube' | 'doc'; name: string }[]) => void;
+  sendChatMessage: (text: string, attachedSources?: ChatAttachment[]) => void;
   
   // Artifact Panel
   activeArtifactNote: NoteItem | null;
@@ -1349,14 +1350,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const executeTakeNote = async (
     text: string,
-    attachedSources: { type: 'pdf' | 'youtube' | 'doc'; name: string }[] | undefined,
+    attachedSources: ChatAttachment[] | undefined,
     methodOverride?: string,
     originalUserText?: string
   ) => {
     return sendChatMessage(originalUserText || text, attachedSources);
   };
 
-  const sendChatMessage = async (text: string, attachedSources?: { type: 'pdf' | 'youtube' | 'doc'; name: string }[]) => {
+  const sendChatMessage = async (text: string, attachedSources?: ChatAttachment[]) => {
     if (!text.trim() && (!attachedSources || attachedSources.length === 0)) return;
 
     const userMsgId = 'msg_user_' + Date.now();

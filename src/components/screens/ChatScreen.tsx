@@ -19,7 +19,7 @@ import {
   History
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { NoteMethod } from '../../types';
+import { NoteMethod, ChatAttachment } from '../../types';
 import { ArtifactPanel } from './ArtifactPanel';
 import { AttachSourceModal } from '../modals/AttachSourceModal';
 import { CustomTemplateModal } from '../modals/CustomTemplateModal';
@@ -49,7 +49,7 @@ export const ChatScreen: React.FC = () => {
   } = useApp();
 
   const [inputVal, setInputVal] = useState<string>('');
-  const [attachedSources, setAttachedSources] = useState<{ type: 'pdf' | 'youtube' | 'doc'; name: string }[]>([]);
+  const [attachedSources, setAttachedSources] = useState<ChatAttachment[]>([]);
   const [isAttachModalOpen, setIsAttachModalOpen] = useState<boolean>(false);
   const [isUploadAreaOpen, setIsUploadAreaOpen] = useState<boolean>(false);
   const [isCustomTemplateModalOpen, setIsCustomTemplateModalOpen] = useState<boolean>(false);

@@ -4,10 +4,12 @@ import { Upload, Link as LinkIcon, FileText } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { uploadFileToR2 } from '../../lib/apiClient';
 
+import { ChatAttachment } from '../../types';
+
 interface AttachSourceModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAttach: (source: { type: 'pdf' | 'youtube' | 'doc'; name: string }) => void;
+  onAttach: (source: ChatAttachment) => void;
 }
 
 export const AttachSourceModal: React.FC<AttachSourceModalProps> = ({ isOpen, onClose, onAttach }) => {
@@ -22,12 +24,40 @@ export const AttachSourceModal: React.FC<AttachSourceModalProps> = ({ isOpen, on
 
   const handleFileUpload = async (file: File) => {
     try {
-      // Upload file thật lên R2 qua Presigned URL (PRD mục 3.1/4.1)
-      const { publicUrl } = await uploadFileToR2(file);
+      let textContent = '';
+      const isTextFile = file.type.startsWith('text/') || 
+        file.name.endsWith('.txt') || 
+        file.name.endsWith('.md') || 
+        file.name.endsWith('.json') || 
+        file.name.endsWith('.csv') ||
+        file.name.endsWith('.js') ||
+        file.name.endsWith('.ts') ||
+        file.name.endsWith('.py') ||
+        file.name.endsWith('.html') ||
+        file.name.endsWith('.css');
+
+      if (isTextFile) {
+        textContent = await file.text();
+      }
+
+      let publicUrl: string | undefined = undefined;
+      try {
+        const uploadRes = await uploadFileToR2(file);
+        publicUrl = uploadRes.publicUrl;
+      } catch (uploadErr) {
+        console.warn('Direct R2 upload skipped/failed:', uploadErr);
+      }
       
-      // Lưu metadata vào Neon DB
-      await addSourceFile(file.name, file.size.toString(), file.type.includes('video') ? 'video' : file.type.includes('audio') ? 'audio' : file.type.includes('pdf') ? 'pdf' : 'doc', publicUrl);
-      onAttach({ type: 'pdf', name: file.name });
+      const fileType = file.type.includes('video') ? 'video' : file.type.includes('audio') ? 'audio' : file.type.includes('pdf') ? 'pdf' : 'doc';
+      await addSourceFile(file.name, file.size.toString(), fileType, publicUrl);
+
+      onAttach({ 
+        type: fileType, 
+        name: file.name,
+        url: publicUrl,
+        content: textContent || undefined,
+        size: `${(file.size / 1024).toFixed(1)} KB`
+      });
       onClose();
     } catch (err) {
       addToast(
@@ -60,7 +90,8 @@ export const AttachSourceModal: React.FC<AttachSourceModalProps> = ({ isOpen, on
     const isYt = linkInput.includes('youtube') || linkInput.includes('youtu.be');
     onAttach({
       type: isYt ? 'youtube' : 'doc',
-      name: isYt ? 'YouTube Video (' + linkInput.substring(0, 25) + '...)' : 'Web Article (' + linkInput.substring(0, 25) + '...)'
+      name: isYt ? 'YouTube Video (' + linkInput.substring(0, 25) + '...)' : 'Web Article (' + linkInput.substring(0, 25) + '...)',
+      url: linkInput.trim()
     });
     setLinkInput('');
     onClose();
@@ -71,7 +102,8 @@ export const AttachSourceModal: React.FC<AttachSourceModalProps> = ({ isOpen, on
     if (!rawTextInput.trim()) return;
     onAttach({
       type: 'doc',
-      name: rawTitle.trim() || (language === 'vi' ? 'Văn bản thô (' : 'Raw Text (') + rawTextInput.substring(0, 20) + '...)'
+      name: rawTitle.trim() || (language === 'vi' ? 'Văn bản đính kèm' : 'Attached Document'),
+      content: rawTextInput.trim()
     });
     setRawTextInput('');
     setRawTitle('');
