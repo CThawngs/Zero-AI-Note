@@ -20,32 +20,25 @@ export async function POST(request: NextRequest) {
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Check if email already exists (Account Merging)
+    // 1 email = 1 ID duy nhất. Kiểm tra xem email đã tồn tại hay chưa
     const existing = await findUserByEmail(normalizedEmail);
     let user: UserRecord;
 
     if (existing) {
-      // ── HỢP NHẤT TÀI KHOẢN (ACCOUNT MERGING) ──
-      // Nếu tài khoản đã tồn tại qua Google (chưa có mật khẩu) -> Cập nhật mật khẩu và hợp nhất
-      if (!existing.password_hash) {
-        const passwordHash = await bcrypt.hash(password, 10);
-        await updateUserPassword(existing.id, passwordHash);
-        existing.password_hash = passwordHash;
-        user = existing;
-      } else {
-        // Tài khoản đã có mật khẩu: kiểm tra xem mật khẩu nhập vào có đúng không
-        const isValid = await verifyPassword(password, existing.password_hash);
-        if (isValid) {
-          // Đúng mật khẩu -> Tự động đăng nhập
-          user = existing;
-        } else {
-          // Khác mật khẩu -> Cho phép cập nhật mật khẩu mới hoặc báo đăng nhập
-          const passwordHash = await bcrypt.hash(password, 10);
-          await updateUserPassword(existing.id, passwordHash);
-          existing.password_hash = passwordHash;
-          user = existing;
-        }
+      // Nếu tài khoản đã đăng ký mật khẩu trước đó -> Báo lỗi không cho tạo trùng
+      if (existing.password_hash) {
+        return fail(
+          'Địa chỉ email này đã được đăng ký tài khoản trước đó. Vui lòng đăng nhập hoặc sử dụng tính năng Quên mật khẩu.',
+          409
+        );
       }
+
+      // HỢP NHẤT TÀI KHOẢN (ACCOUNT MERGING):
+      // Nếu tài khoản đã tồn tại qua Google (chưa thiết lập mật khẩu) -> Hợp nhất bằng cách cập nhật mật khẩu cho tài khoản Google đó
+      const passwordHash = await bcrypt.hash(password, 10);
+      await updateUserPassword(existing.id, passwordHash);
+      existing.password_hash = passwordHash;
+      user = existing;
     } else {
       // Tạo tài khoản mới hoàn toàn
       const passwordHash = await bcrypt.hash(password, 10);
