@@ -331,7 +331,7 @@ export const PricingScreen: React.FC = () => {
 
             const hasDiscount = appliedCoupon && plan.rawPrice > 0 && (appliedCoupon.discountPercent ?? 0) > 0;
             const discountedPrice = hasDiscount 
-              ? Math.max(1000, Math.round(plan.rawPrice * (1 - (appliedCoupon.discountPercent ?? 0) / 100)))
+              ? Math.max(0, Math.round(plan.rawPrice * (1 - (appliedCoupon.discountPercent ?? 0) / 100)))
               : plan.rawPrice;
 
             return (
@@ -415,7 +415,9 @@ export const PricingScreen: React.FC = () => {
                           <span className="text-3xl sm:text-4xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
                             {discountedPrice.toLocaleString('vi-VN')}đ
                           </span>
-                          <span className="text-xs text-[var(--text-muted)]">/ {plan.period}</span>
+                          <span className="text-xs text-[var(--text-muted)]">
+                            / {discountedPrice === 0 ? (language === 'vi' ? 'tháng' : 'month') : plan.period}
+                          </span>
                         </div>
                       </div>
                     ) : (
