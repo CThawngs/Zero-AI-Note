@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Plus, 
   Search, 
@@ -15,7 +15,10 @@ import {
   X,
   ChevronRight,
   Clock,
-  LogOut
+  LogOut,
+  MoreVertical,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useApp } from '../../context/AppContext';
@@ -30,16 +33,23 @@ export const Sidebar: React.FC = () => {
     chatSessions,
     activeSessionId,
     resumeChatSession,
+    renameChatSession,
+    deleteChatSessionPermanently,
+    archiveChatSession,
+    addToast,
     openNoteDetail, 
     startNewChatNote, 
     setLibrarySearchQuery,
     setFocusSearchInput,
     t,
+    language,
     isMobileSidebarOpen,
     setIsMobileSidebarOpen,
     theme,
     logout
   } = useApp();
+
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
 
   const navItems = [
     { id: 'library', label: t('navNotes'), icon: FileText, screen: 'library' as ScreenType },
@@ -185,7 +195,7 @@ export const Sidebar: React.FC = () => {
         </nav>
 
         {/* Recent Chat Sessions & Notes History (Scrollable) */}
-        <div className="pt-3 border-t border-[var(--border-color)]">
+        <div className="pt-3 border-t border-[var(--border-color)] relative">
           <div className="flex items-center justify-between px-2 mb-2">
             <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
               {t('recentSessions') || 'Hội thoại gần đây'}
@@ -210,6 +220,7 @@ export const Sidebar: React.FC = () => {
                     whileHover={{ x: 2 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => {
+                      if (menuOpenId === session.id) return;
                       resumeChatSession(session.id);
                       setIsMobileSidebarOpen(false);
                     }}
@@ -228,6 +239,55 @@ export const Sidebar: React.FC = () => {
                       <span className="text-[9px] px-1 py-0.2 rounded font-mono font-bold uppercase bg-[var(--bg-hover)] text-[var(--text-muted)]">
                         Note
                       </span>
+                    )}
+                    {/* Action menu trigger */}
+                    <button
+                      type="button"
+                      aria-label="Chat actions"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMenuOpenId(menuOpenId === session.id ? null : session.id);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 shrink-0 p-0.5 rounded hover:bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-opacity"
+                    >
+                      <MoreVertical className="w-3.5 h-3.5" />
+                    </button>
+                    {menuOpenId === session.id && (
+                      <div
+                        className="absolute right-2 top-9 z-30 w-36 rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] shadow-lg py-1 text-[var(--text-primary)]"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          type="button"
+                          className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-[var(--bg-hover)] text-left"
+                          onClick={() => {
+                            setMenuOpenId(null);
+                            const name = window.prompt(
+                              language === 'vi' ? 'Đổi tên hội thoại:' : 'Rename conversation:',
+                              session.title
+                            );
+                            if (name && name.trim()) renameChatSession(session.id, name.trim());
+                          }}
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                          {language === 'vi' ? 'Đổi tên' : 'Rename'}
+                        </button>
+                        <button
+                          type="button"
+                          className="w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-[var(--bg-hover)] text-left text-red-500"
+                          onClick={() => {
+                            setMenuOpenId(null);
+                            if (window.confirm(
+                              language === 'vi' ? `Xóa hội thoại "${session.title}"?` : `Delete "${session.title}"?`
+                            )) {
+                              deleteChatSessionPermanently(session.id);
+                            }
+                          }}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          {language === 'vi' ? 'Xóa' : 'Delete'}
+                        </button>
+                      </div>
                     )}
                   </motion.button>
                 );
