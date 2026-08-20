@@ -316,21 +316,21 @@ export const SettingsScreen: React.FC = () => {
                         : (language === 'vi' ? 'Nâng cấp để mở khóa thêm dung lượng ghi chú, templates nâng cao và xuất file cao cấp.' : 'Upgrade to unlock more storage, advanced templates, and premium export formats.')}
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  {user.plan === 'free' ? (
-                    <button
-                      id="btn-upgrade-from-settings"
-                      onClick={() => setCurrentScreen('pricing')}
-                      className="px-4 py-2 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-primary)] hover:from-[var(--accent-primary)] hover:to-[var(--accent-primary)] text-[var(--accent-text)] text-xs font-bold rounded-xl shadow-md shadow-[var(--accent-primary)]/20 transition-all cursor-pointer active:scale-95"
-                    >
-                      {t('upgradePro')}
-                    </button>
-                  ) : (
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    id="btn-upgrade-from-settings"
+                    onClick={() => setCurrentScreen('pricing')}
+                    className="px-4 py-2 bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-hover)] text-[var(--accent-text)] text-xs font-bold rounded-xl shadow-md shadow-[var(--accent-primary)]/20 transition-all cursor-pointer active:scale-95 flex items-center gap-1.5"
+                  >
+                    <Crown className="w-3.5 h-3.5 fill-current" />
+                    <span>{user.plan === 'free' ? t('upgradePro') : (language === 'vi' ? 'Xem Bảng Giá / Đổi Gói' : 'View Pricing / Change Plan')}</span>
+                  </button>
+                  {user.plan !== 'free' && (
                     <button
                       id="btn-downgrade-plan"
                       onClick={() => setIsCancelModalOpen(true)}
-                      className={`px-3 py-1.5 text-xs font-semibold rounded-xl border transition-all cursor-pointer active:scale-95 ${
-                        isDark ? 'bg-[var(--bg-hover)] hover:bg-[var(--border-color)] border-[var(--border-color)] text-[var(--text-secondary)]' : 'bg-[var(--bg-hover)] hover:bg-[var(--bg-hover)] border-[var(--border-color)] text-[var(--text-secondary)]'
+                      className={`px-3 py-2 text-xs font-semibold rounded-xl border transition-all cursor-pointer active:scale-95 ${
+                        isDark ? 'bg-[var(--bg-hover)] hover:bg-[var(--border-color)] border-[var(--border-color)] text-[var(--text-secondary)]' : 'bg-[var(--bg-hover)] hover:bg-gray-200 border-[var(--border-color)] text-[var(--text-secondary)]'
                       }`}
                     >
                       {language === 'vi' ? 'Hủy gia hạn gói' : 'Cancel subscription'}

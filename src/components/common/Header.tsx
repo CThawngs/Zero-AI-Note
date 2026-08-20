@@ -369,17 +369,16 @@ export const Header: React.FC = () => {
           {theme === 'dark' ? <Sun className="w-4 h-4 text-[var(--accent-primary)]" /> : <Moon className="w-4 h-4 text-[var(--accent-primary)]" />}
         </button>
 
-        {/* Upgrade Plan Button (Free Plan Only) */}
-        {user.plan === 'free' && (
-          <button
-            id="btn-upgrade-plan-header"
-            onClick={() => setCurrentScreen('pricing')}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-[var(--accent-primary)]/50 bg-[var(--accent-subtle)] hover:bg-[var(--accent-primary)] text-[var(--accent-primary)] hover:text-[var(--accent-text)] text-xs font-bold transition-all duration-200 cursor-pointer hover:scale-[1.04] hover:shadow-md hover:shadow-[var(--accent-primary)]/25 active:scale-95 group relative overflow-hidden"
-          >
-            <Crown className="w-3.5 h-3.5 text-[var(--accent-primary)] group-hover:text-[var(--accent-text)] fill-[var(--accent-primary)] group-hover:fill-[var(--accent-text)] transition-colors" />
-            <span>{isEn ? 'Upgrade' : 'Nâng cấp'}</span>
-          </button>
-        )}
+        {/* Upgrade Plan Button (Always Visible for Free, Pro, Ultra) */}
+        <button
+          id="btn-upgrade-plan-header"
+          onClick={() => setCurrentScreen('pricing')}
+          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-[var(--accent-primary)]/50 bg-[var(--accent-subtle)] hover:bg-[var(--accent-primary)] text-[var(--accent-primary)] hover:text-[var(--accent-text)] text-xs font-bold transition-all duration-200 cursor-pointer hover:scale-[1.04] hover:shadow-md hover:shadow-[var(--accent-primary)]/25 active:scale-95 group relative overflow-hidden"
+          title={isEn ? 'View Pricing & Upgrade Plans' : 'Xem bảng giá & Nâng cấp gói'}
+        >
+          <Crown className="w-3.5 h-3.5 text-[var(--accent-primary)] group-hover:text-[var(--accent-text)] fill-[var(--accent-primary)] group-hover:fill-[var(--accent-text)] transition-colors" />
+          <span>{isEn ? 'Upgrade' : 'Nâng cấp'}</span>
+        </button>
 
         {/* Notifications Bell Dropdown */}
         <div className="relative">
