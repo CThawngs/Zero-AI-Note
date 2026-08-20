@@ -44,6 +44,14 @@ export default function RootLayout({
           src="https://accounts.google.com/gsi/client"
           strategy="afterInteractive"
         />
+        {/* Zero Tracking Telemetry & Analytics SDK */}
+        <Script
+          src="https://zero-tracking-ai.vercel.app/track.js"
+          data-app-id="32ca6d16-812a-4502-aaf2-d83103baa2cc"
+          data-api-key="77f87388-069f-4817-8617-96f0c60a95b4"
+          data-endpoint="https://zero-tracking-ai.vercel.app/api/track"
+          strategy="afterInteractive"
+        />
         <AppProvider>
           {children}
         </AppProvider>
