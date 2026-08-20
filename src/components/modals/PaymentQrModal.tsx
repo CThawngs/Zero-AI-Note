@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle, QrCode, Copy, Check, Loader2, Sparkles, ShieldCheck, Zap, AlertCircle } from 'lucide-react';
+import { CheckCircle, QrCode, Copy, Check, Loader2, Sparkles, ShieldCheck, Zap, AlertCircle, ShieldAlert } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { QRPay } from 'vietnam-qr-pay';
 import { Modal } from '../common/Modal';
@@ -25,13 +25,19 @@ interface PaymentQrModalProps {
       bankName?: string;
       accountNo?: string;
       accountName?: string;
+      isOpenBanking?: boolean;
+      mode?: string;
     };
+    isOpenBanking?: boolean;
+    mode?: string;
     payee?: {
       accountNo?: string | null;
       bankName?: string | null;
       accountName?: string | null;
       acqId?: string | null;
       resolvedVia?: string | null;
+      isOpenBanking?: boolean;
+      mode?: string;
     } | null;
   } | null;
 }
@@ -247,6 +253,12 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({
   const accountNo = billData.qr_data?.accountNo || billData.payee?.accountNo || '1035194556';
   const accountName = billData.qr_data?.accountName || billData.payee?.accountName || 'NGUYEN CHI THANG';
   const transferNote = billData.qr_data?.addInfo || billData.bill_id;
+  const isBankOpenBanking = Boolean(
+    billData.qr_data?.isOpenBanking ??
+    (billData as any).payee?.isOpenBanking ??
+    (billData as any).isOpenBanking ??
+    (billData.qr_data?.mode === 'auto')
+  );
 
   return (
     <Modal
@@ -460,57 +472,79 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({
 
             </div>
 
-            {/* Real-time Auto-Detection Radar Banner */}
-            <div className="p-3.5 rounded-2xl bg-blue-500/10 border border-blue-500/25 text-blue-600 dark:text-blue-400 text-xs flex items-center gap-3">
-              <div className="relative flex h-3.5 w-3.5 shrink-0">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-blue-500"></span>
+            {/* Dynamic Open Banking vs Manual Bank Reconciliation Banner & Action */}
+            {isBankOpenBanking ? (
+              // ── Open Banking (MBBank, ACB, BIDV, MSB, OCB, KienLongBank...): 100% Automated, No confirmation button needed ──
+              <div className="p-3.5 rounded-2xl bg-blue-500/10 border border-blue-500/25 text-blue-600 dark:text-blue-400 text-xs flex items-center gap-3 shadow-xs">
+                <div className="relative flex h-3.5 w-3.5 shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-blue-500"></span>
+                </div>
+                <div className="flex-1 text-left leading-relaxed">
+                  <span className="font-bold block text-[11px] uppercase tracking-wide text-blue-700 dark:text-blue-300">
+                    {language === 'vi' ? '⚡ Tự Động Kích Hoạt 100% (Open Banking)' : '⚡ 100% Automated Open Banking'}
+                  </span>
+                  <span className="text-[11px] opacity-90 block">
+                    {language === 'vi' 
+                      ? `Hệ thống tự động nhận diện thanh toán qua ${bankName} và nâng cấp tài khoản ngay lập tức. Không cần bấm nút xác nhận!`
+                      : `Live webhooks listen to ${bankName} transactions and activate your plan instantly upon transfer. No confirmation buttons needed!`}
+                  </span>
+                </div>
               </div>
-              <div className="flex-1 text-left leading-relaxed">
-                <span className="font-bold block text-[11px] uppercase tracking-wide text-blue-700 dark:text-blue-300">
-                  {language === 'vi' ? '⚡ Tự Động Kích Hoạt (Realtime Auto-Detect)' : '⚡ Real-time Auto-Detect 100%'}
-                </span>
-                <span className="text-[11px] opacity-90 block">
-                  {language === 'vi' 
-                    ? `Zero Tracking tự động lắng nghe biến động tài khoản ${bankName} — kích hoạt gói ngay khi nhận được tiền (không cần bấm).`
-                    : `Zero Tracking listens to live transactions from ${bankName} — activates immediately upon receipt (no clicks needed).`}
-                </span>
-              </div>
-            </div>
+            ) : (
+              // ── Manual Reconciliation Bank (Vietcombank, Techcombank...): Confirmation button required ──
+              <>
+                <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-amber-600 dark:text-amber-400 text-xs flex items-center gap-3 shadow-xs">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/15 flex items-center justify-center shrink-0 text-amber-500">
+                    <ShieldAlert className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 text-left leading-relaxed">
+                    <span className="font-bold block text-[11px] uppercase tracking-wide text-amber-700 dark:text-amber-300">
+                      {language === 'vi' ? '🏦 Đối Soát Chuyển Khoản Thủ Công' : '🏦 Manual Bank Transfer'}
+                    </span>
+                    <span className="text-[11px] opacity-90 block">
+                      {language === 'vi' 
+                        ? `Sau khi chuyển tiền đến ${bankName}, vui lòng bấm nút "Tôi Đã Chuyển Tiền Thành Công" bên dưới để gửi yêu cầu xác nhận duyệt tiền.`
+                        : `After transferring to ${bankName}, click "I Have Transferred Successfully" below to submit a verification request.`}
+                    </span>
+                  </div>
+                </div>
 
-            {/* Inline Error Alert if payment not yet received */}
-            {paymentError && (
-              <motion.div
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs flex items-start gap-2.5 text-left"
-              >
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
-                <span className="leading-relaxed font-medium">{paymentError}</span>
-              </motion.div>
-            )}
-
-            {/* Action Buttons Area */}
-            <div className="pt-1">
-              <button
-                type="button"
-                onClick={handleActionClick}
-                disabled={isSubmittingConfirm || isPaidSuccess}
-                className="w-full py-2.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer bg-[var(--bg-hover)] hover:bg-[var(--border-color)] border border-[var(--border-color)] text-[var(--text-primary)] transition-all active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSubmittingConfirm ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>{language === 'vi' ? 'Đang kiểm tra từ ngân hàng...' : 'Checking with Bank...'}</span>
-                  </>
-                ) : (
-                  <>
-                    <Zap className="w-3.5 h-3.5 text-amber-500" />
-                    <span>{language === 'vi' ? 'Kiểm Tra Thanh Toán Ngay' : 'Check Payment Status Now'}</span>
-                  </>
+                {/* Inline Error Alert if payment not yet received */}
+                {paymentError && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs flex items-start gap-2.5 text-left"
+                  >
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-500" />
+                    <span className="leading-relaxed font-medium">{paymentError}</span>
+                  </motion.div>
                 )}
-              </button>
-            </div>
+
+                {/* Action Buttons Area */}
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={handleActionClick}
+                    disabled={isSubmittingConfirm || isPaidSuccess}
+                    className="w-full py-3 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white transition-all active:scale-98 shadow-md shadow-amber-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSubmittingConfirm ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>{language === 'vi' ? 'Đang gửi yêu cầu xác nhận...' : 'Submitting Confirmation...'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-3.5 h-3.5" />
+                        <span>{language === 'vi' ? 'Tôi Đã Chuyển Tiền Thành Công' : 'I Have Transferred Successfully'}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
 
             {/* Security Notice */}
             <p className="text-[10px] text-center text-[var(--text-muted)] flex items-center justify-center gap-1">
