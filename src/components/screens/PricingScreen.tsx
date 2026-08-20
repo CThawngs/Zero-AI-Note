@@ -259,7 +259,7 @@ export const PricingScreen: React.FC = () => {
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
-          className="max-w-2xl mx-auto w-full relative z-10 shrink-0"
+          className="max-w-2xl mx-auto w-full relative z-0 shrink-0"
         >
           <div className="p-4 sm:p-5 rounded-2xl border bg-[var(--bg-card)] border-[var(--border-color)] shadow-lg transition-all">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">

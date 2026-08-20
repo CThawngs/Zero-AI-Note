@@ -113,7 +113,7 @@ export const Header: React.FC = () => {
   const isDark = theme === 'dark';
 
   return (
-    <header className={`h-14 px-4 sm:px-6 flex items-center justify-between shrink-0 z-10 transition-colors duration-250 border-b ${
+    <header className={`h-14 px-4 sm:px-6 flex items-center justify-between shrink-0 z-40 relative transition-colors duration-250 border-b ${
       isDark 
         ? 'bg-[var(--bg-card)]/95 border-[var(--border-color)] text-[var(--text-primary)]' 
         : 'bg-[var(--bg-card)]/95 border-[var(--border-color)] text-[var(--text-primary)] shadow-xs'
@@ -155,7 +155,7 @@ export const Header: React.FC = () => {
             {isModelDropdownOpen && (
               <>
                 <div 
-                  className="fixed inset-0 z-30" 
+                  className="fixed inset-0 z-50" 
                   onClick={() => setIsModelDropdownOpen(false)} 
                 />
                 <motion.div 
@@ -163,7 +163,7 @@ export const Header: React.FC = () => {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 6, scale: 0.98 }}
                   transition={{ duration: 0.15 }}
-                  className={`absolute left-0 mt-1.5 w-84 sm:w-96 rounded-2xl shadow-2xl p-2.5 z-40 space-y-2.5 border ${
+                  className={`absolute left-0 mt-1.5 w-84 sm:w-96 rounded-2xl shadow-2xl p-2.5 z-[60] space-y-2.5 border ${
                     isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)]' : 'bg-white border-[var(--border-color)]'
                   }`}
                 >
@@ -310,7 +310,7 @@ export const Header: React.FC = () => {
             {isLangDropdownOpen && (
               <>
                 <div 
-                  className="fixed inset-0 z-30" 
+                  className="fixed inset-0 z-50" 
                   onClick={() => setIsLangDropdownOpen(false)} 
                 />
                 <motion.div 
@@ -318,7 +318,7 @@ export const Header: React.FC = () => {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 6, scale: 0.98 }}
                   transition={{ duration: 0.15 }}
-                  className={`absolute right-0 sm:right-auto sm:left-0 mt-1.5 w-40 rounded-2xl shadow-xl p-1.5 z-40 space-y-1 border ${
+                  className={`absolute right-0 sm:right-auto sm:left-0 mt-1.5 w-40 rounded-2xl shadow-xl p-1.5 z-[60] space-y-1 border ${
                     isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)]' : 'bg-white border-[var(--border-color)]'
                   }`}
                 >
@@ -408,7 +408,7 @@ export const Header: React.FC = () => {
             {isNotificationsOpen && (
               <>
                 <div 
-                  className="fixed inset-0 z-30" 
+                  className="fixed inset-0 z-50" 
                   onClick={() => setIsNotificationsOpen(false)} 
                 />
                 <motion.div 
@@ -416,7 +416,7 @@ export const Header: React.FC = () => {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 6, scale: 0.98 }}
                   transition={{ duration: 0.15 }}
-                  className={`absolute right-0 mt-1.5 w-80 sm:w-96 rounded-2xl shadow-2xl border p-3 z-40 space-y-3 ${
+                  className={`absolute right-0 mt-1.5 w-80 sm:w-96 rounded-2xl shadow-2xl border p-3 z-[60] space-y-3 ${
                     isDark ? 'bg-[var(--bg-card)] border-[var(--border-color)]' : 'bg-white border-[var(--border-color)]'
                   }`}
                 >

@@ -198,7 +198,7 @@ export const Sidebar: React.FC = () => {
         <div className="pt-3 border-t border-[var(--border-color)] relative">
           <div className="flex items-center justify-between px-2 mb-2">
             <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
-              {t('recentSessions') || 'Hội thoại gần đây'}
+              {language === 'vi' ? 'Hội thoại gần đây' : 'Recent Chats'}
             </span>
             <span className="text-[11px] font-mono font-medium px-1.5 py-0.5 rounded bg-[var(--bg-hover)] text-[var(--text-muted)]">
               {chatSessions.length}
@@ -208,7 +208,7 @@ export const Sidebar: React.FC = () => {
           <div className="space-y-1">
             {chatSessions.length === 0 ? (
               <p className="px-3 py-2 text-[11px] text-[var(--text-muted)] italic">
-                Chưa có hội thoại nào
+                {language === 'vi' ? 'Chưa có hội thoại nào' : 'No recent conversations'}
               </p>
             ) : (
               chatSessions.slice(0, 8).map((session) => {
