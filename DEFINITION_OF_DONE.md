@@ -19,11 +19,16 @@
 - [ ] Hàng đợi job nền (Inngest/Trigger.dev) dựng xong, test 1 job giả lập chạy được
 
 ## Tuần 3-4 — MVP lõi
-- [x] 1 file thật / prompt → transcribe & phân tích thật bằng Google Gemini 2.0 Flash → note Cornell/tóm tắt nhanh → Artifact Panel (commit mới)
+- [x] 1 file thật / prompt → transcribe & phân tích thật bằng **Gemini 3.7 Flash (primary) + failover 2.5/2.0** → note Cornell/tóm tắt nhanh → Artifact Panel (commit mới)
 - [x] Copy/Download hoạt động thật (DOCX thật qua docx package, PDF chuẩn print, Markdown, HTML — không placeholder)
 - [x] `content_structured` là nguồn DUY NHẤT để render Preview và sinh mọi file export (MD/DOCX/PDF/HTML)
 
-## Tuần 5-7 — Mở rộng đầu vào/đầu ra & AI Agent Engine
+## Tuần 5-7b — Pipeline file dài 10–25h (theo PRD 3.2b, đã lock 2026-08-20)
+- [ ] Upload file 10–25h → R2 (presigned) → Inngest worker demux `ffmpeg -c:a copy` streaming + segment 30–60p (KHÔNG re-encode)
+- [ ] STT từng chunk (overlap 10–15s + silence detection, trọn vẹn 100%, timestamp đầy đủ) → Map-Reduce → `content_structured` → Neon
+- [ ] YouTube caption client-side (`youtubei.js`); không caption → unsupported
+- [ ] **Dispatcher dùng model USER CHỌN từ AppContext**, rẽ nhánh STT (Gemini native / transcription service cho OpenAI-Claude) ↔ Synthesis; failover cascade 3.7→2.5→2.0 trên 429
+- [ ] Stepper 3 bước + sub-progress + email Resend khi xong; test thực tế 1 file 10h end-to-end
 - [x] Đọc hiểu & Trích xuất nội dung đa định dạng: Tệp mã nguồn, text, markdown (.txt, .md, .json, .py, .ts,...), PDF, DOCX, Video/Audio transcripts và link YouTube/Web ✅
 - [x] Trực quan hóa Markdown phong phú & Khối mã nguồn CodeBlock chuyên nghiệp kèm nút Sao chép 1-Click (`MarkdownView.tsx`) ✅
 - [x] Kiến trúc Dual-Mode AI Agent: Hội thoại suy luận sâu, lập trình Frontend / UI-UX sạch đẹp, tự động thu thập thông tin và kiến tạo Note chuyên sâu ✅
@@ -63,6 +68,6 @@
 - [ ] 3. Không màu hardcode mới (đổi thử 2-3 theme)
 - [ ] 4. Không API key/secret lộ client bundle (kiểm tra Network tab)
 - [ ] 5. `content_structured` vẫn là nguồn duy nhất
-- [ ] 6. Mọi quyết định tự đưa ra đã ghi DECISIONS.md
+- [ ] 6. Mọi quyết định tự đưa ra đã ghi DECISIONS.md (bao gồm quyết định model 3.7-primary/failover + pipeline server-cloud + runtime=user-selected)
 - [ ] 7. File này đã cập nhật đúng tiến độ
 - [ ] 8. Test luồng lỗi — không crash trắng trang/treo vô hạn

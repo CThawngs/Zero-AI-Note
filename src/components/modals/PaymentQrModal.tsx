@@ -43,6 +43,7 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({
   const [isPaidSuccess, setIsPaidSuccess] = useState(false);
   const [isSubmittingConfirm, setIsSubmittingConfirm] = useState(false);
   const [showExitWarning, setShowExitWarning] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   const isDark = theme === 'dark';
 
@@ -52,6 +53,7 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({
       setIsPaidSuccess(false);
       setIsSubmittingConfirm(false);
       setShowExitWarning(false);
+      setPaymentError(null);
     }
   }, [isOpen, billData?.bill_id]);
 
@@ -80,45 +82,67 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({
   const qrValue = billData?.qr_data ? buildVietQrString() : '';
 
   // Xử lý khi user bấm nút "Tôi Đã Chuyển Tiền Thành Công"
+  // CHỈ NÂNG CẤP KHI NGÂN HÀNG XÁC NHẬN TIỀN ĐÃ VÀO TÀI KHOẢN (isPaid = true)
   const handleManualConfirm = async () => {
     if (!billData || isSubmittingConfirm || isPaidSuccess) return;
     try {
       setIsSubmittingConfirm(true);
+      setPaymentError(null);
+
       const res = await fetch('/api/billing/confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ billId: billData.bill_id }),
+        body: JSON.stringify({ billId: billData.bill_id, plan: billData.plan }),
       });
       const data = await res.json().catch(() => ({}));
 
-      setIsPaidSuccess(true);
-      setUser(prev => ({ ...prev, plan: billData.plan }));
+      // BẮT BUỘC data.ok VÀ data.isPaid PHẢI LÀ TRUE MỚI CHO NÂNG CẤP
+      if (data.ok && data.isPaid) {
+        setIsPaidSuccess(true);
+        setUser(prev => ({ ...prev, plan: billData.plan }));
 
-      confetti({
-        particleCount: 150,
-        spread: 85,
-        origin: { y: 0.6 },
-      });
+        confetti({
+          particleCount: 150,
+          spread: 85,
+          origin: { y: 0.6 },
+        });
 
-      addToast(
-        language === 'vi' ? '🎉 Nâng cấp thành công!' : '🎉 Upgrade Successful!',
-        language === 'vi'
-          ? `Tài khoản của bạn đã được nâng cấp lên gói ${billData.plan.toUpperCase()}.`
-          : `Your account is now upgraded to ${billData.plan.toUpperCase()} plan.`,
-        'success'
-      );
+        addToast(
+          language === 'vi' ? '🎉 Nâng cấp thành công!' : '🎉 Upgrade Successful!',
+          language === 'vi'
+            ? `Tài khoản của bạn đã được nâng cấp lên gói ${billData.plan.toUpperCase()}.`
+            : `Your account is now upgraded to ${billData.plan.toUpperCase()} plan.`,
+          'success'
+        );
 
-      setTimeout(() => {
-        onClose();
-      }, 2500);
+        setTimeout(() => {
+          onClose();
+        }, 2500);
+      } else {
+        // CHƯA NHẬN ĐƯỢC TIỀN TỪ NGÂN HÀNG -> BÁO LỖI VÀ KHÔNG NÂNG CẤP
+        const errorMsg = data.error || (
+          language === 'vi'
+            ? 'Hệ thống chưa nhận được thông báo chuyển tiền từ ngân hàng cho đơn này. Vui lòng quét mã VietQR chuyển tiền và bấm lại nút xác nhận.'
+            : 'Payment not detected in bank account yet. Please scan VietQR and click verify again.'
+        );
+        setPaymentError(errorMsg);
+        addToast(
+          language === 'vi' ? 'Chưa nhận được thanh toán' : 'Payment Not Received',
+          errorMsg,
+          'warning'
+        );
+      }
     } catch (e) {
       console.error('Manual payment confirm error:', e);
-      setIsPaidSuccess(true);
-      setUser(prev => ({ ...prev, plan: billData.plan }));
-      confetti({ particleCount: 140, spread: 80, origin: { y: 0.6 } });
-      setTimeout(() => {
-        onClose();
-      }, 2500);
+      const errMsg = language === 'vi'
+        ? 'Có lỗi kết nối khi kiểm tra thanh toán. Vui lòng thử lại sau ít giây.'
+        : 'Connection error while checking payment. Please try again.';
+      setPaymentError(errMsg);
+      addToast(
+        language === 'vi' ? 'Lỗi kiểm tra' : 'Check Error',
+        errMsg,
+        'error'
+      );
     } finally {
       setIsSubmittingConfirm(false);
     }
@@ -346,8 +370,20 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({
 
             </div>
 
+            {/* Inline Error Alert if payment not yet received */}
+            {paymentError && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs flex items-start gap-2.5 text-left"
+              >
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
+                <span className="leading-relaxed font-medium">{paymentError}</span>
+              </motion.div>
+            )}
+
             {/* Primary Action Button: Confirm payment */}
-            <div className="pt-2">
+            <div className="pt-1">
               <button
                 type="button"
                 onClick={handleManualConfirm}
