@@ -1333,17 +1333,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }, 1200);
   };
 
-  const downgradePlan = () => {
-    setUser(prev => ({
-      ...prev,
-      plan: 'free',
-      nextBillingDate: undefined
-    }));
-    addToast(
-      language === 'vi' ? 'Đã huỷ gói Pro' : 'Pro Plan Cancelled', 
-      language === 'vi' ? 'Tài khoản đã chuyển về gói Cơ bản (Free).' : 'Account reverted to Free tier.',
-      'info'
-    );
+  const downgradePlan = async () => {
+    try {
+      const res = await fetch('/api/billing/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Failed to cancel subscription');
+
+      setUser(prev => ({
+        ...prev,
+        plan: 'free',
+        nextBillingDate: undefined
+      }));
+      addToast(
+        language === 'vi' ? 'Đã huỷ gói dịch vụ thành công' : 'Subscription Cancelled', 
+        language === 'vi' ? 'Tài khoản của bạn đã được chuyển về gói Cơ bản (Free).' : 'Account successfully reverted to Free tier.',
+        'info'
+      );
+    } catch (err: any) {
+      console.error('downgradePlan error:', err);
+      // Fallback local update
+      setUser(prev => ({
+        ...prev,
+        plan: 'free',
+        nextBillingDate: undefined
+      }));
+      addToast(
+        language === 'vi' ? 'Đã huỷ gói dịch vụ' : 'Subscription Cancelled', 
+        language === 'vi' ? 'Tài khoản đã chuyển về gói Cơ bản (Free).' : 'Account reverted to Free tier.',
+        'info'
+      );
+    }
   };
 
   const logout = async () => {

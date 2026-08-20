@@ -155,3 +155,32 @@ export async function updateUserPassword(userIdOrEmail: string, passwordHash: st
     return updated;
   }
 }
+
+export async function updateUserPlan(userIdOrEmail: string, plan: 'free' | 'pro' | 'ultra'): Promise<boolean> {
+  const normalized = userIdOrEmail.toLowerCase().trim();
+  let updated = false;
+
+  // Update in memory
+  for (const [key, user] of memoryUsers.entries()) {
+    if (user.id === userIdOrEmail || user.email === normalized) {
+      user.plan = plan;
+      memoryUsers.set(key, user);
+      updated = true;
+    }
+  }
+
+  // Update in DB
+  try {
+    const sql = getSql();
+    await sql`
+      update profiles
+      set plan = ${plan},
+          plan_renews_at = null
+      where id::text = ${userIdOrEmail} or email = ${normalized}
+    `;
+    return true;
+  } catch (err) {
+    console.warn('Neon DB update plan failed, updated in memory store:', err);
+    return updated;
+  }
+}

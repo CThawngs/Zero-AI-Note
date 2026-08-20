@@ -68,6 +68,10 @@ export const SettingsScreen: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
+  // Cancel Subscription Confirmation Modal state
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [isCancellingPlan, setIsCancellingPlan] = useState(false);
+
   // Add Provider Modal
   const [isAddProviderModalOpen, setIsAddProviderModalOpen] = useState(false);
   const [expandedProviders, setExpandedProviders] = useState<Record<string, boolean>>({});
@@ -324,7 +328,7 @@ export const SettingsScreen: React.FC = () => {
                   ) : (
                     <button
                       id="btn-downgrade-plan"
-                      onClick={downgradePlan}
+                      onClick={() => setIsCancelModalOpen(true)}
                       className={`px-3 py-1.5 text-xs font-semibold rounded-xl border transition-all cursor-pointer active:scale-95 ${
                         isDark ? 'bg-[var(--bg-hover)] hover:bg-[var(--border-color)] border-[var(--border-color)] text-[var(--text-secondary)]' : 'bg-[var(--bg-hover)] hover:bg-[var(--bg-hover)] border-[var(--border-color)] text-[var(--text-secondary)]'
                       }`}
@@ -992,6 +996,84 @@ export const SettingsScreen: React.FC = () => {
                 className="px-4 py-2 rounded-xl bg-[var(--status-error)] hover:bg-[var(--status-error)] text-white text-xs font-semibold disabled:opacity-40 cursor-pointer shadow-md shadow-[var(--status-error)]/20 active:scale-95 transition-all"
               >
                 {language === 'vi' ? 'Xác nhận xoá vĩnh viễn' : 'Permanently Delete'}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Cancel Subscription Confirmation Modal */}
+      {isCancelModalOpen && (
+        <Modal
+          isOpen={true}
+          onClose={() => !isCancellingPlan && setIsCancelModalOpen(false)}
+          title={language === 'vi' ? 'Xác nhận hủy gói dịch vụ' : 'Cancel Subscription Confirmation'}
+          maxWidth="max-w-md"
+        >
+          <div className="space-y-4">
+            <div className={`p-3.5 rounded-xl border text-xs flex items-start gap-2.5 ${
+              isDark ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : 'bg-amber-50 border-amber-200 text-amber-800'
+            }`}>
+              <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="font-bold">
+                  {language === 'vi' 
+                    ? `Bạn có chắc muốn hủy gói ${user.plan.toUpperCase()}?`
+                    : `Are you sure you want to cancel your ${user.plan.toUpperCase()} plan?`}
+                </p>
+                <p className="leading-relaxed opacity-90">
+                  {language === 'vi'
+                    ? 'Sau khi hủy, tài khoản của bạn sẽ ngay lập tức trở về gói Miễn Phí (Free). Dung lượng ghi chú, templates tùy chỉnh và các tính năng nâng cao sẽ bị giới hạn theo tiêu chuẩn gói Free.'
+                    : 'After cancelling, your account will immediately revert to the Free tier. Note storage limits, custom templates, and advanced features will be restricted to Free tier standards.'}
+                </p>
+              </div>
+            </div>
+
+            <div className={`p-3 rounded-xl border text-xs space-y-1.5 ${
+              isDark ? 'bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-secondary)]' : 'bg-[var(--bg-hover)] border-[var(--border-color)] text-[var(--text-secondary)]'
+            }`}>
+              <p className="font-semibold text-[var(--text-primary)]">
+                {language === 'vi' ? 'Quyền lợi sẽ thay đổi:' : 'Benefits that will change:'}
+              </p>
+              <ul className="list-disc pl-4 space-y-1 text-[11px]">
+                <li>{language === 'vi' ? 'Dung lượng lưu trữ giảm về 1 GB (Gói Free)' : 'Storage limit reduced to 1 GB (Free Tier)'}</li>
+                <li>{language === 'vi' ? 'Tối đa 20 ghi chú & 5 templates tùy chỉnh' : 'Max 20 notes & 5 custom templates'}</li>
+                <li>{language === 'vi' ? 'Hủy bỏ việc gia hạn tự động hàng tháng' : 'Monthly automatic renewal will be stopped'}</li>
+              </ul>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                disabled={isCancellingPlan}
+                onClick={() => setIsCancelModalOpen(false)}
+                className={`px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer active:scale-95 transition-all ${
+                  isDark ? 'bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:bg-[var(--border-color)]' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
+                }`}
+              >
+                {language === 'vi' ? 'Giữ lại gói cước' : 'Keep Subscription'}
+              </button>
+              <button
+                type="button"
+                id="btn-confirm-cancel-subscription"
+                disabled={isCancellingPlan}
+                onClick={async () => {
+                  setIsCancellingPlan(true);
+                  try {
+                    await downgradePlan();
+                    setIsCancelModalOpen(false);
+                  } finally {
+                    setIsCancellingPlan(false);
+                  }
+                }}
+                className="px-4 py-2 rounded-xl bg-[var(--status-error)] hover:opacity-90 text-white text-xs font-semibold disabled:opacity-50 cursor-pointer shadow-md shadow-[var(--status-error)]/20 active:scale-95 transition-all flex items-center gap-1.5"
+              >
+                {isCancellingPlan && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>
+                  {isCancellingPlan 
+                    ? (language === 'vi' ? 'Đang hủy...' : 'Cancelling...') 
+                    : (language === 'vi' ? 'Xác nhận hủy gói' : 'Confirm Cancellation')}
+                </span>
               </button>
             </div>
           </div>

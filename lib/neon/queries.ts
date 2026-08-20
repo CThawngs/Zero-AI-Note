@@ -470,3 +470,26 @@ export async function upgradeUserPlan(
     console.warn('Could not insert subscription record:', e);
   }
 }
+
+export async function downgradeUserPlan(userIdOrEmail: string): Promise<void> {
+  const sql = getSql();
+  const updatedProfiles = await sql`
+    update profiles
+    set plan = 'free',
+        plan_renews_at = null
+    where id::text = ${userIdOrEmail} or email = ${userIdOrEmail}
+    returning id
+  `;
+
+  const userId = updatedProfiles[0]?.id || userIdOrEmail;
+
+  try {
+    await sql`
+      update subscriptions
+      set status = 'cancelled'
+      where user_id = ${userId} and status in ('active', 'paid', 'pending')
+    `;
+  } catch (e) {
+    console.warn('Could not update subscription to cancelled:', e);
+  }
+}

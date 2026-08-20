@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifySession } from '@/lib/auth/session';
 import { ok, fail } from '@/lib/auth/http';
 import { findUserById } from '@/lib/auth/users';
+import { Plan } from '@/lib/auth/types';
 
 export const runtime = 'nodejs';
 
@@ -18,10 +19,12 @@ export async function GET(request: NextRequest) {
     }
 
     let displayName = null;
+    let freshPlan: Plan | null = null;
     try {
       const user = await findUserById(session.sub);
       if (user) {
         displayName = user.display_name;
+        freshPlan = user.plan; // Use fresh plan from DB, not stale JWT
       }
     } catch {
       // Fallback
@@ -34,7 +37,7 @@ export async function GET(request: NextRequest) {
         email: session.email,
         displayName,
         role: session.role,
-        plan: session.plan,
+        plan: freshPlan || session.plan, // Prefer fresh DB plan over JWT
         processingMinutesUsed: session.processingMinutesUsed,
         processingMinutesLimit: session.processingMinutesLimit,
         needsPasswordSetup: false,
