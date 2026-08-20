@@ -366,7 +366,7 @@ create table subscriptions (
   status text default 'pending' check (status in ('pending','paid','expired','canceled')),
   qr_data text,                               -- Chuỗi EMVCo payload (render client-side); null nếu bill 0đ auto-paid
   coupon_code text,
-  payment_account_id text,   -- Zero Tracking payee được chọn tại checkout (null = app default); snapshot for traceability
+  payment_account_id text,   -- (deprecated) Zero Tracking App đã gắn cố định 1 tài khoản NH khi tạo; Zero AI Note KHÔNG gửi payee per-checkout nữa
   paid_at timestamptz,
   renews_at timestamptz,                      -- Ngày hết hạn gói (now() + 30 days)
   created_at timestamptz default now()
