@@ -26,7 +26,7 @@
 
 ## DANGLING WORK QUEUE (the backlog)
 1. **Tuần 1-2:** Inngest background job queue — not yet tested (only 1 simulated job)
-2. **Tuần 5-7:** Multi-file/multi-format pipeline via chunk; 5 templates + Auto + custom template; preview of 4 export formats
+2. **Tuần 5-7:** Multi-file/multi-format pipeline via chunk — **DESIGNED & LOCKED in PRD (2026-08-20)**: server-cloud 7-step (R2 presign → Inngest worker demux `-c:a copy` streaming + segment 30–60p → FFmpeg keyframe <2h → Gemini STT per chunk w/ overlap 10–15s+silence-detection for lossless → YouTube caption client-side (youtubei.js) → map-reduce → content_structured → Neon; Stepper3 + sub-progress + email Resend; cap free 2GB/5h). **Model = user-selected from AppContext combobox + failover cascade 3.7→2.5→2.0; non-Gemini → transcription-first then synthesis.** BUILD PENDING (handoff @tech). Also: 5 templates + Auto + custom template; preview of 4 export formats
 3. **Tuần 12+:** Mind map, TTS, action items, Notion/Calendar sync, spaced repetition
 4. **Launch:** Vercel production deploy; run full real flow (signup → upload → note → upgrade → pay)
 

@@ -91,6 +91,17 @@ User gửi file/link/text + (tùy chọn) chỉ định phương pháp ghi chú
 
 **Nguyên tắc bắt buộc**: Preview và file tải về đều sinh ra từ cùng 1 `content_structured`, không parse ngược từ HTML — tránh các định dạng lệch nhau. DOCX/PDF không tự render trong trình duyệt, chỉ sinh file thật tại thời điểm tải.
 
+### 3.2b Luồng xử lý file dài (Video/Audio 10–25h) trên Server Cloud
+**Nguyên tắc**: Xử lý nặng chạy trên worker bất đồng bộ (không tại client, không tại Vercel sync). "Miễn phí" ở đây nghĩa là **miễn phí cho người dùng cuối**; operator (chủ dự án) chịu chi phí hạ tầng, tối ưu trong free tier các dịch vụ (R2 10GB, Inngest free, Resend 3000 mail/tháng, Gemini daily cap) và **có giới hạn** — không phải 0đ vô điều kiện.
+1. **Client → R2 (Presigned URL)**: trình duyệt đẩy file gốc thẳng lên Cloudflare R2, không qua Vercel (vượt giới hạn payload 4.5MB).
+2. **Inngest trigger → worker bất đồng bộ** (Lambda/Cloudflare Worker): demux luồng audio bằng `ffmpeg -c:a copy` (streaming copy, KHÔNG re-encode) + segment thành chunk **30–60 phút** → ghi thẳng từng chunk lên R2. Không load whole-file 20GB vào RAM; vượt qua giới hạn Lambda 15' timeout & /tmp 10GB.
+3. **Keyframes**: worker FFmpeg scene-change detection (giới hạn video <2h hoặc đã demux được) → R2, gắn timestamp.
+4. **STT từng chunk**: mỗi chunk (≈57k–115k tokens) → **Gemini STT** (free tier). Dùng **overlap 10–15s + silence detection** tại biên chunk để **không rớt 1 giây audio nào**, timestamp đầy đủ → đảm bảo nội dung trọn vẹn 100%.
+5. **YouTube**: caption fetch **tại client** (`youtubei.js`) — server-side bị Google IP-block. Không có caption → UI báo *"Video YouTube không phụ đề hiện chưa hỗ trợ"*.
+6. **Map-Reduce**: ghép transcript (giữ timestamp) → tổng hợp thành `content_structured` JSON → Neon.
+7. **Tracking**: Stepper 3 bước [Trích Transcript → Phân tích Cấu trúc → Hoàn thiện Note] + sub-progress *"Transcript 47/120"*; client polling `/api/notes/status/:jobId` 2–3s → in-app + **email Resend** khi xong.
+**Giới hạn free tier (để không vỡ quota)**: cap upload free = 2GB/file & 5h audio/video; vượt → yêu cầu nâng gói. Gemini: queue 1–2 job/shared key, 15 RPM, không hứa thời gian cụ thể (đúng PRD 4.5).
+
 ### 3.3 Bảo mật & vận hành
 
 - Row-Level Security (RLS) trên mọi bảng chứa dữ liệu cá nhân (Neon dùng cú pháp `auth_uid()` qua `current_setting('request.jwt.claims')`, không dùng `auth.uid()` của Supabase) — áp dụng cho `notes`, `notebooks`, `sources`, `byok_providers`, `coupons`, `subscriptions`
@@ -131,14 +142,14 @@ Dùng cho **Hermes `browser_exec`** để điều khiển Chrome thật (đọc 
 - Tự nhận diện ngôn ngữ + xử lý code-switching Việt-Anh
 - Kiến trúc transcribe-trước-cấu trúc-sau (2 pha), cho phép audit lại khi nghi ngờ sai sót
 - Tách giọng theo người nói (speaker diarization) — mở rộng cho use case họp sau này
-- Nhận link website (reader-mode) và YouTube (ưu tiên transcript có sẵn, fallback tải+STT tái dùng pipeline chính)
+- Nhận link website (reader-mode) và YouTube (ưu tiên caption có sẵn; YouTube không có caption → unsupported, không tải audio server-side vì CORS + IP-block cloud)
 - Tự động phân loại & gộp nhiều file rời rạc thành 1 bộ note liền mạch (có xác nhận lại từ user, AI không tự quyết định gộp mà không hỏi)
 
 **Ràng buộc hạ tầng Vercel Serverless — bắt buộc tuân thủ**:
 - **Giới hạn Request Payload 4.5MB**: File lớn >4.5MB **KHÔNG** gửi qua form/sheet thông thường tới API Route Next.js — Vercel sẽ sập.
 - **Upload qua Presigned URL**: Trình duyệt client gọi API Route `/api/upload/presign` (chỉ cần tên file + loại + size) → nhận URL Presigned từ R2 → **đẩy thẳng file lên Cloudflare R2** (không qua server Next.js). Server chỉ lưu `file_url` (R2 key) trong table `sources`.
-- **Bóc tách Audio client-side (cho file Video tải lên trực tiếp)**: Trình duyệt dùng **Web Audio API / FFmpeg.wasm** để tách luồng âm thanh ngay tại máy user trước khi đẩy lên R2 — file audio kết quả (~30–50MB thay vì video 2–10GB) tiết kiệm băng thông + token Gemini. Nếu trình duyệt không hỗ trợ → fallback tải full video lên R2 + log cảnh báo để Hệ thống xử lý tách bên worker (nhưng nên khuyến khích client-side trước).
-- **Link YouTube**: Backend chỉ tải audio stream (format m4a/opus ~20MB) hoặc ưu tiên cào phụ đề có sẵn (Captions) — **không tải video 4K full**.
+- **Bóc tách Audio trên worker cloud (cho file Video tải lên trực tiếp)**: Sau khi file gốc lên R2, **Inngest worker** chạy `ffmpeg -c:a copy` streaming + segment 30–60p để tách luồng âm thanh (KHÔNG re-encode, không chạy FFmpeg.wasm/MEMFS tại client — client không nuốt nổi file 2–20GB). Kết quả audio chunk (~14MB/chunk) đẩy thẳng lên R2. Worker chạy bất đồng bộ, vượt giới hạn Vercel 60s & Lambda 15'/tmp 10GB.
+- **Link YouTube**: caption fetch **tại client** qua `youtubei.js` (IP dân, tránh Google IP-block trên cloud). Ưu tiên phụ đề có sẵn (0đ, 0 compute); **không có caption → unsupported** (backend không tải audio YouTube vì CORS + IP-block cloud). Không tải video 4K full.
 
 ### 4.2 Điều khiển output
 - Chọn phương pháp ghi chú qua ngôn ngữ tự nhiên trong prompt: Cornell, Outline, Mindmap dạng text, Q&A, Flashcard, tóm tắt điều hành, tóm tắt nhanh, hoặc custom template
@@ -199,7 +210,9 @@ Dùng cho **Hermes `browser_exec`** để điều khiển Chrome thật (đọc 
 
 ### 4.5 UX xử lý file dài
 - Xử lý bất đồng bộ qua job nền + thông báo khi xong (email/in-app) — **không hứa hẹn thời gian xử lý cụ thể ("vài phút")**, mô tả đúng bất đồng bộ: job nền, thanh tiến trình, thông báo khi xong, không ngồi chờ
-- Thanh tiến trình theo giai đoạn thật (Trích transcript → Cấu trúc → Tạo file), không phải spinner vô nghĩa
+- Thanh tiến trình (Progress Bar) thời gian thực: Stepper 3 bước [Trích Transcript → Phân tích Cấu trúc → Hoàn thiện Note] + **sub-progress từng chunk** ("Transcript 47/120") lấy từ DB, cập nhật liên tục bởi worker nền (không phải spinner vô nghĩa)
+- Email tự động qua **Resend** (free tier 3.000 mail/tháng) gửi tới email account khi Note hoàn tất, kèm link mở Note
+- Dự toán thời gian thông minh: ước tính từ dung lượng/độ dài nguồn đầu vào ngay khi bắt đầu (hiển thị khoảng, không cam kết)
 - Streaming kết quả theo từng chunk khi có thể
 
 ### 4.6 Giữ chân người dùng
@@ -549,7 +562,7 @@ Tiêu chí chấm điểm không đòi hỏi billing thật/"Tự kết nối AI
 - Storage:
   - **Neon** — NetworkDB chính để lưu trữ Text, Metadata, JSON, Profile, Notes (cấu trúc dữ liệu).
   - **Cloudflare R2** — Upload file media (Video/Audio/PDF/Docx/ppt) qua Presigned URL, không backup fallback.
-- ✅ **Upload file lớn**: Presigned URL (client đẩy thẳng lên R2, tránh giới hạn 4.5MB Vercel); bóc tách audio client-side (Web Audio API/FFmpeg.wasm); YouTube chỉ lấy audio stream/captions
+- ✅ **Upload file lớn**: Presigned URL (client đẩy thẳng lên R2, tránh giới hạn 4.5MB Vercel); **bóc tách audio trên Inngest worker cloud** (`ffmpeg -c:a copy` streaming + segment 30–60p, KHÔNG re-encode); YouTube caption **client-side** (`youtubei.js`), không có caption → unsupported
 - ✅ **Job nền + Polling**: không stream token qua SSE/WebSocket — trình duyệt Polling `/api/notes/status/:jobId` mỗi 2–3s + Stepper 3 bước
 - ✅ **Giới hạn AI song song**: key Gemini dùng chung chạy tối đa 1–2 job AI đồng thời (Inngest queue), user Tự kết nối AI dùng luồng riêng chạy ngay
 - ✅ **Chống lộ Gemini key**: env `GEMINI_API_KEY` (KHÔNG `NEXT_PUBLIC_`), 100% gọi AI qua server-side route/worker, client không gọi Google AI trực tiếp
@@ -557,6 +570,16 @@ Tiêu chí chấm điểm không đòi hỏi billing thật/"Tự kết nối AI
 - ✅ **Block-based `content_structured`**: 17 template trả về Block JSON chuẩn (heading/paragraph/cue_box/table/card_grid/callout...), Export Engine DUY NHẤT render DOCX/PDF/HTML — tránh 17×3=51 converter
 - ✅ **Interactive HTML Ultra**: dùng HTML Template tĩnh mẫu + inject `window.__NOTE_DATA__`, KHÔNG để AI tự viết JS từ đầu
 - ✅ **Subscription schema**: bảng `subscriptions` (bill_id, plan, amount, status, qr_data, coupon_code, paid_at, renews_at) — xem mục 6
+
+**Chốt bổ sung (2026-08-20) — Pipeline file dài & AI model**:
+- ✅ Pipeline file dài (Video/Audio 10–25h) chạy **server-cloud**: Client → R2 (presigned) → **Inngest worker** demux streaming `-c:a copy` + segment **30–60 phút** (KHÔNG re-encode, vượt Lambda 15'/tmp 10GB) → STT từng chunk (overlap 10–15s + silence detection, **trọn vẹn 100%**, timestamp đầy đủ) → Map-Reduce → `content_structured` → Neon.
+- ✅ **YouTube caption client-side** (`youtubei.js`): server-side bị Google IP-block. Không có caption → UI báo unsupported.
+- ✅ **Email notify**: **Resend** (free tier 3000/tháng) khi Note xong.
+- ✅ "Free" = **miễn phí người dùng cuối**, operator tối ưu free tier **có giới hạn** (KHÔNG "free 100% vận hành" / "0đ vô điều kiện").
+- ✅ **Cap free tier**: 2GB/file, 5h source — vượt → yêu cầu nâng gói (tránh vỡ quota R2 10GB & Gemini daily cap).
+- ✅ **Model lõi: `gemini-3.7-flash` (mới nhất, Stable/GA) làm PRIMARY**, `gemini-2.5-flash` + `gemini-2.0-flash` làm **FALLBACK cascade tự động** (theo chỉ đạo Chủ tịch 2026-08-20: 3.7 chính → lỗi/429 → 2.5 → 2.0). Dispatcher phải implement **failover chain 3 bậc**: gọi 3.7 Flash, bắt `429 Resource Exhausted` / lỗi → retry 2.5 → 2.0 (cùng shared key `GEMINI_API_KEY`). 3.7 Flash giữ nguyên 1M context + 65k output + native audio/video như 2.5. ⚠️ RPM free-tier 3.7 Flash **CHƯA verify được** (login-wall AI Studio, giống 2.5) → failover đảm bảo pipeline không kẹt. Operator nên check RPM 3.7 trong console để tối ưu queue size.
+- ✅ **Runtime model = model USER CHỌN từ Model Selector** (lưu trong `AppContext`), KHÔNG hardcode default. Pipeline rẽ nhánh 2 giai đoạn: (1) **STT (audio→text)**: nếu user chọn Gemini → Gemini native audio; nếu user chọn non-Gemini (OpenAI/Claude) → bắt buộc qua **transcription service** (Whisper/equivalent) vì **Claude/OpenAI KHÔNG ingest raw audio/video** (chỉ text+image); (2) **Synthesis (text→note)**: dùng model user chọn (mọi provider đều làm được vì đã là text). User không chọn / chọn Auto → dùng Gemini chung operator (cascade 3.7→2.5→2.0). **BYOK = user trả token riêng** → vừa đỡ tốn Gemini chung, vừa mở model khác (khớp PRD 4.8).
+- ❌ Loại bỏ đề xuất "chunk 5 phút" (dựa trên số "free tier 5 phút" KHÔNG có trong Google docs — myth). Chunk chuẩn = 30–60 phút.
 
 **Còn cần xác nhận**:
 - Notebook chia sẻ: chỉ xem hay đồng biên tập
@@ -576,3 +599,5 @@ Tiêu chí chấm điểm không đòi hỏi billing thật/"Tự kết nối AI
 | 2026-08-18 | **Hợp nhất 2 file PRD** (`PRD-Zero-AI-Note.md` + `PRD_Zero_AI_Note.md`) thành 1 file duy nhất. Cập nhật theo hiện trạng triển khai: Neon database chính + Cloudflare R2 backup, JWT auth thay Neon Auth, 3 gói giá chốt con số cụ thể (3h/50h/200h, file 30'/2h/4h — sau đó được thay bằng "không giới hạn thời lượng"), đơn vị tiền tệ theo ngôn ngữ (đ/$) |
 | 2026-08-17 | Bổ sung bối cảnh Đồ án Chuyên ngành (deadline Tuần 10 & 15), quyết định storage Neon chính + R2 backup |
 | 2026-08-16 | Chuyển từ Supabase sang Neon, bổ sung BYOK chi tiết (Import/Sync free models, Test Connection/Check Model — sau này bỏ Auto-Sync, đổi tên Tự kết nối AI) |
+| 2026-08-20 | **Thống nhất Pipeline xử lý file dài (Video/Audio 10–25h) chạy server-cloud**: Client → R2 (presigned) → Inngest worker demux `ffmpeg -c:a copy` streaming + segment 30–60p (KHÔNG re-encode, vượt Lambda 15'/tmp 10GB) → STT từng chunk (overlap 10–15s + silence detection, trọn vẹn 100%, timestamp đầy đủ) → Map-Reduce → `content_structured` → Neon. YouTube caption **client-side** (`youtubei.js`, tránh IP-block); không caption → unsupported. Email notify qua **Resend** free. Ghi rõ "Free" = miễn phí người dùng cuối, operator tối ưu free tier **có giới hạn** (bỏ "free 100% vận hành"). Cap free: 2GB/file, 5h source. **Model: `gemini-3.7-flash` PRIMARY + `gemini-2.5-flash` + `gemini-2.0-flash` FALLBACK cascade tự động (failover chain 3 bậc trên 429)** — theo chỉ đạo Chủ tịch; RPM 3.7 free chưa verify (login-wall) nên cần failover. Bỏ đề xuất "chunk 5 phút" (dựa trên số ảo). |
+| 2026-08-20 | **Runtime model = model USER CHỌN** từ Model Selector (`AppContext`), không hardcode. Pipeline rẽ nhánh: STT (Gemini native nếu user chọn Gemini; transcription service nếu user chọn OpenAI/Claude vì 2 provider này **KHÔNG ingest raw audio/video**) → Synthesis (model user chọn, đã là text). User không chọn/Auto → Gemini chung operator cascade 3.7→2.5→2.0. BYOK = user trả token riêng, đỡ tốn Gemini chung. |
