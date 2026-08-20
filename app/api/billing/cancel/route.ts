@@ -12,14 +12,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const body = await request.json().catch(() => ({}));
+    const targetPlan: 'free' | 'pro' = body.plan === 'pro' ? 'pro' : 'free';
+
     // 1. Downgrade in Neon DB & memory cache
-    await downgradeUserPlan(session.sub);
-    await updateUserPlan(session.sub, 'free');
+    await downgradeUserPlan(session.sub, targetPlan);
+    await updateUserPlan(session.sub, targetPlan);
 
     return NextResponse.json({
       ok: true,
-      message: 'Subscription cancelled successfully. Account reverted to Free tier.',
-      plan: 'free',
+      message: targetPlan === 'pro' ? 'Downgraded to Pro plan successfully.' : 'Subscription cancelled successfully. Account reverted to Free tier.',
+      plan: targetPlan,
     });
   } catch (error) {
     console.error('[POST /api/billing/cancel] error:', error);

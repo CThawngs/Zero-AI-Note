@@ -92,7 +92,7 @@ interface AppContextType {
   logout: () => Promise<void>;
   upgradeToPro: () => void;
   upgradeToUltra: () => void;
-  downgradePlan: () => void;
+  downgradePlan: (targetPlan?: 'free' | 'pro') => Promise<void>;
   
   // Chat Sessions & History (Unified Sessions + Note Artifacts)
   chatSessions: ChatSessionItem[];
@@ -1333,23 +1333,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }, 1200);
   };
 
-  const downgradePlan = async () => {
+  const downgradePlan = async (targetPlan: 'free' | 'pro' = 'free') => {
     try {
       const res = await fetch('/api/billing/cancel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: targetPlan }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Failed to cancel subscription');
+      if (!res.ok) throw new Error(data.error || 'Failed to change subscription plan');
 
       setUser(prev => ({
         ...prev,
-        plan: 'free',
-        nextBillingDate: undefined
+        plan: targetPlan,
+        nextBillingDate: targetPlan === 'free' ? undefined : prev.nextBillingDate
       }));
       addToast(
-        language === 'vi' ? 'Đã huỷ gói dịch vụ thành công' : 'Subscription Cancelled', 
-        language === 'vi' ? 'Tài khoản của bạn đã được chuyển về gói Cơ bản (Free).' : 'Account successfully reverted to Free tier.',
+        targetPlan === 'pro'
+          ? (language === 'vi' ? 'Đã hạ xuống gói Pro thành công' : 'Downgraded to Pro Plan')
+          : (language === 'vi' ? 'Đã huỷ gói dịch vụ thành công' : 'Subscription Cancelled'), 
+        targetPlan === 'pro'
+          ? (language === 'vi' ? 'Tài khoản của bạn đã được chuyển về gói Pro.' : 'Account successfully changed to Pro tier.')
+          : (language === 'vi' ? 'Tài khoản của bạn đã được chuyển về gói Cơ bản (Free).' : 'Account successfully reverted to Free tier.'),
         'info'
       );
     } catch (err: any) {
@@ -1357,12 +1362,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // Fallback local update
       setUser(prev => ({
         ...prev,
-        plan: 'free',
-        nextBillingDate: undefined
+        plan: targetPlan,
+        nextBillingDate: targetPlan === 'free' ? undefined : prev.nextBillingDate
       }));
       addToast(
-        language === 'vi' ? 'Đã huỷ gói dịch vụ' : 'Subscription Cancelled', 
-        language === 'vi' ? 'Tài khoản đã chuyển về gói Cơ bản (Free).' : 'Account reverted to Free tier.',
+        targetPlan === 'pro'
+          ? (language === 'vi' ? 'Đã hạ xuống gói Pro' : 'Downgraded to Pro Plan')
+          : (language === 'vi' ? 'Đã huỷ gói dịch vụ' : 'Subscription Cancelled'), 
+        targetPlan === 'pro'
+          ? (language === 'vi' ? 'Tài khoản của bạn đã được chuyển về gói Pro.' : 'Account changed to Pro tier.')
+          : (language === 'vi' ? 'Tài khoản đã chuyển về gói Cơ bản (Free).' : 'Account reverted to Free tier.'),
         'info'
       );
     }

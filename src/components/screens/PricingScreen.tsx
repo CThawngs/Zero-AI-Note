@@ -22,13 +22,15 @@ import {
   Flame,
   FileText,
   CreditCard,
-  QrCode
+  QrCode,
+  AlertTriangle
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { PaymentQrModal } from '../modals/PaymentQrModal';
+import { Modal } from '../common/Modal';
 
 export const PricingScreen: React.FC = () => {
-  const { user, setUser, applyCouponCode, addToast, addNotification, theme, language, t } = useApp();
+  const { user, setUser, downgradePlan, applyCouponCode, addToast, addNotification, theme, language, t } = useApp();
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<{ 
     code: string; 
@@ -41,6 +43,10 @@ export const PricingScreen: React.FC = () => {
   const [isCreatingInvoice, setIsCreatingInvoice] = useState<string | null>(null);
   const [billData, setBillData] = useState<any>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
+  // Downgrade plan confirmation modal
+  const [targetDowngradePlan, setTargetDowngradePlan] = useState<'free' | 'pro' | null>(null);
+  const [isDowngrading, setIsDowngrading] = useState(false);
 
   const isDark = theme === 'dark';
 
@@ -470,18 +476,31 @@ export const PricingScreen: React.FC = () => {
                   {isCurrentPlan ? (
                     <button
                       disabled
-                      className="w-full py-3.5 px-4 rounded-2xl border text-xs font-bold bg-[var(--bg-hover)] border-[var(--border-color)] text-[var(--text-muted)] cursor-not-allowed flex items-center justify-center gap-2"
+                      className="w-full py-3.5 px-4 rounded-2xl border text-xs font-bold bg-[var(--bg-hover)] border-[var(--border-color)] text-[var(--text-muted)] cursor-not-allowed flex items-center justify-center gap-2 opacity-70"
                     >
-                      <CheckCircle2 className="w-4 h-4" />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                       <span>{language === 'vi' ? 'Đang Sử Dụng Gói Này' : 'Currently Active'}</span>
                     </button>
                   ) : plan.id === 'free' ? (
-                    <button
-                      disabled
-                      className="w-full py-3.5 px-4 rounded-2xl border text-xs font-bold bg-[var(--bg-hover)] border-[var(--border-color)] text-[var(--text-secondary)] cursor-default flex items-center justify-center gap-2"
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setTargetDowngradePlan('free')}
+                      className="w-full py-3.5 px-4 rounded-2xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center gap-2 bg-[var(--bg-hover)] hover:bg-[var(--border-color)] border-[var(--border-color)] text-[var(--text-primary)] shadow-xs active:scale-98"
                     >
-                      <span>{language === 'vi' ? 'Gói Cơ Bản Miễn Phí' : 'Free Tier'}</span>
-                    </button>
+                      <ArrowRight className="w-3.5 h-3.5 rotate-180 text-[var(--text-muted)]" />
+                      <span>{language === 'vi' ? 'Quay lại gói Free' : 'Revert to Free Tier'}</span>
+                    </motion.button>
+                  ) : plan.id === 'pro' && user.plan === 'ultra' ? (
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setTargetDowngradePlan('pro')}
+                      className="w-full py-3.5 px-4 rounded-2xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center gap-2 bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/30 text-blue-600 dark:text-blue-400 shadow-xs active:scale-98"
+                    >
+                      <ArrowRight className="w-3.5 h-3.5 rotate-180 text-blue-500" />
+                      <span>{language === 'vi' ? 'Hạ xuống gói Pro' : 'Downgrade to Pro'}</span>
+                    </motion.button>
                   ) : (
                     <motion.button
                       whileHover={{ scale: 1.02 }}
@@ -569,6 +588,94 @@ export const PricingScreen: React.FC = () => {
         </div>
 
       </div>
+
+      {/* Downgrade / Cancel Confirmation Modal */}
+      {targetDowngradePlan && (
+        <Modal
+          isOpen={true}
+          onClose={() => !isDowngrading && setTargetDowngradePlan(null)}
+          title={language === 'vi' ? 'Xác nhận chuyển đổi hạ gói' : 'Confirm Plan Downgrade'}
+          maxWidth="max-w-md"
+        >
+          <div className="space-y-4">
+            <div className={`p-3.5 rounded-xl border text-xs flex items-start gap-2.5 ${
+              isDark ? 'bg-amber-500/10 border-amber-500/30 text-amber-400' : 'bg-amber-50 border-amber-200 text-amber-800'
+            }`}>
+              <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="font-bold">
+                  {language === 'vi' 
+                    ? `Bạn có chắc muốn ${targetDowngradePlan === 'free' ? 'quay lại gói Free' : 'hạ xuống gói Pro'}?`
+                    : `Are you sure you want to ${targetDowngradePlan === 'free' ? 'revert to Free plan' : 'downgrade to Pro plan'}?`}
+                </p>
+                <p className="leading-relaxed opacity-90">
+                  {language === 'vi'
+                    ? 'Lưu ý: Đây là quyết định hạ gói cước. Quyền lợi cao cấp của gói hiện tại sẽ bị thu hẹp theo giới hạn của gói mới và số tiền đã thanh toán cho chu kỳ hiện tại sẽ không được hoàn lại.'
+                    : 'Note: This action will downgrade your active subscription. Premium features will be restricted to the target tier and paid fees for the current cycle are non-refundable.'}
+                </p>
+              </div>
+            </div>
+
+            <div className={`p-3 rounded-xl border text-xs space-y-1.5 ${
+              isDark ? 'bg-[var(--bg-app)] border-[var(--border-color)] text-[var(--text-secondary)]' : 'bg-[var(--bg-hover)] border-[var(--border-color)] text-[var(--text-secondary)]'
+            }`}>
+              <p className="font-semibold text-[var(--text-primary)]">
+                {language === 'vi' ? 'Thay đổi quyền lợi tài khoản:' : 'Account changes:'}
+              </p>
+              <ul className="list-disc pl-4 space-y-1 text-[11px]">
+                {targetDowngradePlan === 'free' ? (
+                  <>
+                    <li>{language === 'vi' ? 'Dung lượng lưu trữ giảm về 1 GB (Tối đa 20 ghi chú)' : 'Storage limit reduced to 1 GB (Max 20 notes)'}</li>
+                    <li>{language === 'vi' ? 'Tối đa 5 templates tùy chỉnh' : 'Max 5 custom templates'}</li>
+                    <li>{language === 'vi' ? 'Hủy bỏ tính năng Multi-Export & ZIP cao cấp' : 'Multi-Export & ZIP bundle disabled'}</li>
+                  </>
+                ) : (
+                  <>
+                    <li>{language === 'vi' ? 'Dung lượng lưu trữ giảm từ 50 GB về 10 GB' : 'Storage reduced from 50 GB to 10 GB'}</li>
+                    <li>{language === 'vi' ? 'Tối đa 50 ghi chú & 25 templates tùy chỉnh' : 'Max 50 notes & 25 custom templates'}</li>
+                    <li>{language === 'vi' ? 'Chuyển về mức phí 199.000đ / tháng' : 'Pro tier pricing applied (199,000đ/mo)'}</li>
+                  </>
+                )}
+              </ul>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                disabled={isDowngrading}
+                onClick={() => setTargetDowngradePlan(null)}
+                className={`px-4 py-2 rounded-xl text-xs font-semibold cursor-pointer active:scale-95 transition-all ${
+                  isDark ? 'bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:bg-[var(--border-color)]' : 'bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
+                }`}
+              >
+                {language === 'vi' ? 'Giữ nguyên gói hiện tại' : 'Keep Current Plan'}
+              </button>
+              <button
+                type="button"
+                id="btn-confirm-plan-downgrade"
+                disabled={isDowngrading}
+                onClick={async () => {
+                  setIsDowngrading(true);
+                  try {
+                    await downgradePlan(targetDowngradePlan);
+                    setTargetDowngradePlan(null);
+                  } finally {
+                    setIsDowngrading(false);
+                  }
+                }}
+                className="px-4 py-2 rounded-xl bg-[var(--status-error)] hover:opacity-90 text-white text-xs font-semibold disabled:opacity-50 cursor-pointer shadow-md shadow-[var(--status-error)]/20 active:scale-95 transition-all flex items-center gap-1.5"
+              >
+                {isDowngrading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>
+                  {isDowngrading 
+                    ? (language === 'vi' ? 'Đang chuyển đổi...' : 'Changing...') 
+                    : (language === 'vi' ? 'Xác nhận hạ gói' : 'Confirm Downgrade')}
+                </span>
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
 
       {/* VietQR Payment Modal */}
       <PaymentQrModal 

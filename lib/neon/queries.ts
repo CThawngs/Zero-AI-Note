@@ -471,12 +471,12 @@ export async function upgradeUserPlan(
   }
 }
 
-export async function downgradeUserPlan(userIdOrEmail: string): Promise<void> {
+export async function downgradeUserPlan(userIdOrEmail: string, targetPlan: 'free' | 'pro' = 'free'): Promise<void> {
   const sql = getSql();
   const updatedProfiles = await sql`
     update profiles
-    set plan = 'free',
-        plan_renews_at = null
+    set plan = ${targetPlan},
+        plan_renews_at = ${targetPlan === 'free' ? null : sql`now() + interval '30 days'`}
     where id::text = ${userIdOrEmail} or email = ${userIdOrEmail}
     returning id
   `;
@@ -489,6 +489,12 @@ export async function downgradeUserPlan(userIdOrEmail: string): Promise<void> {
       set status = 'cancelled'
       where user_id = ${userId} and status in ('active', 'paid', 'pending')
     `;
+    if (targetPlan === 'pro') {
+      await sql`
+        insert into subscriptions (user_id, plan, status, renews_at)
+        values (${userId}, 'pro', 'paid', now() + interval '30 days')
+      `;
+    }
   } catch (e) {
     console.warn('Could not update subscription to cancelled:', e);
   }
