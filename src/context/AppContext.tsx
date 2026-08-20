@@ -1398,6 +1398,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setChatMessages(prev => [...prev, newUserMsg]);
     setIsProcessingChat(true);
     setProcessingStep(1);
+    const startTime = Date.now();
 
     const effectiveModel = selectedModel || 'gemini-2.0-flash';
     const activeProvider = aiProviders.find(p =>
@@ -1432,6 +1433,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (!res.ok) throw new Error(data.error || 'AI processing failed');
 
       setProcessingStep(4);
+      const durationSec = Math.max(0.4, Number(((Date.now() - startTime) / 1000).toFixed(1)));
 
       let generatedNote: NoteItem | undefined = undefined;
       if (data.isNoteAction && data.note) {
@@ -1452,6 +1454,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         text: data.replyText || (isEn ? 'I have processed your request.' : 'Tôi đã xử lý xong yêu cầu của bạn.'),
         timestamp: nowTime,
         noteResultId: generatedNote?.id,
+        model: effectiveModel,
+        provider: activeProvider?.name || (effectiveModel.startsWith('gemini') ? 'Google AI' : 'AI Engine'),
+        thinkingDuration: durationSec,
+        thoughtProcess: isEn 
+          ? `Thought in ${durationSec}s · Evaluated context and formulated optimal response using ${effectiveModel}.`
+          : `Suy luận trong ${durationSec}s · Đã phân tích ngữ cảnh và tổng hợp câu trả lời tối ưu qua ${effectiveModel}.`,
       };
 
       const updatedHistory = [...chatMessages, newUserMsg, aiMsg];

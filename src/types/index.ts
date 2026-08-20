@@ -220,6 +220,10 @@ export interface ChatMessage {
     }[];
   };
   noteResultId?: string;
+  model?: string;
+  provider?: string;
+  thinkingDuration?: number; // Thinking duration in seconds, e.g. 2.4
+  thoughtProcess?: string; // Summary of Chain of Thought
 }
 
 export interface ChatSessionItem {

@@ -25,6 +25,8 @@ import { AttachSourceModal } from '../modals/AttachSourceModal';
 import { CustomTemplateModal } from '../modals/CustomTemplateModal';
 import { MethodPillRow } from '../chat/MethodPillRow';
 import { ChatPipelineProgress } from '../chat/ChatPipelineProgress';
+import { AIThinkingEffect } from '../chat/AIThinkingEffect';
+import { ThinkingBlock } from '../chat/ThinkingBlock';
 import { UploadArea } from '../common/UploadArea';
 import { MarkdownView } from '../common/MarkdownView';
 
@@ -337,6 +339,15 @@ export const ChatScreen: React.FC = () => {
                 )}
 
                 <div className="max-w-[88%] sm:max-w-[82%] space-y-2">
+                  {/* Thinking pill / accordion for AI messages */}
+                  {msg.sender === 'ai' && (
+                    <ThinkingBlock 
+                      duration={msg.thinkingDuration} 
+                      model={msg.model} 
+                      thoughtProcess={msg.thoughtProcess} 
+                    />
+                  )}
+
                   <div
                     className={`p-3.5 sm:p-4 rounded-2xl text-xs sm:text-sm leading-relaxed ${
                       msg.sender === 'user'
@@ -433,9 +444,14 @@ export const ChatScreen: React.FC = () => {
               </motion.div>
             ))}
 
-            {/* AI Multi-step Processing Pipeline Card */}
+            {/* AI Live Thinking Effect and Pipeline Indicator */}
             {isProcessingChat && (
-              <ChatPipelineProgress currentStep={processingStep} />
+              <div className="space-y-4">
+                <AIThinkingEffect hasAttachments={attachedSources.length > 0} />
+                {attachedSources.length > 0 && (
+                  <ChatPipelineProgress currentStep={processingStep} />
+                )}
+              </div>
             )}
 
             <div ref={messagesEndRef} />
