@@ -17,7 +17,7 @@ import { PricingScreen } from './components/screens/PricingScreen';
 import { AdminCouponScreen } from './components/screens/AdminCouponScreen';
 
 const MainApp: React.FC = () => {
-  const { currentScreen } = useApp();
+  const { currentScreen, user } = useApp();
 
   // If on login screen
   if (currentScreen === 'login') {
@@ -29,8 +29,23 @@ const MainApp: React.FC = () => {
     );
   }
 
-  // If on dedicated Admin portal
+  // If on dedicated Admin portal — strictly restrict to nguyenchithang2804@gmail.com
   if (currentScreen === 'admin-coupons') {
+    if (!user || user.email !== 'nguyenchithang2804@gmail.com') {
+      // Force back to chat screen for non-admin users
+      return (
+        <div className="h-screen w-screen font-sans antialiased flex overflow-hidden transition-colors duration-250 bg-app-theme text-theme-primary">
+          <Sidebar />
+          <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden transition-colors duration-250 bg-app-theme">
+            <Header />
+            <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+              <ChatScreen />
+            </main>
+          </div>
+          <ToastContainer />
+        </div>
+      );
+    }
     return (
       <div className="h-screen w-screen font-sans antialiased flex flex-col overflow-hidden transition-colors duration-250 bg-app-theme text-theme-primary">
         <AdminCouponScreen />

@@ -299,29 +299,31 @@ export const Sidebar: React.FC = () => {
 
       {/* Bottom section: Admin switch & User (Sticky) */}
       <div className="p-3 border-t shrink-0 flex flex-col gap-2 border-[var(--border-color)] bg-[var(--bg-sidebar)]">
-        {/* Admin Portal Shortcut */}
-        <motion.button
-          id="btn-switch-admin"
-          whileHover={{ scale: 1.01 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => {
-            setCurrentScreen(currentScreen === 'admin-coupons' ? 'chat' : 'admin-coupons');
-            setIsMobileSidebarOpen(false);
-          }}
-          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium border transition-colors cursor-pointer ${
-            currentScreen === 'admin-coupons'
-              ? 'bg-[var(--accent-subtle)] border-[var(--accent-primary)]/40 text-[var(--accent-primary)] font-semibold'
-              : 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] shadow-2xs'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-[var(--status-success)]" />
-            <span>{t('navAdminArea')}</span>
-          </div>
-          <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-bold bg-[var(--status-success)]/20 text-[var(--status-success)]">
-            {currentScreen === 'admin-coupons' ? 'Active' : 'Portal'}
-          </span>
-        </motion.button>
+        {/* Admin Portal Shortcut — Strictly restricted to nguyenchithang2804@gmail.com */}
+        {user?.email === 'nguyenchithang2804@gmail.com' && (
+          <motion.button
+            id="btn-switch-admin"
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => {
+              setCurrentScreen(currentScreen === 'admin-coupons' ? 'chat' : 'admin-coupons');
+              setIsMobileSidebarOpen(false);
+            }}
+            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium border transition-colors cursor-pointer ${
+              currentScreen === 'admin-coupons'
+                ? 'bg-[var(--accent-subtle)] border-[var(--accent-primary)]/40 text-[var(--accent-primary)] font-semibold'
+                : 'bg-[var(--bg-card)] border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] shadow-2xs'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-[var(--status-success)]" />
+              <span>{t('navAdminArea')}</span>
+            </div>
+            <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-bold bg-[var(--status-success)]/20 text-[var(--status-success)]">
+              {currentScreen === 'admin-coupons' ? 'Active' : 'Portal'}
+            </span>
+          </motion.button>
+        )}
 
         {/* User Profile Card */}
         <div className="flex items-center gap-1.5">
@@ -340,7 +342,7 @@ export const Sidebar: React.FC = () => {
                 {user.name}
               </p>
               <div className="flex items-center gap-1.5 mt-0.5">
-                {user.role === 'admin' ? (
+                {user.email === 'nguyenchithang2804@gmail.com' ? (
                   <span className="text-[9px] uppercase font-black px-1.5 py-0.5 rounded-md font-mono tracking-tight bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-0.5 shadow-xs shrink-0">
                     <Shield className="w-2.5 h-2.5" />
                     <span>ADMIN</span>

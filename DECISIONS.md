@@ -424,7 +424,26 @@
 
 ---
 
-## 22. References
+## 22. Genuine Dual-Mode AI Agent Engine Architecture & Autonomous Information Gathering (2026-08-20)
+
+### Problem
+- Giao diện chat trước đây bị chặn bởi các điều kiện kiểm tra cứng nhắc (hardcoded guards) ở client (`if (!attachedSources) return hardcoded message...`), khiến AI không gọi API LLM thực tế khi người dùng trò chuyện, đặt câu hỏi về danh tính, hỏi về model LLM đang dùng hay yêu cầu viết code.
+- Backend trước đây chỉ ép schema JSON tạo ghi chú, thiếu khả năng hội thoại tự nhiên, thiếu phản hồi chat và thiếu cơ chế thu thập thông tin tự động khi người dùng yêu cầu tạo note nhưng chưa có nội dung cụ thể.
+
+### Decision & Implementation
+1. **Loại bỏ Hoàn Toàn Hardcoded Guards ở Client (`AppContext.tsx`)**:
+   - Mọi tin nhắn của người dùng (có đính kèm file hoặc không) đều được gửi trực tiếp tới AI Engine (`/api/notes/generate`).
+   - Tự động truyền API Key và Endpoint của Provider tương ứng được chọn (`Google AI Studio`, `OpenAI`, `Anthropic`, `Groq`, `OpenRouter`, `NVIDIA`, `Local Ollama`, `Custom Endpoints`).
+2. **Kiến Trúc Dual-Mode AI Agent Engine (`gemini.ts`, `dispatcher.ts`, `/api/notes/generate`)**:
+   - **Chế độ 1 - Conversational Chat, In-depth Reasoning & Clean Code**: Khi người dùng chào hỏi, hỏi "bạn là ai", hỏi về mô hình đang dùng, hỏi kiến thức hay yêu cầu viết code Frontend/UI-UX, AI Agent nhận thức rõ danh tính (*Zero AI Note Agent*), mô hình đang kích hoạt (`model`), trả lời chi tiết, sắc sảo, sinh mã nguồn sạch (clean code) với cú pháp chuẩn xác.
+   - **Chế độ 2 - Autonomous Information Gathering**: Khi người dùng yêu cầu tạo Note nhưng chưa cung cấp chủ đề hoặc tài liệu, AI Agent thông minh hỏi thăm, gợi ý người dùng bổ sung thông tin thay vì từ chối hay phản hồi theo mẫu máy móc.
+   - **Chế độ 3 - Autonomous Academic Note Synthesis**: Khi có đầy đủ tài liệu, bài giảng hoặc văn bản, AI Agent vừa phản hồi xác nhận thân thiện trong chat (`replyText`), vừa đồng thời kiến tạo bản ghi chú học thuật chuẩn hóa chuyên sâu (`note` artifact theo 17 phương pháp) cập nhật trực tiếp vào Artifact Panel bên phải.
+3. **Trình Trực Quan Hóa Markdown & Code Block Độc Quyền (`MarkdownView.tsx`, `ChatScreen.tsx`)**:
+   - Tích hợp component `MarkdownView` hỗ trợ render Markdown toàn diện: đề mục `#`, danh sách `•`, trích dẫn `>`, và khối mã nguồn tối ưu (`CodeBlock`) kèm thanh công cụ hiển thị ngôn ngữ lập trình và nút **Sao Chép Code 1-Click**.
+
+---
+
+## 23. References
 - [Neon Documentation](https://neon.tech/docs)
 - [Drizzle ORM](https://orm.drizzle.team)
 - [gitleaks](https://github.com/gitleaks/gitleaks)

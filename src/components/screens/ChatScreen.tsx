@@ -26,6 +26,7 @@ import { CustomTemplateModal } from '../modals/CustomTemplateModal';
 import { MethodPillRow } from '../chat/MethodPillRow';
 import { ChatPipelineProgress } from '../chat/ChatPipelineProgress';
 import { UploadArea } from '../common/UploadArea';
+import { MarkdownView } from '../common/MarkdownView';
 
 export const ChatScreen: React.FC = () => {
   const { 
@@ -345,7 +346,11 @@ export const ChatScreen: React.FC = () => {
                           : 'bg-white text-[var(--text-primary)] border border-[var(--border-color)] shadow-2xs rounded-tl-xs'
                     }`}
                   >
-                    <p className="whitespace-pre-wrap">{msg.text}</p>
+                    {msg.sender === 'ai' ? (
+                      <MarkdownView content={msg.text} />
+                    ) : (
+                      <p className="whitespace-pre-wrap">{msg.text}</p>
+                    )}
 
                     {/* Attached files preview in message */}
                     {msg.attachments && msg.attachments.length > 0 && (

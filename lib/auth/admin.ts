@@ -5,7 +5,7 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'nguyenchithang2804@gmail.com';
 
 /**
  * Check if the current session user is an admin.
- * Uses ADMIN_EMAIL environment variable for the hardcoded admin email.
+ * Strictly restricts access to the hardcoded admin email.
  */
 export async function isAdmin(request: NextRequest): Promise<boolean> {
   const sessionToken = request.cookies.get('zero_ai_note_session')?.value;
@@ -14,8 +14,8 @@ export async function isAdmin(request: NextRequest): Promise<boolean> {
   const session = await verifySession(sessionToken);
   if (!session) return false;
   
-  // Check both role or email for defense-in-depth
-  return session.role === 'admin' || isAdminEmail(session.email);
+  // Strictly enforce admin email check to prevent any role spoofing/injection
+  return isAdminEmail(session.email);
 }
 
 /**

@@ -57,6 +57,17 @@ export const AdminCouponScreen: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
 
+  // Hard block non-admin users at mount level
+  useEffect(() => {
+    if (!user || user.email !== 'nguyenchithang2804@gmail.com') {
+      setCurrentScreen('chat');
+    }
+  }, [user, setCurrentScreen]);
+
+  if (!user || user.email !== 'nguyenchithang2804@gmail.com') {
+    return null;
+  }
+
   // Stats State
   const [statsData, setStatsData] = useState<any>(null);
   const [isLoadingStats, setIsLoadingStats] = useState(false);

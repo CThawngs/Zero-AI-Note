@@ -1,8 +1,14 @@
-import { generateStructuredNote as generateGeminiNote, StructuredNoteOutput } from './gemini';
+import { 
+  generateAgentResponse as generateGeminiAgentResponse, 
+  generateStructuredNote as generateGeminiNote, 
+  StructuredNoteOutput, 
+  AgentResponseOutput 
+} from './gemini';
 import { NoteMethod } from '@/src/types';
 
 export interface AIModelRequest {
   inputText: string;
+  chatHistory?: { role: 'user' | 'assistant' | 'system'; content: string }[];
   method?: NoteMethod;
   language?: 'vi' | 'en';
   model?: string;
@@ -36,25 +42,26 @@ const methodGuidance: Record<NoteMethod, string> = {
   custom: 'Cấu trúc theo yêu cầu và hướng dẫn tùy biến từ người dùng.',
 };
 
+// Pool 3 template Free (PRD 4.2): khi user Free dùng Auto, chỉ cho random trong đây.
+const freeTemplates: NoteMethod[] = ['cornell', 'outline', 'summary'];
+
 /**
- * Universal AI Note Dispatcher:
- * Routes requests through System Gemini 2.0 Flash or BYOK Providers (OpenAI, Claude, Groq, OpenRouter, NVIDIA, Custom)
+ * Universal AI Agent Dispatcher:
+ * Routes requests through System Gemini 2.5 Flash, or BYOK Providers (Google, OpenAI, Claude, Groq, OpenRouter, NVIDIA, Local, Custom Endpoints).
+ * Returns AgentResponseOutput containing conversational replyText and optional structured note artifact.
  */
-export async function dispatchStructuredNote(params: AIModelRequest): Promise<StructuredNoteOutput> {
+export async function dispatchAgentResponse(params: AIModelRequest): Promise<AgentResponseOutput> {
   const { providerId, endpointUrl, apiKey, model, inputText, method = 'auto', language = 'vi', userPlan } = params;
 
-  // Chống lách gói (Tier Bypass) — PRD 4.2:
-  // 'auto' cho user Free được route về pool 3 template Free (cornell/outline/summary).
-  // Pro/Ultra giữ 'auto' đầy đủ. User không đăng nhập xem như Free.
   const resolvedMethod: NoteMethod =
     method === 'auto' && (userPlan || 'free') === 'free'
       ? freeTemplates[Math.floor(Math.random() * freeTemplates.length)]
       : method;
 
-  // 1. If no custom endpoint provided, use built-in Google Gemini Free Tier Pool
+  // 1. Built-in Google Gemini Free Tier Pool
   if (!endpointUrl || providerId === 'google-system' || providerId === 'system') {
     try {
-      return await generateGeminiNote({
+      return await generateGeminiAgentResponse({
         inputText,
         method: resolvedMethod,
         language,
@@ -73,7 +80,7 @@ export async function dispatchStructuredNote(params: AIModelRequest): Promise<St
 
   // 2. BYOK Google Gemini with custom API Key
   if (endpointUrl.includes('googleapis.com') || providerId === 'google') {
-    return await generateGeminiNote({
+    return await generateGeminiAgentResponse({
       inputText,
       method: resolvedMethod,
       language,
@@ -84,51 +91,90 @@ export async function dispatchStructuredNote(params: AIModelRequest): Promise<St
 
   // 3. BYOK Anthropic Claude
   if (endpointUrl.includes('anthropic.com') || providerId === 'anthropic') {
-    return await generateWithAnthropic({ ...params, method: resolvedMethod });
+    return await generateAgentWithAnthropic({ ...params, method: resolvedMethod });
   }
 
-  // 4. BYOK OpenAI / Groq / OpenRouter / NVIDIA / Custom OpenAI-Compatible
-  return await generateWithOpenAICompatible({ ...params, method: resolvedMethod });
+  // 4. BYOK OpenAI / Groq / OpenRouter / NVIDIA / Local / Custom OpenAI-Compatible
+  return await generateAgentWithOpenAICompatible({ ...params, method: resolvedMethod });
 }
 
-// Pool 3 template Free (PRD 4.2): khi user Free dùng Auto, chỉ cho random trong đây.
-const freeTemplates: NoteMethod[] = ['cornell', 'outline', 'summary'];
+/**
+ * Backward-compatible dispatchStructuredNote
+ */
+export async function dispatchStructuredNote(params: AIModelRequest): Promise<StructuredNoteOutput> {
+  const agentRes = await dispatchAgentResponse(params);
+  if (agentRes.note) {
+    return agentRes.note;
+  }
+  return {
+    title: 'Ghi chú nghiên cứu',
+    method: params.method || 'cornell',
+    summary: agentRes.replyText.substring(0, 300),
+    category: 'AI Assistant',
+    keywords: ['AI', 'Research', 'Notes'],
+    coreQuestions: ['Mục tiêu cốt lõi?'],
+    content: {
+      overview: agentRes.replyText,
+      sections: [{ title: 'Nội dung', text: agentRes.replyText }],
+      summaryText: 'Hoàn thành ghi chú.',
+    },
+    rawMarkdown: agentRes.replyText,
+  };
+}
 
-async function generateWithOpenAICompatible(params: AIModelRequest): Promise<StructuredNoteOutput> {
+async function generateAgentWithOpenAICompatible(params: AIModelRequest): Promise<AgentResponseOutput> {
   const { endpointUrl, apiKey, model = 'gpt-4o-mini', inputText, method = 'auto', language = 'vi' } = params;
   const cleanEndpoint = (endpointUrl || 'https://api.openai.com/v1').replace(/\/+$/, '');
   const url = cleanEndpoint.endsWith('/chat/completions') ? cleanEndpoint : `${cleanEndpoint}/chat/completions`;
 
-  const systemPrompt = `Bạn là Chuyên gia Ghi chú Học thuật AI (Zero AI Note Engine).
-Nhiệm vụ: Chuyển đổi nội dung đầu vào thành Structured Note chất lượng cao.
-Phương pháp: "${method}" (${methodGuidance[method] || methodGuidance.auto}).
+  const systemPrompt = `Bạn là Zero AI Note Agent — Trợ lý Nghiên cứu & Ghi chú Học thuật Thông minh kiêm Kỹ sư Phần mềm Cao cấp (Senior Software & AI Engineer).
+Mô hình AI bạn đang chạy: "${model}".
 Ngôn ngữ: ${language === 'vi' ? 'Tiếng Việt' : 'English'}.
 
-BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON HỢP LỆ THEO SCHEMA SAU (Không thêm text ngoài JSON):
+ĐẶC ĐIỂM HOẠT ĐỘNG:
+1. Trả lời thông minh, đúng trọng tâm, hiểu ngữ cảnh và hỗ trợ lập trình Frontend / UI-UX sạch đẹp khi được hỏi.
+2. Nếu người dùng chỉ đang trò chuyện, hỏi bạn là ai, hỏi model/provider đang dùng, giải thích khái niệm, hoặc viết code:
+   - "isNoteAction": false
+   - "replyText": Trả lời chi tiết, Markdown đầy đủ trong khung chat.
+   - "note": null
+3. Nếu người dùng yêu cầu tạo note nhưng chưa có đủ thông tin / tài liệu:
+   - "isNoteAction": false
+   - "replyText": Hỏi thăm và gợi ý người dùng cung cấp thêm chủ đề hoặc tài liệu.
+   - "note": null
+4. Nếu người dùng cung cấp tài liệu hoặc yêu cầu cụ thể tổng hợp bài học:
+   - "isNoteAction": true
+   - "replyText": Lời nhắn ngắn gọn đã tổng hợp note vào Artifact Panel.
+   - "note": Structured Note JSON theo method "${method}".
+
+BẮT BUỘC TRẢ VỀ DUY NHẤT JSON THEO SCHEMA:
 {
-  "title": "Tiêu đề ghi chú",
-  "method": "${method === 'auto' ? 'cornell' : method}",
-  "summary": "Tóm tắt tổng quan 1-2 đoạn văn",
-  "category": "Danh mục",
-  "keywords": ["từ khóa 1", "từ khóa 2", "từ khóa 3", "từ khóa 4", "từ khóa 5"],
-  "coreQuestions": ["Câu hỏi 1?", "Câu hỏi 2?", "Câu hỏi 3?"],
-  "content": {
-    "overview": "Tổng quan bối cảnh tài liệu",
-    "sections": [
-      {
-        "title": "Tiêu đề phần 1",
-        "definition": "Định nghĩa cốt lõi nếu có",
-        "text": "Nội dung phân tích chi tiết",
-        "cue": "Gợi ý / Từ khóa (cho Cornell)",
-        "note": "Ý chính chi tiết (cho Cornell)",
-        "question": "Câu hỏi",
-        "answer": "Câu trả lời",
-        "bulletPoints": ["Điểm quan trọng 1", "Điểm quan trọng 2"]
-      }
-    ],
-    "summaryText": "Kết luận và bài học rút ra"
-  },
-  "rawMarkdown": "# Bản ghi chú định dạng Markdown..."
+  "replyText": "Nội dung phản hồi khung chat",
+  "isNoteAction": true hoặc false,
+  "note": {
+    "title": "Tiêu đề ghi chú",
+    "method": "${method === 'auto' ? 'cornell' : method}",
+    "summary": "Tóm tắt tổng quan",
+    "category": "Danh mục",
+    "keywords": ["từ khóa 1", "từ khóa 2", "từ khóa 3", "từ khóa 4", "từ khóa 5"],
+    "coreQuestions": ["Câu hỏi 1?", "Câu hỏi 2?", "Câu hỏi 3?"],
+    "content": {
+      "overview": "Tổng quan",
+      "sections": [
+        {
+          "title": "Tiêu đề phần",
+          "definition": "Định nghĩa nếu có",
+          "text": "Nội dung phân tích",
+          "cue": "Gợi ý",
+          "note": "Ý chính",
+          "question": "Câu hỏi",
+          "answer": "Câu trả lời",
+          "bulletPoints": ["Điểm 1", "Điểm 2"]
+        }
+      ],
+      "summaryText": "Kết luận"
+    },
+    "rawMarkdown": "# Bản ghi chú định dạng Markdown..."
+  } (hoặc null nếu isNoteAction là false)
 }`;
 
   const headers: Record<string, string> = {
@@ -149,10 +195,10 @@ BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON HỢP LỆ THEO SCHEMA SAU (K
       model,
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Nội dung cần ghi chú:\n\n${inputText}` },
+        { role: 'user', content: inputText },
       ],
       response_format: { type: 'json_object' },
-      temperature: 0.2,
+      temperature: 0.3,
     }),
   });
 
@@ -164,14 +210,21 @@ BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON HỢP LỆ THEO SCHEMA SAU (K
   const data = await res.json();
   const rawContent = data.choices?.[0]?.message?.content || '{}';
   const cleaned = rawContent.replace(/^```json\s*/, '').replace(/\s*```$/, '').trim();
-  return JSON.parse(cleaned) as StructuredNoteOutput;
+  const parsed = JSON.parse(cleaned) as AgentResponseOutput;
+  return parsed;
 }
 
-async function generateWithAnthropic(params: AIModelRequest): Promise<StructuredNoteOutput> {
+async function generateAgentWithAnthropic(params: AIModelRequest): Promise<AgentResponseOutput> {
   const { endpointUrl = 'https://api.anthropic.com/v1', apiKey, model = 'claude-3-5-haiku-20241022', inputText, method = 'auto', language = 'vi' } = params;
   const url = `${endpointUrl.replace(/\/+$/, '')}/messages`;
 
-  const systemPrompt = `Bạn là Chuyên gia Ghi chú Học thuật AI (Zero AI Note Engine). Trả về duy nhất JSON hợp lệ (không markdown block) cho ghi chú học thuật: title, method, summary, category, keywords, coreQuestions, content (overview, sections với cue/note/bulletPoints), summaryText, rawMarkdown.`;
+  const systemPrompt = `Bạn là Zero AI Note Agent — Trợ lý Nghiên cứu & Ghi chú Học thuật Thông minh (chạy trên Anthropic Claude ${model}).
+Trả về duy nhất JSON hợp lệ theo schema:
+{
+  "replyText": "Nội dung phản hồi chat",
+  "isNoteAction": boolean,
+  "note": null hoặc object { title, method, summary, category, keywords, coreQuestions, content, rawMarkdown }
+}`;
 
   const res = await fetch(url, {
     method: 'POST',
@@ -183,9 +236,9 @@ async function generateWithAnthropic(params: AIModelRequest): Promise<Structured
     body: JSON.stringify({
       model,
       system: systemPrompt,
-      messages: [{ role: 'user', content: `Tạo ghi chú theo phương pháp ${method} (${language}):\n\n${inputText}` }],
+      messages: [{ role: 'user', content: `Yêu cầu từ người dùng (${language}):\n\n${inputText}` }],
       max_tokens: 4000,
-      temperature: 0.2,
+      temperature: 0.3,
     }),
   });
 
@@ -197,5 +250,5 @@ async function generateWithAnthropic(params: AIModelRequest): Promise<Structured
   const data = await res.json();
   const text = data.content?.[0]?.text || '{}';
   const cleaned = text.replace(/^```json\s*/, '').replace(/\s*```$/, '').trim();
-  return JSON.parse(cleaned) as StructuredNoteOutput;
+  return JSON.parse(cleaned) as AgentResponseOutput;
 }
