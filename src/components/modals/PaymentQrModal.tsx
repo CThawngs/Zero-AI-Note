@@ -59,13 +59,59 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({
     }
   }, [isOpen, billData?.bill_id]);
 
+  // Tự động kiểm tra trạng thái thanh toán Realtime mỗi 2 giây
+  // Khi tiền vào tài khoản MBBank qua PayOS -> Tự động nổ pháo hoa và đóng popup
+  useEffect(() => {
+    if (!isOpen || !billData?.bill_id || isPaidSuccess) return;
+
+    let isMounted = true;
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/billing/check-status?billId=${billData.bill_id}&plan=${billData.plan}`);
+        const data = await res.json().catch(() => ({}));
+        if (!isMounted) return;
+
+        if (data.isPaid || data.status === 'paid') {
+          clearInterval(pollInterval);
+          setIsPaidSuccess(true);
+          setUser(prev => ({ ...prev, plan: billData.plan }));
+
+          confetti({
+            particleCount: 160,
+            spread: 85,
+            origin: { y: 0.6 },
+          });
+
+          addToast(
+            language === 'vi' ? '🎉 Thanh toán thành công!' : '🎉 Payment Received!',
+            language === 'vi'
+              ? `Tài khoản của bạn đã được nâng cấp lên gói ${billData.plan.toUpperCase()}.`
+              : `Your account is now upgraded to ${billData.plan.toUpperCase()} plan.`,
+            'success'
+          );
+
+          setTimeout(() => {
+            if (isMounted) onClose();
+          }, 2500);
+        }
+      } catch (err) {
+        console.warn('Auto-poll check payment error:', err);
+      }
+    }, 2000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(pollInterval);
+    };
+  }, [isOpen, billData?.bill_id, isPaidSuccess, billData?.plan, language, onClose, setUser, addToast]);
+
   /** Dựng payload EMVCo VietQR chuẩn từ qr_data object (Napas spec 2022) */
   const buildVietQrString = (): string => {
     if (!billData?.qr_data) return '';
     const { acqId, accountNo, amount, addInfo } = billData.qr_data;
     try {
       const qr = QRPay.initVietQR({
-        bankBin: acqId || '970436', // Default Vietcombank BIN if empty
+        bankBin: acqId || '970422', // Default MBBank BIN if empty
         bankNumber: accountNo,
         amount: String(Number(amount) || 0),
         purpose: addInfo || billData.bill_id,
@@ -83,35 +129,29 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({
 
   const qrValue = billData?.qr_data ? buildVietQrString() : '';
 
-  // Xử lý khi user bấm nút "Tôi Đã Chuyển Tiền Thành Công"
-  // CHỈ NÂNG CẤP KHI NGÂN HÀNG XÁC NHẬN TIỀN ĐÃ VÀO TÀI KHOẢN (isPaid = true)
+  // Xử lý khi user bấm nút "Kiểm Tra Thanh Toán Ngay"
   const handleManualConfirm = async () => {
     if (!billData || isSubmittingConfirm || isPaidSuccess) return;
     try {
       setIsSubmittingConfirm(true);
       setPaymentError(null);
 
-      const res = await fetch('/api/billing/confirm', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ billId: billData.bill_id, plan: billData.plan }),
-      });
+      const res = await fetch(`/api/billing/check-status?billId=${billData.bill_id}&plan=${billData.plan}`);
       const data = await res.json().catch(() => ({}));
 
-      // BẮT BUỘC data.ok VÀ data.isPaid PHẢI LÀ TRUE MỚI CHO NÂNG CẤP
-      if (data.ok && data.isPaid) {
+      // BẮT BUỘC data.isPaid PHẢI LÀ TRUE MỚI CHO NÂNG CẤP
+      if (data.isPaid || data.status === 'paid') {
         setIsPaidSuccess(true);
-        setUser(prev => ({ ...prev, plan: billData.plan, appliedCoupon: undefined }));
-        onSuccess?.();
+        setUser(prev => ({ ...prev, plan: billData.plan }));
 
         confetti({
-          particleCount: 150,
+          particleCount: 160,
           spread: 85,
           origin: { y: 0.6 },
         });
 
         addToast(
-          language === 'vi' ? '🎉 Nâng cấp thành công!' : '🎉 Upgrade Successful!',
+          language === 'vi' ? '🎉 Thanh toán thành công!' : '🎉 Payment Received!',
           language === 'vi'
             ? `Tài khoản của bạn đã được nâng cấp lên gói ${billData.plan.toUpperCase()}.`
             : `Your account is now upgraded to ${billData.plan.toUpperCase()} plan.`,
@@ -125,8 +165,8 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({
         // CHƯA NHẬN ĐƯỢC TIỀN TỪ NGÂN HÀNG -> BÁO LỖI VÀ KHÔNG NÂNG CẤP
         const errorMsg = data.error || (
           language === 'vi'
-            ? 'Hệ thống chưa nhận được thông báo chuyển tiền từ ngân hàng cho đơn này. Vui lòng quét mã VietQR chuyển tiền và bấm lại nút xác nhận.'
-            : 'Payment not detected in bank account yet. Please scan VietQR and click verify again.'
+            ? 'Hệ thống chưa nhận được thông báo chuyển tiền từ ngân hàng cho đơn này. Vui lòng quét mã VietQR chuyển tiền và thử lại sau ít giây.'
+            : 'Payment not detected in bank account yet. Please scan VietQR and try again.'
         );
         setPaymentError(errorMsg);
         addToast(
@@ -136,7 +176,7 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({
         );
       }
     } catch (e) {
-      console.error('Manual payment confirm error:', e);
+      console.error('Manual payment check error:', e);
       const errMsg = language === 'vi'
         ? 'Có lỗi kết nối khi kiểm tra thanh toán. Vui lòng thử lại sau ít giây.'
         : 'Connection error while checking payment. Please try again.';
@@ -373,6 +413,24 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({
 
             </div>
 
+            {/* Live Real-time Auto-Detection Banner */}
+            <div className="p-3 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 text-xs flex items-center gap-3">
+              <div className="relative flex h-3 w-3 shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+              </div>
+              <div className="flex-1 text-left leading-relaxed">
+                <span className="font-bold block text-[11px] uppercase tracking-wide text-blue-700 dark:text-blue-300">
+                  {language === 'vi' ? 'Tự Động Kích Hoạt (Auto-Detect)' : 'Real-time Auto-Detect'}
+                </span>
+                <span className="text-[11px] opacity-90 block">
+                  {language === 'vi' 
+                    ? 'Hệ thống tự động phát hiện chuyển khoản từ MBBank và kích hoạt gói ngay sau 1-2 giây.'
+                    : 'System automatically detects your transfer from MBBank and activates within 1-2 seconds.'}
+                </span>
+              </div>
+            </div>
+
             {/* Inline Error Alert if payment not yet received */}
             {paymentError && (
               <motion.div
@@ -385,32 +443,32 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({
               </motion.div>
             )}
 
-            {/* Primary Action Button: Confirm payment */}
+            {/* Secondary Action Button: Check now */}
             <div className="pt-1">
               <button
                 type="button"
                 onClick={handleManualConfirm}
                 disabled={isSubmittingConfirm || isPaidSuccess}
-                className="w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white shadow-md shadow-[var(--accent-primary)]/20 transition-all active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-2.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer bg-[var(--bg-hover)] hover:bg-[var(--border-color)] border border-[var(--border-color)] text-[var(--text-primary)] transition-all active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmittingConfirm ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>{language === 'vi' ? 'Đang xác nhận giao dịch...' : 'Verifying Transaction...'}</span>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>{language === 'vi' ? 'Đang kiểm tra từ ngân hàng...' : 'Checking with Bank...'}</span>
                   </>
                 ) : (
                   <>
-                    <CheckCircle className="w-4 h-4" />
-                    <span>{language === 'vi' ? 'Tôi Đã Chuyển Tiền Thành Công' : 'I Have Transferred Successfully'}</span>
+                    <Zap className="w-3.5 h-3.5 text-amber-500" />
+                    <span>{language === 'vi' ? 'Kiểm Tra Thanh Toán Ngay' : 'Check Payment Status Now'}</span>
                   </>
                 )}
               </button>
             </div>
 
             {/* Security Notice */}
-            <p className="text-[11px] text-center text-[var(--text-muted)] flex items-center justify-center gap-1">
+            <p className="text-[10px] text-center text-[var(--text-muted)] flex items-center justify-center gap-1">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-              <span>{language === 'vi' ? 'Bảo mật qua VietQR • Kích hoạt tài khoản ngay sau khi bấm xác nhận' : 'Secured via VietQR • Account activated immediately after confirm'}</span>
+              <span>{language === 'vi' ? 'Bảo mật qua PayOS Open Banking & VietQR • Tự động đóng khi hoàn tất' : 'Secured via PayOS Open Banking & VietQR • Auto-closes on completion'}</span>
             </p>
           </>
         )}
