@@ -1,11 +1,8 @@
 const ZEROINVOICE_API_KEY = process.env.ZEROINVOICE_API_KEY;
 
 export function getZeroInvoiceBaseUrl(): string {
-  let url = process.env.ZEROINVOICE_BASE_URL || process.env.ZERO_TRACKING_BASE_URL || 'https://zero-tracking-ai.vercel.app';
-  // Tự động chuyển đổi nếu env cũ vẫn còn trỏ về zeroinvoice-silk
-  if (!url || url.includes('zeroinvoice-silk.vercel.app') || url.includes('zeroinvoice-silk')) {
-    url = 'https://zero-tracking-ai.vercel.app';
-  }
+  // Zero Tracking production URL (formerly known as ZeroInvoice)
+  let url = process.env.ZEROINVOICE_BASE_URL || process.env.ZERO_TRACKING_BASE_URL || 'https://zeroinvoice-silk.vercel.app';
   return url.replace(/\/+$/, '');
 }
 
