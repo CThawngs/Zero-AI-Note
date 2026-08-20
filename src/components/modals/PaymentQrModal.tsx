@@ -10,6 +10,7 @@ import confetti from 'canvas-confetti';
 interface PaymentQrModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
   billData: {
     bill_id: string;
     amount: number;
@@ -34,6 +35,7 @@ interface PaymentQrModalProps {
 export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({
   isOpen,
   onClose,
+  onSuccess,
   billData,
 }) => {
   const { user, setUser, addToast, theme, language } = useApp();
@@ -99,7 +101,8 @@ export const PaymentQrModal: React.FC<PaymentQrModalProps> = ({
       // BẮT BUỘC data.ok VÀ data.isPaid PHẢI LÀ TRUE MỚI CHO NÂNG CẤP
       if (data.ok && data.isPaid) {
         setIsPaidSuccess(true);
-        setUser(prev => ({ ...prev, plan: billData.plan }));
+        setUser(prev => ({ ...prev, plan: billData.plan, appliedCoupon: undefined }));
+        onSuccess?.();
 
         confetti({
           particleCount: 150,

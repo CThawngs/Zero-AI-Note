@@ -30,14 +30,22 @@ import { PaymentQrModal } from '../modals/PaymentQrModal';
 import { Modal } from '../common/Modal';
 
 export const PricingScreen: React.FC = () => {
-  const { user, setUser, downgradePlan, applyCouponCode, addToast, addNotification, theme, language, t } = useApp();
-  const [couponCode, setCouponCode] = useState('');
-  const [appliedCoupon, setAppliedCoupon] = useState<{ 
-    code: string; 
-    discountPercent?: number; 
-    baseAmount?: number; 
-    finalAmount?: number 
-  } | null>(null);
+  const { 
+    user, 
+    setUser, 
+    downgradePlan, 
+    applyCouponCode, 
+    removeAppliedCoupon, 
+    clearCouponAfterUpgrade, 
+    appliedCoupon, 
+    setAppliedCoupon, 
+    addToast, 
+    addNotification, 
+    theme, 
+    language, 
+    t 
+  } = useApp();
+  const [couponCode, setCouponCode] = useState(appliedCoupon?.code || '');
   const [isApplying, setIsApplying] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
   const [isCreatingInvoice, setIsCreatingInvoice] = useState<string | null>(null);
@@ -151,12 +159,6 @@ export const PricingScreen: React.FC = () => {
     setIsApplying(false);
 
     if (res.success) {
-      setAppliedCoupon({ 
-        code: couponCode.trim().toUpperCase(),
-        discountPercent: res.discountPercent,
-        baseAmount: res.baseAmount,
-        finalAmount: res.finalAmount
-      });
       addNotification(
         language === 'vi' ? 'Kích hoạt mã thành công' : 'Coupon activated',
         res.message,
@@ -172,9 +174,8 @@ export const PricingScreen: React.FC = () => {
   };
 
   const handleRemoveCoupon = () => {
-    setAppliedCoupon(null);
+    removeAppliedCoupon();
     setCouponCode('');
-    addToast(language === 'vi' ? 'Đã gỡ mã giảm giá' : 'Coupon removed', '', 'info');
   };
 
   const handleCheckout = async (planId: 'pro' | 'ultra') => {
@@ -198,15 +199,19 @@ export const PricingScreen: React.FC = () => {
       setBillData(data);
       if (data.autoActivated) {
         setIsPaymentModalOpen(false);
-        setUser(prev => ({ ...prev, plan: planId }));
+        setUser(prev => ({ ...prev, plan: planId, appliedCoupon: undefined }));
+        // Reset and consume coupon immediately
+        clearCouponAfterUpgrade();
+        setCouponCode('');
+
         addNotification(
           language === 'vi' ? 'Kích hoạt gói thành công (0đ)' : 'Plan activated (0đ)',
-          language === 'vi' ? `Đã áp dụng coupon ${data.coupon?.code || ''} và nâng cấp ${planId.toUpperCase()}.` : `Coupon ${data.coupon?.code || ''} applied, ${planId.toUpperCase()} activated.`,
+          language === 'vi' ? `Đã áp dụng coupon ${data.coupon?.code || ''} và nâng cấp ${planId.toUpperCase()}. Mã coupon đã được sử dụng hoàn tất.` : `Coupon ${data.coupon?.code || ''} applied, ${planId.toUpperCase()} activated. Coupon redeemed.`,
           'success'
         );
         addToast(
           language === 'vi' ? 'Nâng cấp thành công!' : 'Upgrade Successful!',
-          language === 'vi' ? `Tài khoản của bạn đã được nâng cấp lên gói ${planId.toUpperCase()}.` : `Account upgraded to ${planId.toUpperCase()}.`,
+          language === 'vi' ? `Tài khoản của bạn đã được nâng cấp lên gói ${planId.toUpperCase()}. Mã giảm giá đã được hoàn tất.` : `Account upgraded to ${planId.toUpperCase()}. Coupon has been redeemed.`,
           'success'
         );
       } else {
@@ -662,6 +667,10 @@ export const PricingScreen: React.FC = () => {
         isOpen={isPaymentModalOpen}
         onClose={() => setIsPaymentModalOpen(false)}
         billData={billData}
+        onSuccess={() => {
+          clearCouponAfterUpgrade();
+          setCouponCode('');
+        }}
       />
     </div>
   );

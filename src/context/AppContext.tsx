@@ -152,13 +152,16 @@ interface AppContextType {
   updateAIProvider: (providerId: string, updates: Partial<AIProviderItem>) => void;
 
   // Coupons & Admin
-    coupons: CouponItem[];
-    setCoupons: React.Dispatch<React.SetStateAction<CouponItem[]>>;
-    addCoupon: (coupon: Omit<CouponItem, 'id' | 'usage_count'>) => void;
+  coupons: CouponItem[];
+  setCoupons: React.Dispatch<React.SetStateAction<CouponItem[]>>;
+  appliedCoupon: { code: string; discountPercent?: number; baseAmount?: number; finalAmount?: number } | null;
+  setAppliedCoupon: React.Dispatch<React.SetStateAction<{ code: string; discountPercent?: number; baseAmount?: number; finalAmount?: number } | null>>;
+  addCoupon: (coupon: Omit<CouponItem, 'id' | 'usage_count'>) => void;
   updateCoupon: (couponId: string, data: Partial<CouponItem>) => void;
   deleteCoupon: (couponId: string) => void;
-  applyCouponCode: (code: string) => Promise<{ success: boolean; message: string; discountPercent?: number; discountValue?: number; discountType?: 'percent' | 'fixed'; baseAmount?: number; finalAmount?: number }>;
+  applyCouponCode: (code: string, targetPlan?: 'pro' | 'ultra') => Promise<{ success: boolean; message: string; discountPercent?: number; discountValue?: number; discountType?: 'percent' | 'fixed'; baseAmount?: number; finalAmount?: number }>;
   removeAppliedCoupon: () => void;
+  clearCouponAfterUpgrade: () => void;
 
   // Payments
   paymentHistory: PaymentRecord[];
@@ -354,6 +357,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [templates, setTemplates] = useState<TemplateItem[]>(initialTemplates);
   const [files, setFiles] = useState<SourceFileItem[]>(EMPTY_FILES);
   const [coupons, setCoupons] = useState<CouponItem[]>(EMPTY_COUPONS);
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    discountPercent?: number;
+    baseAmount?: number;
+    finalAmount?: number;
+  } | null>(null);
   // Lưu yêu cầu take note chờ xác nhận user (guard AI flow thông minh)
   const pendingNoteRef = useRef<{
     text: string;
@@ -1239,15 +1248,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const applyCouponCode = async (code: string): Promise<{ success: boolean; message: string; discountPercent?: number; discountValue?: number; discountType?: 'percent' | 'fixed'; baseAmount?: number; finalAmount?: number }> => {
+  const applyCouponCode = async (code: string, targetPlan?: 'pro' | 'ultra'): Promise<{ success: boolean; message: string; discountPercent?: number; discountValue?: number; discountType?: 'percent' | 'fixed'; baseAmount?: number; finalAmount?: number }> => {
     try {
       // Read-only validation against the backend. The coupon is NOT redeemed here —
       // usage_count is incremented only when a real bill is created in /api/billing/create-invoice.
-      const targetPlan = (user.plan === 'ultra' ? 'ultra' : 'pro') as 'pro' | 'ultra';
+      const resolvedPlan = targetPlan || (user.plan === 'ultra' ? 'ultra' : 'pro');
       const res = await fetch('/api/billing/validate-coupon', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ couponCode: code, plan: targetPlan }),
+        body: JSON.stringify({ couponCode: code, plan: resolvedPlan }),
       });
       const data = await res.json();
       if (!res.ok || !data.valid) {
@@ -1261,6 +1270,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       const coupon = data.coupon;
       const discountVal = coupon.discount_type === 'percent' ? coupon.discount_value : Math.round((data.discount_amount / data.base_amount) * 100);
+      
+      const couponObj = {
+        code: coupon.code,
+        discountPercent: discountVal,
+        baseAmount: data.base_amount,
+        finalAmount: data.final_amount,
+      };
+
+      setAppliedCoupon(couponObj);
+      setUser(prev => ({
+        ...prev,
+        appliedCoupon: {
+          code: coupon.code,
+          discountPercent: discountVal,
+        },
+      }));
+
       return {
         success: true,
         message: language === 'vi'
@@ -1283,32 +1309,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const removeAppliedCoupon = async () => {
-    try {
-      // In a real app, you would call an API to remove the coupon
-      const profile = await getUserProfile();
-      if (profile) {
-        setUser(prev => ({
-          ...prev,
-          id: profile.id,
-          email: profile.email,
-          name: profile.display_name ?? prev.name,
-          role: (profile.role as 'user' | 'admin') ?? 'user',
-          plan: (profile.plan as 'free' | 'pro' | 'ultra') ?? 'free'
-        }));
-      }
-      
-      addToast(
-        language === 'vi' ? 'Đã gỡ mã giảm giá' : 'Coupon Removed', 
-        language === 'vi' ? 'Ưu đãi đã được huỷ bỏ.' : 'Coupon discount has been removed.',
-        'info'
-      );
-    } catch (err) {
-      addToast(
-        language === 'vi' ? 'Lỗi gỡ mã' : 'Remove failed',
-        err instanceof Error ? err.message : 'Unknown error',
-        'error'
-      );
-    }
+    setAppliedCoupon(null);
+    setUser(prev => ({
+      ...prev,
+      appliedCoupon: undefined,
+    }));
+    addToast(
+      language === 'vi' ? 'Đã gỡ mã giảm giá' : 'Coupon Removed', 
+      language === 'vi' ? 'Ưu đãi đã được huỷ bỏ.' : 'Coupon discount has been removed.',
+      'info'
+    );
+  };
+
+  const clearCouponAfterUpgrade = () => {
+    setAppliedCoupon(null);
+    setUser(prev => ({
+      ...prev,
+      appliedCoupon: undefined,
+    }));
   };
 
   const upgradeToPro = () => {
@@ -1591,11 +1609,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       updateAIProvider,
       coupons,
       setCoupons,
+      appliedCoupon,
+      setAppliedCoupon,
       addCoupon,
       updateCoupon,
       deleteCoupon,
       applyCouponCode,
       removeAppliedCoupon,
+      clearCouponAfterUpgrade,
       paymentHistory,
       selectedModel,
       setSelectedModel,
