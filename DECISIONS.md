@@ -405,11 +405,32 @@
 
 ---
 
-## 21. References
+## 21. Pricing Coupon Layout Hardening & Automatic Zero-Click VietQR Payment Flow (2026-08-20)
+
+### Problem
+- Khung nhập mã Coupon bị bể giao diện do flexbox squish và bị các huy hiệu floating (`-top-3.5`) của các Pricing Cards bên dưới đè lên khi thay đổi kích thước cửa sổ.
+- Trải nghiệm thanh toán VietQR yêu cầu sự liền mạch và tự động 100%: người dùng chỉ quét mã QR trên ứng dụng ngân hàng, không cần phải tìm bấm bất kỳ nút "Xác nhận" thủ công nào.
+
+### Decision & Implementation
+1. **Tối ưu hóa Cấu trúc Bố cục Trang Bảng Giá (`PricingScreen.tsx`)**:
+   - Tách biệt hoàn toàn Coupon Promo Banner thành container riêng biệt với `relative z-10 shrink-0` và khoảng cách thông thoáng.
+   - Thêm `pt-6 sm:pt-8` vào Pricing Cards Grid, tạo khoảng thở an toàn để các floating badges (Most Popular, Ultimate) không bao giờ chạm hoặc đè lên khung Coupon.
+   - Bố cục responsive hoàn chỉnh cho cả Mobile, Tablet và Desktop.
+2. **Quy trình Thanh toán VietQR Tự Động 100% Zero-Click (`PaymentQrModal.tsx`)**:
+   - Loại bỏ hoàn toàn tất cả các nút bấm xác nhận thủ công.
+   - Hiển thị trực quan: Mã VietQR Napas EMVCo sắc nét, thông tin ngân hàng chi tiết (Tên NH, Số TK, Chủ TK, Số tiền, Nội dung chuyển khoản kèm nút 1-Click Copy).
+   - Tích hợp radar trạng thái thời gian thực (`Listening for automatic payment...`) cùng cơ chế Polling siêu nhạy (2.5s) qua `/api/billing/check-status`.
+   - Ngay khi tiền vào tài khoản, hệ thống tự động: Bắn pháo hoa Confetti $\rightarrow$ Cập nhật tức thì `user.plan` trong AppContext $\rightarrow$ Hiển thị màn hình thành công $\rightarrow$ Tự động đóng modal sau 2.5s.
+
+---
+
+## 22. References
 - [Neon Documentation](https://neon.tech/docs)
 - [Drizzle ORM](https://orm.drizzle.team)
 - [gitleaks](https://github.com/gitleaks/gitleaks)
 - [Cloudflare R2](https://developers.cloudflare.com/r2)
+- [VietQR Napas EMVCo Specification](https://vietqr.net)
+- [vietnam-qr-pay](https://github.com/trungnguyenthien/vietnam-qr-pay)
 - [Google GenAI SDK](https://github.com/google-gemini/generative-ai-js)
 - [Anthropic API](https://docs.anthropic.com)
 - [OpenAI API](https://platform.openai.com/docs)
