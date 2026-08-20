@@ -491,16 +491,6 @@ export const PricingScreen: React.FC = () => {
                       <ArrowRight className="w-3.5 h-3.5 rotate-180 text-[var(--text-muted)]" />
                       <span>{language === 'vi' ? 'Quay lại gói Free' : 'Revert to Free Tier'}</span>
                     </motion.button>
-                  ) : plan.id === 'pro' && user.plan === 'ultra' ? (
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => setTargetDowngradePlan('pro')}
-                      className="w-full py-3.5 px-4 rounded-2xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center gap-2 bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/30 text-blue-600 dark:text-blue-400 shadow-xs active:scale-98"
-                    >
-                      <ArrowRight className="w-3.5 h-3.5 rotate-180 text-blue-500" />
-                      <span>{language === 'vi' ? 'Hạ xuống gói Pro' : 'Downgrade to Pro'}</span>
-                    </motion.button>
                   ) : (
                     <motion.button
                       whileHover={{ scale: 1.02 }}
@@ -522,9 +512,9 @@ export const PricingScreen: React.FC = () => {
                         <>
                           {isUltra ? <Crown className="w-4 h-4 fill-current" /> : <Rocket className="w-4 h-4" />}
                           <span>
-                            {language === 'vi' 
-                              ? `Nâng Cấp ${plan.name} Ngay` 
-                              : `Upgrade to ${plan.name}`}
+                            {plan.id === 'pro' && user.plan === 'ultra'
+                              ? (language === 'vi' ? 'Hạ Xuống Gói Pro (99.000đ)' : 'Downgrade to Pro (99,000đ)')
+                              : (language === 'vi' ? `Nâng Cấp ${plan.name} Ngay` : `Upgrade to ${plan.name}`)}
                           </span>
                           <ArrowRight className="w-3.5 h-3.5" />
                         </>
@@ -589,12 +579,12 @@ export const PricingScreen: React.FC = () => {
 
       </div>
 
-      {/* Downgrade / Cancel Confirmation Modal */}
+      {/* Downgrade / Cancel Confirmation Modal (Only for reverting to Free) */}
       {targetDowngradePlan && (
         <Modal
           isOpen={true}
           onClose={() => !isDowngrading && setTargetDowngradePlan(null)}
-          title={language === 'vi' ? 'Xác nhận chuyển đổi hạ gói' : 'Confirm Plan Downgrade'}
+          title={language === 'vi' ? 'Xác nhận quay lại gói Free' : 'Confirm Reverting to Free Plan'}
           maxWidth="max-w-md"
         >
           <div className="space-y-4">
@@ -605,13 +595,13 @@ export const PricingScreen: React.FC = () => {
               <div className="space-y-1">
                 <p className="font-bold">
                   {language === 'vi' 
-                    ? `Bạn có chắc muốn ${targetDowngradePlan === 'free' ? 'quay lại gói Free' : 'hạ xuống gói Pro'}?`
-                    : `Are you sure you want to ${targetDowngradePlan === 'free' ? 'revert to Free plan' : 'downgrade to Pro plan'}?`}
+                    ? 'Bạn có chắc chắn muốn quay lại gói Free (Cơ bản)?'
+                    : 'Are you sure you want to revert to the Free tier?'}
                 </p>
                 <p className="leading-relaxed opacity-90">
                   {language === 'vi'
-                    ? 'Lưu ý: Đây là quyết định hạ gói cước. Quyền lợi cao cấp của gói hiện tại sẽ bị thu hẹp theo giới hạn của gói mới và số tiền đã thanh toán cho chu kỳ hiện tại sẽ không được hoàn lại.'
-                    : 'Note: This action will downgrade your active subscription. Premium features will be restricted to the target tier and paid fees for the current cycle are non-refundable.'}
+                    ? 'Lưu ý: Quyền lợi cao cấp của gói hiện tại sẽ bị hủy và tài khoản sẽ chuyển về giới hạn miễn phí. Số tiền đã thanh toán cho chu kỳ hiện tại sẽ không được hoàn lại.'
+                    : 'Note: Premium privileges will be cancelled and your account will revert to the free limits. Fees for the current billing cycle are non-refundable.'}
                 </p>
               </div>
             </div>
@@ -623,19 +613,9 @@ export const PricingScreen: React.FC = () => {
                 {language === 'vi' ? 'Thay đổi quyền lợi tài khoản:' : 'Account changes:'}
               </p>
               <ul className="list-disc pl-4 space-y-1 text-[11px]">
-                {targetDowngradePlan === 'free' ? (
-                  <>
-                    <li>{language === 'vi' ? 'Dung lượng lưu trữ giảm về 1 GB (Tối đa 20 ghi chú)' : 'Storage limit reduced to 1 GB (Max 20 notes)'}</li>
-                    <li>{language === 'vi' ? 'Tối đa 5 templates tùy chỉnh' : 'Max 5 custom templates'}</li>
-                    <li>{language === 'vi' ? 'Hủy bỏ tính năng Multi-Export & ZIP cao cấp' : 'Multi-Export & ZIP bundle disabled'}</li>
-                  </>
-                ) : (
-                  <>
-                    <li>{language === 'vi' ? 'Dung lượng lưu trữ giảm từ 50 GB về 10 GB' : 'Storage reduced from 50 GB to 10 GB'}</li>
-                    <li>{language === 'vi' ? 'Tối đa 50 ghi chú & 25 templates tùy chỉnh' : 'Max 50 notes & 25 custom templates'}</li>
-                    <li>{language === 'vi' ? 'Chuyển về mức phí 199.000đ / tháng' : 'Pro tier pricing applied (199,000đ/mo)'}</li>
-                  </>
-                )}
+                <li>{language === 'vi' ? 'Dung lượng lưu trữ giảm về 1 GB (Tối đa 20 ghi chú)' : 'Storage limit reduced to 1 GB (Max 20 notes)'}</li>
+                <li>{language === 'vi' ? 'Tối đa 5 templates tùy chỉnh' : 'Max 5 custom templates'}</li>
+                <li>{language === 'vi' ? 'Hủy bỏ tính năng Multi-Export & ZIP cao cấp' : 'Multi-Export & ZIP bundle disabled'}</li>
               </ul>
             </div>
 
