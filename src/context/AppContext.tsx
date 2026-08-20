@@ -377,7 +377,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [settingsActiveTab, setSettingsActiveTab] = useState<'account' | 'appearance' | 'ai-providers' | 'notifications'>('account');
 
   // AI & Chat States
-  const [selectedModel, setSelectedModel] = useState<string>('');
+  const [selectedModel, setSelectedModel] = useState<string>('gemini-2.0-flash');
   const [selectedLanguage, setSelectedLanguage] = useState<string>('Tiếng Việt');
   const [selectedMethod, setSelectedMethod] = useState<NoteMethod>('auto');
   const [autoSelectedMethod, setAutoSelectedMethod] = useState<NoteMethod>('cornell');
@@ -657,7 +657,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch {}
   }, [user.id]);
 
-  // Load custom aiProviders from localStorage
+  // Load custom aiProviders & selectedModel from localStorage
   useEffect(() => {
     try {
       const storageKey = `zero_ai_providers_${user.id || 'default'}`;
@@ -667,6 +667,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (Array.isArray(parsed) && parsed.length > 0) {
           setAIProviders(parsed);
         }
+      }
+      const savedModel = localStorage.getItem('zero_selected_model');
+      if (savedModel) {
+        setSelectedModel(savedModel);
       }
     } catch {}
   }, [user.id]);
@@ -680,6 +684,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     } catch {}
   }, [aiProviders, user.id]);
+
+  // Persist selectedModel to localStorage whenever changed
+  useEffect(() => {
+    try {
+      if (selectedModel) {
+        localStorage.setItem('zero_selected_model', selectedModel);
+      }
+    } catch {}
+  }, [selectedModel]);
 
   const openNoteDetail = (note: NoteItem) => {
     setActiveNote(note);
@@ -1386,8 +1399,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsProcessingChat(true);
     setProcessingStep(1);
 
+    const effectiveModel = selectedModel || 'gemini-2.0-flash';
     const activeProvider = aiProviders.find(p =>
-      p.defaultModel === selectedModel || p.name === selectedModel || p.models?.includes(selectedModel) || p.providerId === selectedModel
+      p.defaultModel === effectiveModel || 
+      p.name === effectiveModel || 
+      p.models?.includes(effectiveModel) || 
+      (p.providerId === 'google' && effectiveModel.startsWith('gemini')) ||
+      p.providerId === effectiveModel
     );
 
     try {
@@ -1401,7 +1419,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           prompt: text,
           method: currentMethod,
           language: isEn ? 'en' : 'vi',
-          model: selectedModel || 'gemini-2.5-flash',
+          model: effectiveModel,
           providerId: activeProvider?.providerId,
           endpointUrl: activeProvider?.endpointUrl,
           apiKey: activeProvider?.apiKey,
@@ -1448,7 +1466,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         title: generatedNote?.title || text.substring(0, 35) || (isEn ? 'AI Conversation' : 'Cuộc trò chuyện AI'),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        model: selectedModel || 'Gemini 2.5 Flash',
+        model: effectiveModel,
         method: generatedNote?.method || currentMethod,
         category: generatedNote?.category || (isEn ? 'General' : 'Tổng hợp'),
         keywords: generatedNote?.keywords || [],

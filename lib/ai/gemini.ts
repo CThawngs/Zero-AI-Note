@@ -69,6 +69,25 @@ const methodGuidance: Record<NoteMethod, string> = {
  * Understands conversational queries, writes clean code, answers technical questions,
  * and autonomously creates/updates structured academic notes.
  */
+export function resolveGeminiModelId(rawModel?: string): string {
+  if (!rawModel) return 'gemini-2.0-flash';
+  const m = rawModel.trim().toLowerCase();
+  if (m === 'gemini-2.5-flash' || m === 'gemini-2.5' || m.includes('2.0-flash (default)')) return 'gemini-2.0-flash';
+  if (m.includes('thinking')) return 'gemini-2.0-flash-thinking-exp';
+  if (m.includes('pro')) return 'gemini-2.0-pro-exp';
+  if (m.includes('lite')) return 'gemini-2.0-flash-lite';
+  if (m.includes('1.5-pro')) return 'gemini-1.5-pro';
+  if (m.includes('1.5-flash')) return 'gemini-1.5-flash';
+  if (m.includes('2.0-flash')) return 'gemini-2.0-flash';
+  if (m.startsWith('gemini')) return 'gemini-2.0-flash';
+  return rawModel;
+}
+
+/**
+ * Intelligent AI Agent Engine:
+ * Understands conversational queries, writes clean code, answers technical questions,
+ * and autonomously creates/updates structured academic notes.
+ */
 export async function generateAgentResponse(params: {
   inputText: string;
   chatHistory?: { role: 'user' | 'assistant' | 'system'; content: string }[];
@@ -79,22 +98,26 @@ export async function generateAgentResponse(params: {
 }): Promise<AgentResponseOutput> {
   const apiKey = params.apiKey?.trim() || getGeminiApiKey();
   if (!apiKey) {
-    throw new Error('GEMINI_API_KEY is not configured on server.');
+    throw new Error(
+      params.language === 'en'
+        ? 'No AI API Key configured. Please go to Settings -> AI Engine Models to connect your API Key.'
+        : 'Chưa có API Key AI. Vui lòng vào Cài đặt -> AI Engine Models để thêm API Key của bạn (BYOK).'
+    );
   }
 
   const ai = new GoogleGenAI({ apiKey });
   const method = params.method || 'auto';
   const language = params.language || 'vi';
-  const activeModelName = params.model || 'gemini-2.5-flash';
+  const activeModelName = resolveGeminiModelId(params.model);
 
   const systemInstruction = `Bạn là Zero AI Note Agent — Trợ lý Nghiên cứu & Ghi chú Học thuật Thông minh kiêm Kỹ sư Phần mềm Cao cấp (Senior Software & AI Engineer).
-Mô hình AI bạn đang chạy: "${activeModelName}".
+Mô hình AI bạn đang chạy: "${params.model || activeModelName}".
 Ngôn ngữ giao tiếp chính: ${language === 'vi' ? 'Tiếng Việt' : 'English'}.
 
 ĐẶC ĐIỂM & NGUYÊN TẮC HOẠT ĐỘNG:
 1. Bạn là một AI Agent thông minh thực sự, có khả năng tư duy sâu, hiểu đúng ngữ cảnh và trả lời đúng trọng tâm câu hỏi của người dùng.
 2. Khả năng lập trình Frontend & UI/UX: Viết code sạch (clean code), chuẩn TypeScript/React/Tailwind CSS/HTML, giải thích cặn kẽ và tối ưu trải nghiệm người dùng khi được hỏi về kỹ thuật.
-3. Khi người dùng trò chuyện, chào hỏi, hỏi bạn là ai, hỏi về model/provider bạn đang sử dụng, hỏi kiến thức tổng quát, hoặc yêu cầu giải thích/viết code:
+3. Khi người dùng trò chuyện, chào hỏi, hỏi bạn là ai, hỏi về model/provider bạn đang sử dụng, hỏi kiến thức tổng quát (ví dụ: thời tiết, toán học, lập trình, khoa học), hoặc yêu cầu giải thích/viết code:
    - "isNoteAction": false
    - "replyText": Trả lời trực tiếp, đầy đủ, thông minh, đúng trọng tâm và tự nhiên trong khung chat (hỗ trợ Markdown đầy đủ, bullet points, code blocks).
    - "note": null
@@ -161,10 +184,40 @@ Lưu ý: Nếu isNoteAction là false, trường "note" phải là null.`;
     }
 
     return parsed;
-  } catch (error) {
+  } catch (error: any) {
     console.error('[Gemini Agent Engine] Error:', error);
-    // Intelligent fallback
-    return createEmergencyAgentResponse(params.inputText, method, language, activeModelName);
+
+    const isAuthError = 
+      error?.status === 401 || 
+      error?.status === 403 || 
+      String(error?.message || '').includes('UNAUTHENTICATED') ||
+      String(error?.message || '').includes('invalid authentication') ||
+      String(error?.message || '').includes('ACCESS_TOKEN_TYPE_UNSUPPORTED') ||
+      String(error?.message || '').includes('API_KEY_INVALID');
+
+    if (isAuthError) {
+      throw new Error(
+        language === 'en'
+          ? `Authentication error with ${params.model || activeModelName}. Please check your API Key in Settings -> AI Providers.`
+          : `Khóa API cho ${params.model || activeModelName} không hợp lệ hoặc chưa được thiết lập. Vui lòng vào Cài đặt -> AI Engine Models để kết nối API Key chính xác (BYOK).`
+      );
+    }
+
+    const isQuotaError = 
+      error?.status === 429 || 
+      String(error?.message || '').includes('RESOURCE_EXHAUSTED') ||
+      String(error?.message || '').includes('quota');
+
+    if (isQuotaError) {
+      throw new Error(
+        language === 'en'
+          ? `Rate limit exceeded (429) for ${params.model || activeModelName}. Please try again in 30 seconds or connect your own API Key.`
+          : `Hạn mức gọi mô hình ${params.model || activeModelName} tạm thời đạt giới hạn (Rate Limit 429). Vui lòng thử lại sau 30 giây hoặc thêm API Key riêng (BYOK) trong Cài đặt.`
+      );
+    }
+
+    // Unexpected error fallback
+    return createEmergencyAgentResponse(params.inputText, method, language, params.model || activeModelName);
   }
 }
 

@@ -45,9 +45,49 @@ const methodGuidance: Record<NoteMethod, string> = {
 // Pool 3 template Free (PRD 4.2): khi user Free dùng Auto, chỉ cho random trong đây.
 const freeTemplates: NoteMethod[] = ['cornell', 'outline', 'summary'];
 
+export function extractJsonFromText(text: string): AgentResponseOutput {
+  const clean = text.trim();
+  try {
+    const parsed = JSON.parse(clean);
+    if (parsed && (parsed.replyText !== undefined || parsed.isNoteAction !== undefined)) {
+      return parsed;
+    }
+  } catch {}
+
+  // Match ```json ... ```
+  const match = clean.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+  if (match && match[1]) {
+    try {
+      const parsed = JSON.parse(match[1]);
+      if (parsed && (parsed.replyText !== undefined || parsed.isNoteAction !== undefined)) {
+        return parsed;
+      }
+    } catch {}
+  }
+
+  // Match between first { and last }
+  const firstBrace = clean.indexOf('{');
+  const lastBrace = clean.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    try {
+      const parsed = JSON.parse(clean.substring(firstBrace, lastBrace + 1));
+      if (parsed && (parsed.replyText !== undefined || parsed.isNoteAction !== undefined)) {
+        return parsed;
+      }
+    } catch {}
+  }
+
+  // If pure conversational output without JSON schema
+  return {
+    replyText: clean,
+    isNoteAction: false,
+    note: null,
+  };
+}
+
 /**
  * Universal AI Agent Dispatcher:
- * Routes requests through System Gemini 2.5 Flash, or BYOK Providers (Google, OpenAI, Claude, Groq, OpenRouter, NVIDIA, Local, Custom Endpoints).
+ * Routes requests through System Gemini 2.0 Flash, or BYOK Providers (Google, OpenAI, Claude, Groq, OpenRouter, NVIDIA, Local, Custom Endpoints).
  * Returns AgentResponseOutput containing conversational replyText and optional structured note artifact.
  */
 export async function dispatchAgentResponse(params: AIModelRequest): Promise<AgentResponseOutput> {
@@ -58,24 +98,16 @@ export async function dispatchAgentResponse(params: AIModelRequest): Promise<Age
       ? freeTemplates[Math.floor(Math.random() * freeTemplates.length)]
       : method;
 
+  const effectiveModel = model || 'gemini-2.0-flash';
+
   // 1. Built-in Google Gemini Free Tier Pool
   if (!endpointUrl || providerId === 'google-system' || providerId === 'system') {
-    try {
-      return await generateGeminiAgentResponse({
-        inputText,
-        method: resolvedMethod,
-        language,
-        model: model || 'gemini-2.5-flash',
-      });
-    } catch (err: any) {
-      if (err?.status === 429 || err?.message?.includes('RESOURCE_EXHAUSTED') || err?.message?.includes('quota')) {
-        throw new Error(
-          'Hệ thống Gemini Free Tier tạm thời đạt giới hạn token chia sẻ (Rate Limit 429). ' +
-          'Token sẽ tự động hồi phục sau 60s. Để sử dụng không giới hạn, bạn có thể thêm API Key riêng (BYOK) trong Cài đặt AI Providers.'
-        );
-      }
-      throw err;
-    }
+    return await generateGeminiAgentResponse({
+      inputText,
+      method: resolvedMethod,
+      language,
+      model: effectiveModel,
+    });
   }
 
   // 2. BYOK Google Gemini with custom API Key
@@ -84,18 +116,18 @@ export async function dispatchAgentResponse(params: AIModelRequest): Promise<Age
       inputText,
       method: resolvedMethod,
       language,
-      model: model || 'gemini-2.5-flash',
+      model: effectiveModel,
       apiKey,
     });
   }
 
   // 3. BYOK Anthropic Claude
   if (endpointUrl.includes('anthropic.com') || providerId === 'anthropic') {
-    return await generateAgentWithAnthropic({ ...params, method: resolvedMethod });
+    return await generateAgentWithAnthropic({ ...params, method: resolvedMethod, model: effectiveModel });
   }
 
   // 4. BYOK OpenAI / Groq / OpenRouter / NVIDIA / Local / Custom OpenAI-Compatible
-  return await generateAgentWithOpenAICompatible({ ...params, method: resolvedMethod });
+  return await generateAgentWithOpenAICompatible({ ...params, method: resolvedMethod, model: effectiveModel });
 }
 
 /**
@@ -209,9 +241,7 @@ BẮT BUỘC TRẢ VỀ DUY NHẤT JSON THEO SCHEMA:
 
   const data = await res.json();
   const rawContent = data.choices?.[0]?.message?.content || '{}';
-  const cleaned = rawContent.replace(/^```json\s*/, '').replace(/\s*```$/, '').trim();
-  const parsed = JSON.parse(cleaned) as AgentResponseOutput;
-  return parsed;
+  return extractJsonFromText(rawContent);
 }
 
 async function generateAgentWithAnthropic(params: AIModelRequest): Promise<AgentResponseOutput> {
@@ -249,6 +279,5 @@ Trả về duy nhất JSON hợp lệ theo schema:
 
   const data = await res.json();
   const text = data.content?.[0]?.text || '{}';
-  const cleaned = text.replace(/^```json\s*/, '').replace(/\s*```$/, '').trim();
-  return JSON.parse(cleaned) as AgentResponseOutput;
+  return extractJsonFromText(text);
 }
