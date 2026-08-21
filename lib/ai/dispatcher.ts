@@ -96,7 +96,7 @@ const templateDetailedInstructions: Record<NoteMethod, string> = {
 - Điền chi tiết bối cảnh, mốc thời gian, KPI và ma trận phân tích rủi ro có đo lường.`,
   'quick-summary': `Tóm tắt siêu nhanh 1 trang. Lấy 3-5 ý cốt lõi nhất.`,
   'executive-summary': `Tóm tắt cấp quản trị chiến lược, làm rõ mục tiêu, số liệu tài chính/đạt được và giải pháp then chốt.`,
-  custom: `Tuân thủ nghiêm ngặt mô tả phong cách tùy biến của người dùng.`,
+  custom: `BẮT BUỘC TUÂN THỦ NGHIÊM NGẶT HƯỚNG DẪN MẪU TÙY CHỈNH ĐƯỢC CUNG CẤP TRONG PHẦN === HƯỚNG DẪN MẪU TÙY CHỈNH === CỦA YÊU CẦU NGƯỜI DÙNG.`,
 };
 
 // Pool 3 template Free (PRD 4.2): khi user Free dùng Auto, chỉ cho random trong đây.

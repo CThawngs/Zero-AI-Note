@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
       endpointUrl,
       apiKey,
       sources = [],
+      templateId,
     } = body as {
       noteId?: string;
       prompt: string;
@@ -34,17 +35,36 @@ export async function POST(request: NextRequest) {
       providerId?: string;
       endpointUrl?: string;
       apiKey?: string;
-      sources: { 
-        type: 'pdf' | 'youtube' | 'audio' | 'doc' | 'image' | 'video' | 'text'; 
-        name: string; 
-        url?: string; 
+      sources: {
+        type: 'pdf' | 'youtube' | 'audio' | 'doc' | 'image' | 'video' | 'text';
+        name: string;
+        url?: string;
         content?: string;
         size?: string;
       }[];
+      templateId?: string;
     };
 
     if (!prompt && (!sources || sources.length === 0)) {
       return fail('Vui lòng nhập nội dung hoặc đính kèm tài liệu để trò chuyện hoặc tạo ghi chú.', 400);
+    }
+
+    // Retrieve custom template prompt if templateId is provided
+    let customTemplatePrompt = '';
+    if (templateId) {
+      try {
+        const sql = getSql();
+        const rows = await sql`
+          select description_prompt from custom_note_templates
+          where id = ${templateId}
+          limit 1
+        `;
+        if (rows && rows.length > 0) {
+          customTemplatePrompt = rows[0].description_prompt;
+        }
+      } catch (err) {
+        console.warn('[GET /api/notes/generate] failed to fetch custom template:', err);
+      }
     }
 
     // Combine prompt and full source information with extracted text
@@ -62,6 +82,11 @@ export async function POST(request: NextRequest) {
       });
       inputText += '\n============================================\n';
       inputText += 'HƯỚNG DẪN: Hãy đọc và phân tích kỹ lưỡng toàn bộ nội dung của các tệp đính kèm ở trên để trả lời câu hỏi của người dùng hoặc tạo bản ghi chú học thuật chuẩn xác theo đúng nội dung tệp.\n';
+    }
+
+    // If this is a custom template, inject the description_prompt into the input
+    if (customTemplatePrompt) {
+      inputText += `\n\n=== HƯỚNG DẪN MẪU TÙY CHỈNH ===\n${customTemplatePrompt}\n============================================\n`;
     }
 
     let userId: string | null = null;

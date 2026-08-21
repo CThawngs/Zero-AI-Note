@@ -771,7 +771,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCurrentScreen('chat');
   };
 
-  const startNewChatNote = (customPrompt?: string) => {
+  const startNewChatNote = (customPrompt?: string, templateId?: string) => {
     const newSessionId = 'session_' + Date.now();
     setActiveSessionId(newSessionId);
 
@@ -1068,10 +1068,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const useTemplateInChat = (template: TemplateItem) => {
+    const promptText = language === 'vi' 
+      ? `Tạo ghi chú theo mẫu "${template.title}": ${template.description}`
+      : `Create note using template "${template.title}": ${template.description}`;
+    
     startNewChatNote(
-      language === 'vi' 
-        ? `Tạo ghi chú theo mẫu "${template.title}": ${template.description}`
-        : `Create note using template "${template.title}": ${template.description}`
+      promptText,
+      template.isCustom ? template.id : undefined
     );
   };
 
@@ -1460,6 +1463,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           endpointUrl: activeProvider?.endpointUrl,
           apiKey: activeProvider?.apiKey,
           sources: attachedSources || [],
+          templateId: templateId || undefined,
         }),
       });
 
