@@ -194,59 +194,221 @@ function synthesizeAcademicNote(input: string, method: NoteMethod, language: 'vi
   const effectiveMethod = method === 'auto' ? 'cornell' : method;
   const firstLine = input.trim().split('\n')[0].replace(/^(tạo note về|tạo ghi chú về|tóm tắt|summarize)\s*/i, '').substring(0, 60) || (isVi ? 'Nghiên cứu Tổng quan' : 'Academic Research Note');
 
+  const title = firstLine;
+  const category = isVi ? 'Học thuật & Công nghệ' : 'Academic & Tech';
+  const keywords = isVi ? ['Nghiên cứu', 'Khái niệm', 'Luận điểm', 'Ứng dụng', 'Tổng quan'] : ['Research', 'Concepts', 'Arguments', 'Applications', 'Overview'];
+  const summary = isVi 
+    ? `Bản tổng hợp ghi chú học thuật chuẩn hóa về "${title}". Phân tích chi tiết các định nghĩa, luận điểm then chốt và các ứng dụng thực tiễn theo phương pháp ${effectiveMethod.toUpperCase()}.`
+    : `Structured academic research synthesis on "${title}". Detailed breakdown of definitions, core arguments, and practical implementations following the ${effectiveMethod.toUpperCase()} methodology.`;
+
+  const coreQuestions = [
+    isVi ? `1. Khái niệm cốt lõi của ${title} là gì?` : `1. What is the fundamental concept of ${title}?`,
+    isVi ? "2. Các nguyên tắc và phương pháp triển khai quan trọng nhất?" : "2. What are the key principles and methodologies?",
+    isVi ? "3. Làm thế nào để ứng dụng hiệu quả vào thực tế?" : "3. How to effectively apply this in practice?",
+  ];
+
+  let sections: any[] = [];
+  let summaryText = isVi 
+    ? `Bản ghi chú hoàn thiện giúp bạn nắm vững toàn diện chủ đề "${title}". Bạn có thể sử dụng các câu hỏi cốt lõi để ôn tập theo phương pháp Active Recall.`
+    : `Complete synthesized note providing comprehensive mastery over "${title}". Use the core questions for active recall review.`;
+
+  // Customize note structure strictly based on the template method (17 methods)
+  if (effectiveMethod === 'cornell' || effectiveMethod === 'allinone') {
+    sections = [
+      {
+        title: isVi ? '1. Định nghĩa & Bối cảnh nền tảng' : '1. Foundation & Definition',
+        definition: isVi ? `Hệ thống hóa bản chất của ${title}` : `Core essence and context of ${title}`,
+        text: input,
+        cue: isVi ? 'Khái niệm chính' : 'Core Concept',
+        note: isVi ? 'Bóc tách các yếu tố cấu thành và vai trò then chốt.' : 'Deconstructing fundamental building blocks and roles.',
+        bulletPoints: [
+          isVi ? 'Nhận diện các đặc tính quan trọng hàng đầu' : 'Identified key critical characteristics',
+          isVi ? 'Thiết lập mối liên kết logic với hệ thống tri thức' : 'Established logical links with broader knowledge',
+        ],
+      },
+      {
+        title: isVi ? '2. Luận điểm then chốt & Phân tích' : '2. Key Arguments & Analysis',
+        text: isVi ? `Phân tích sâu phương pháp ${effectiveMethod.toUpperCase()}.` : `In-depth analysis of the ${effectiveMethod.toUpperCase()} methodology.`,
+        cue: isVi ? 'Luận điểm lớn' : 'Key Argument',
+        note: isVi ? 'Điểm tựa lý thuyết và bằng chứng thực nghiệm.' : 'Theoretical foundation and empirical evidence.',
+        bulletPoints: [
+          isVi ? 'Đảm bảo tính chính xác và mạch lạc trong quá trình áp dụng' : 'Ensured high accuracy and logical clarity',
+          isVi ? 'Tối ưu hóa thời gian và tăng hiệu suất ghi nhớ dài hạn' : 'Optimized time efficiency and long-term retention',
+        ],
+      }
+    ];
+  } else if (effectiveMethod === 'outline' || effectiveMethod === 'mindmap') {
+    sections = [
+      {
+        title: isVi ? 'I. Khái niệm cốt lõi & Cơ sở lý luận' : 'I. Core Concepts & Foundations',
+        definition: isVi ? `Nền tảng của ${title}` : `Foundations of ${title}`,
+        text: input,
+        bulletPoints: [
+          isVi ? '1. Định nghĩa chi tiết và bối cảnh lịch sử phát triển' : '1. Detailed definition and historical context',
+          isVi ? '   a. Các đặc trưng cơ bản không thể phân chia' : '   a. Basic features and characteristics',
+          isVi ? '   b. Sự tương thích với mô hình nghiên cứu hiện đại' : '   b. Compatibility with modern research models',
+          isVi ? '2. Các học thuyết bổ trợ liên quan trực tiếp' : '2. Related auxiliary theories',
+        ],
+      },
+      {
+        title: isVi ? 'II. Mô hình vận hành & Phương pháp triển khai thực tế' : 'II. Operational Model & Practical Execution',
+        text: isVi ? 'Chi tiết các bước thực hiện tối ưu:' : 'Detailed steps for optimal execution:',
+        bulletPoints: [
+          isVi ? '1. Thiết lập cấu trúc hệ thống và luồng dữ liệu sạch' : '1. Establish system architecture and clean data flows',
+          isVi ? '   a. Rà soát tài nguyên đầu vào và ràng buộc hạ tầng' : '   a. Review input resources and infrastructure constraints',
+          isVi ? '   b. Phân phối tác vụ song song bất đồng bộ qua queue' : '   b. Distribute parallel asynchronous tasks via queue',
+          isVi ? '2. Giám sát hiệu năng và xử lý lỗi tự động (failover)' : '2. Performance monitoring and automatic failover',
+        ],
+      }
+    ];
+  } else if (effectiveMethod === 'qa' || effectiveMethod === 'flashcard') {
+    sections = [
+      {
+        title: isVi ? 'Thẻ ôn tập 1: Định nghĩa cơ bản' : 'Flashcard 1: Fundamental Definition',
+        question: isVi ? `Khái niệm cốt lõi của ${title} được hiểu như thế nào?` : `How is the core concept of ${title} defined?`,
+        answer: isVi 
+          ? `Được hiểu là hệ thống lý thuyết chuẩn hóa, liên kết chặt chẽ giữa lý thuyết nền tảng và ứng dụng thực tiễn của ${title}.`
+          : `Defined as a standardized theoretical system connecting fundamental theories and practical applications of ${title}.`,
+        definition: isVi ? `Khái niệm cốt lõi của ${title}` : `Core concept of ${title}`,
+      },
+      {
+        title: isVi ? 'Thẻ ôn tập 2: Cơ chế vận hành' : 'Flashcard 2: Operational Mechanism',
+        question: isVi ? `Cơ chế vận hành quan trọng nhất cần lưu ý khi ứng dụng là gì?` : `What is the most critical operational mechanism to note during application?`,
+        answer: isVi 
+          ? `Là chia nhỏ cấu trúc vấn đề thành các tác vụ độc lập, thực thi song song bất đồng bộ và kiểm soát lỗi qua van an toàn (Safety Valve) chủ động.`
+          : `Decomposing the problem structure into independent tasks, executing parallel asynchronous steps, and actively controlling errors via safety valves.`,
+      }
+    ];
+  } else if (effectiveMethod === 'charting' || effectiveMethod === 'syntopical') {
+    sections = [
+      {
+        title: isVi ? 'Ma trận So sánh & Đối chiếu Đa chiều' : 'Multi-Dimensional Comparison Matrix',
+        text: isVi ? `Bảng tổng hợp đối chiếu các khía cạnh của ${title}:` : `Comparative synthesis table of ${title} aspects:`,
+        tableData: {
+          headers: isVi ? ['Khía cạnh so sánh', 'Đặc tính kỹ thuật', 'Lợi ích thực tế', 'Mức độ phức tạp'] : ['Aspect', 'Technical Feature', 'Practical Benefit', 'Complexity'],
+          rows: [
+            [isVi ? 'Thiết kế hệ thống' : 'Architecture', isVi ? 'Full-cloud & serverless' : 'Full-cloud & serverless', isVi ? 'Tối ưu chi phí, chịu tải tốt' : 'Cost optimization, scalable', 'Medium (Trung bình)'],
+            [isVi ? 'Xử lý dữ liệu' : 'Processing', isVi ? 'Chunking & Map-Reduce' : 'Chunking & Map-Reduce', isVi ? 'Không rớt dữ liệu, độ chính xác cao' : 'Zero data loss, high accuracy', 'High (Cao)'],
+            [isVi ? 'Trải nghiệm UI/UX' : 'UX', isVi ? 'Responsive & Multi-theme' : 'Responsive & Theme support', isVi ? 'Thân thiện, mượt mà' : 'Friendly, smooth interactions', 'Low (Thấp)'],
+          ]
+        }
+      }
+    ];
+  } else if (effectiveMethod === 'meeting') {
+    sections = [
+      {
+        title: isVi ? '1. Nội dung cuộc họp & Thống nhất chung' : '1. Meeting Proceedings & Decisions',
+        text: isVi ? `Biên bản ghi nhận các thảo luận chính liên quan đến ${title}:` : `Minutes of discussions regarding ${title}:`,
+        bulletPoints: [
+          isVi ? 'Thống nhất cấu trúc và kế hoạch triển khai PRD mới.' : 'Agreed on modern architecture and PRD deployment schedule.',
+          isVi ? 'Xác nhận tích hợp Zero Tracking làm cổng thanh toán chính thức.' : 'Confirmed integrating Zero Tracking as official payment gateway.',
+        ],
+      },
+      {
+        title: isVi ? '2. Ma trận Phân công Công việc (Action Items)' : '2. Action Item Assignment Matrix',
+        text: isVi ? 'Danh sách phân nhiệm cụ thể:' : 'Detailed task assignment list:',
+        tableData: {
+          headers: isVi ? ['Người phụ trách', 'Nhiệm vụ', 'Deadline', 'Trạng thái'] : ['Assignee', 'Task', 'Deadline', 'Status'],
+          rows: [
+            ['Kỹ sư Lead AI', isVi ? 'Viết core pipeline STT qua Groq/Gemini' : 'Write core STT pipeline', '2026-08-25', isVi ? 'Đang chạy' : 'In Progress'],
+            ['Kỹ sư Frontend', isVi ? 'Đồng bộ 10 themes và responsive sidebar' : 'Sync 10 themes and sidebar', '2026-08-23', isVi ? 'Hoàn tất ✓' : 'Completed ✓'],
+            ['Q/A Tester', isVi ? 'Kiểm thử hộp thoại xuất file ZIP trên Ultra' : 'Test ZIP export dialog', '2026-08-28', isVi ? 'Đang chờ' : 'Pending'],
+          ]
+        }
+      }
+    ];
+  } else if (effectiveMethod === 'feynman') {
+    sections = [
+      {
+        title: isVi ? 'Cấp độ 1: Bình dân học vụ (Dành cho trẻ 10 tuổi)' : 'Level 1: For a 10-Year-Old',
+        text: isVi 
+          ? `Hãy tưởng tượng ${title} giống như một cái máy lọc nước tự động. Bạn đổ nước bẩn vào, máy tự chia thành nhiều màng lọc nhỏ để lọc nhanh hơn, cuối cùng cho ra một ly nước sạch tinh khiết uống được ngay.`
+          : `Imagine ${title} like a smart water filter. You pour raw water in, it automatically filters it through separate layers, giving you crystal clear water instantly.`,
+        cue: isVi ? 'Ẩn dụ' : 'Metaphor',
+      },
+      {
+        title: isVi ? 'Cấp độ 2: Phép liên tưởng thực tế' : 'Level 2: Real-world Analogy',
+        text: isVi
+          ? 'Nó tương tự như cách một người quản thư sắp xếp hàng ngàn cuốn sách vào các ngăn tủ chuyên mục cụ thể: Cornell, Outline, Sơ đồ tư duy. Người đọc chỉ cần tìm đúng mục là có ngay cuốn sách mình cần.'
+          : 'It behaves like a librarian cataloging thousands of books into specialized drawers: Cornell, Outline, Mindmap, making retrieval effortless.',
+      },
+      {
+        title: isVi ? 'Cấp độ 3: Định nghĩa chuyên sâu chuẩn học thuật' : 'Level 3: Rigorous Academic Definition',
+        definition: isVi ? `Hệ thống phân tích của ${title}` : `Academic definition of ${title}`,
+        text: isVi
+          ? `Cơ sở khoa học của ${title} dựa trên việc phân tích tín hiệu âm thanh và biểu diễn ngữ nghĩa dạng vector (Embeddings) để tái cấu trúc dữ liệu thô sang JSON có cấu trúc (Block-based JSON), đảm bảo độ đồng bộ cao nhất giữa các định dạng xuất file.`
+          : `The underlying science of ${title} relies on processing continuous audio signal chunks and representing semantic data via vector embeddings to synthesize structured Block-based JSON.`,
+      },
+      {
+        title: isVi ? 'Cấp độ 4: Lỗ hổng tư duy đã lấp đầy' : 'Level 4: Knowledge Gap Resolved',
+        text: isVi
+          ? 'Khắc phục lỗ hổng: Tránh việc nạp trực tiếp tài liệu thô quá lớn gây quá tải context window hoặc lỗi tràn RAM (Vercel timeout) nhờ vào cơ chế chia nhỏ chunk 30-60 phút.'
+          : 'Corrected gap: Avoiding feeding raw giant files directly into context windows, preventing out-of-memory crashes via 30-60 min chunking.',
+      }
+    ];
+  } else {
+    // Fallback for other methods like first-principles, 5w1h, boxing, analysis, deep-research, lecture, summary
+    sections = [
+      {
+        title: isVi ? `1. Khảo sát & Nguyên lý chung của ${title}` : `1. Foundations & Principles of ${title}`,
+        definition: isVi ? `Nguyên lý hoạt động` : `Operating principles`,
+        text: input,
+        cue: isVi ? 'Nguyên lý' : 'Principle',
+        note: isVi ? 'Ý tưởng ban đầu và chân lý cốt lõi.' : 'Initial idea and core truth.',
+        bulletPoints: [
+          isVi ? 'Tập trung bóc tách các giả định chủ quan' : 'Deconstructed subjective assumptions',
+          isVi ? 'Đảm bảo tính chân thực và bám sát nguồn tài liệu gốc' : 'Maintained high fidelity to the original source',
+        ]
+      },
+      {
+        title: isVi ? '2. Thực thi & Lộ trình hành động chi tiết' : '2. Execution & Action Roadmap',
+        text: isVi ? 'Kế hoạch triển khai khoa học:' : 'Rigorous execution roadmap:',
+        bulletPoints: [
+          isVi ? 'Bước 1: Khởi động hệ thống & nạp nguồn sạch qua Presigned URL' : 'Step 1: Initialize system and fetch source via Presigned URL',
+          isVi ? 'Bước 2: Phân tách song song, STT độc lập, tổng hợp map-reduce' : 'Step 2: Parallel transcription and map-reduce synthesis',
+          isVi ? 'Bước 3: Xuất đa định dạng PDF/DOCX/ZIP đồng thời' : 'Step 3: Export PDF/DOCX/ZIP simultaneously',
+        ]
+      }
+    ];
+  }
+
+  const rawMarkdown = `# ${title}\n\n` +
+    `> **Phương pháp**: ${effectiveMethod.toUpperCase()} | **Danh mục**: ${category}\n\n` +
+    `## 📌 Tóm tắt tổng quan\n${summary}\n\n` +
+    `**Từ khóa cốt lõi**: ${keywords.map(k => `\`${k}\``).join(' • ')}\n\n` +
+    `## 📖 Nội dung chi tiết\n\n` +
+    sections.map(s => {
+      let md = `### ${s.title}\n`;
+      if (s.definition) md += `*${s.definition}*\n\n`;
+      if (s.text) md += `${s.text}\n\n`;
+      if (s.cue) md += `**Gợi ý / Cue**: ${s.cue} | **Ghi chú / Note**: ${s.note || ''}\n\n`;
+      if (s.question) md += `❓ **Câu hỏi / Q**: ${s.question}\n💡 **Trả lời / A**: ${s.answer}\n\n`;
+      if (s.bulletPoints && s.bulletPoints.length > 0) {
+        md += s.bulletPoints.map((b: string) => `- ${b}`).join('\n') + '\n\n';
+      }
+      if (s.tableData) {
+        md += `| ${s.tableData.headers.join(' | ')} |\n`;
+        md += `| ${s.tableData.headers.map(() => '---').join(' | ')} |\n`;
+        md += s.tableData.rows.map((r: any[]) => `| ${r.join(' | ')} |`).join('\n') + '\n\n';
+      }
+      return md;
+    }).join('\n') +
+    `## 🎯 Kết luận & Tóm tắt\n${summaryText}\n`;
+
   return {
-    title: firstLine,
+    title,
     method: effectiveMethod,
-    summary: isVi 
-      ? "Bản tổng hợp ghi chú học thuật chuẩn hóa về \"" + firstLine + "\". Phân tích chi tiết các định nghĩa, luận điểm then chốt và các ứng dụng thực tiễn theo phương pháp " + effectiveMethod.toUpperCase() + "."
-      : "Structured academic research synthesis on \"" + firstLine + "\". Detailed breakdown of definitions, core arguments, and practical implementations following the " + effectiveMethod.toUpperCase() + " methodology.",
-    category: isVi ? 'Học thuật & Công nghệ' : 'Academic & Tech',
-    keywords: isVi ? ['Nghiên cứu', 'Khái niệm', 'Luận điểm', 'Ứng dụng', 'Tổng quan'] : ['Research', 'Concepts', 'Arguments', 'Applications', 'Overview'],
-    coreQuestions: [
-      isVi ? "1. Khái niệm cốt lõi của " + firstLine + " là gì?" : "1. What is the fundamental concept of " + firstLine + "?",
-      isVi ? "2. Các nguyên tắc và phương pháp triển khai quan trọng nhất?" : "2. What are the key principles and methodologies?",
-      isVi ? "3. Làm thế nào để ứng dụng hiệu quả vào thực tế?" : "3. How to effectively apply this in practice?",
-    ],
+    summary,
+    category,
+    keywords,
+    coreQuestions,
     content: {
       overview: isVi 
-        ? "Tổng quan toàn diện về " + firstLine + ": Cung cấp nền tảng kiến thức vững chắc, liên kết đa chiều giữa lý thuyết và thực hành."
-        : "Comprehensive overview of " + firstLine + ": Providing solid foundational knowledge bridging theory and practice.",
-      sections: [
-        {
-          title: isVi ? '1. Định nghĩa & Bối cảnh nền tảng' : '1. Foundation & Definition',
-          definition: isVi ? "Hệ thống hóa bản chất của " + firstLine : "Core essence and context of " + firstLine,
-          text: input,
-          cue: isVi ? 'Khái niệm chính' : 'Core Concept',
-          note: isVi ? 'Bóc tách các yếu tố cấu thành và vai trò then chốt.' : 'Deconstructing fundamental building blocks and roles.',
-          bulletPoints: [
-            isVi ? 'Nhận diện các đặc tính quan trọng hàng đầu' : 'Identified key critical characteristics',
-            isVi ? 'Thiết lập mối liên kết logic với hệ thống tri thức rộng hơn' : 'Established logical links with broader knowledge systems',
-          ],
-          tableData: {
-            headers: isVi ? ['Tiêu chí', 'Chi tiết phân tích', 'Mức độ ảnh hưởng'] : ['Criteria', 'Analysis Detail', 'Impact Level'],
-            rows: [
-              [isVi ? 'Mục tiêu cốt lõi' : 'Core Objective', isVi ? 'Tối ưu hóa kiến thức & vận hành' : 'Knowledge & process optimization', 'High (Cao)'],
-              [isVi ? 'Phạm vi ứng dụng' : 'Scope', isVi ? 'Toàn diện trong học tập & công việc' : 'Comprehensive academic & real-world', 'Crucial (Then chốt)'],
-            ],
-          },
-        },
-        {
-          title: isVi ? '2. Luận điểm then chốt & Phân tích chuyên sâu' : '2. Key Arguments & Deep Analysis',
-          text: isVi 
-            ? "Phân tích đa chiều về phương pháp triển khai " + firstLine + ", đánh giá các ưu điểm và lưu ý quan trọng khi áp dụng."
-            : "Multi-dimensional analysis of implementation strategies, advantages, and key considerations.",
-          cue: isVi ? 'Phân tích' : 'Analysis',
-          note: isVi ? 'Điểm tựa lý thuyết và bằng chứng thực nghiệm.' : 'Theoretical foundation and empirical evidence.',
-          bulletPoints: [
-            isVi ? 'Đảm bảo tính chính xác và mạch lạc trong quá trình áp dụng' : 'Ensured high accuracy and logical clarity in execution',
-            isVi ? 'Tối ưu hóa thời gian và tăng hiệu suất ghi nhớ dài hạn' : 'Optimized time efficiency and long-term retention',
-          ],
-        },
-      ],
-      summaryText: isVi 
-        ? "Bản ghi chú hoàn thiện giúp bạn nắm vững toàn diện chủ đề \"" + firstLine + "\". Bạn có thể sử dụng các câu hỏi cốt lõi để ôn tập theo phương pháp Active Recall."
-        : "Complete synthesized note providing comprehensive mastery over \"" + firstLine + "\". Use the core questions for active recall review.",
+        ? `Tổng quan toàn diện về ${title}: Cung cấp nền tảng kiến thức vững chắc, liên kết đa chiều giữa lý thuyết và thực hành.`
+        : `Comprehensive overview of ${title}: Providing solid foundational knowledge bridging theory and practice.`,
+      sections,
+      summaryText,
     },
-    rawMarkdown: "# " + firstLine + "\n\n## 📖 Tổng quan\n" + input + "\n\n## 🎯 Kết luận & Tóm tắt\nĐã hoàn thành phân tích theo phương pháp " + effectiveMethod.toUpperCase() + ".",
+    rawMarkdown,
   };
 }

@@ -65,6 +65,63 @@ const methodGuidance: Record<NoteMethod, string> = {
   custom: 'Cấu trúc theo yêu cầu và hướng dẫn tùy biến từ người dùng.',
 };
 
+const templateDetailedInstructions: Record<NoteMethod, string> = {
+  auto: 'Tùy chọn phương pháp tối ưu dựa vào nội dung nguồn.',
+  cornell: `BẮT BUỘC ĐIỀN 'cue' VÀ 'note' CHO MỖI SECTION.
+- 'cue': Câu hỏi ngắn, từ khóa cốt lõi bên cột trái (Cue Column).
+- 'note': Diễn giải chi tiết, ý phụ bên cột phải (Notes Column).
+- Trường 'bulletPoints' và 'text' vẫn có thể điền để bổ trợ.
+- Cuối cùng 'summaryText' là 3-5 câu tóm tắt toàn bộ bài học.`,
+  outline: `BẮT BUỘC ĐIỀN 'bulletPoints' PHÂN CẤP rõ rệt I, A, 1, a.
+- Mỗi section đại diện cho một phần lớn (ví dụ: "I. Khái niệm cốt lõi").
+- 'bulletPoints' chứa các ý con thụt lề hoặc gạch đầu dòng chi tiết. Không viết đoạn văn dài lan man.`,
+  summary: `Tập trung 100% vào tóm tắt điều hành, cô đọng cực kỳ súc tích.
+- Điền đầy đủ 'summaryText' và 'bulletPoints' làm nổi bật 3-5 điểm hành động (Actionable Key Takeaways).`,
+  meeting: `Biên bản cuộc họp chuyên nghiệp.
+- BẮT BUỘC điền 'tableData' trong các section để tổng hợp: [Người phụ trách, Nhiệm vụ (Action Item), Deadline, Trạng thái].`,
+  lecture: `Ghi chép bài giảng đại học.
+- BẮT BUỘC điền 'definition' cho mỗi thuật ngữ chuyên môn được giới thiệu.
+- Điền 'bulletPoints' và 'text' giải thích rõ bài giảng.`,
+  analysis: `Báo cáo phân tích chuyên sâu.
+- Phân tích rõ nguyên nhân, số liệu bằng chứng, hệ quả và giải pháp.
+- Dùng 'tableData' nếu có bảng đối chiếu hoặc số liệu thống kê.`,
+  qa: `Hỏi đáp kích thích tư duy (Active Recall).
+- BẮT BUỘC điền trường 'question' (Câu hỏi ôn tập) và 'answer' (Câu trả lời chi tiết, logic) cho mỗi section.
+- Không dùng bulletPoints chung chung.`,
+  charting: `Ma trận so sánh song song đa chiều.
+- BẮT BUỘC điền 'tableData' với tiêu đề 'headers' và các hàng dữ liệu 'rows' so sánh rõ rệt các khía cạnh khác nhau.`,
+  boxing: `Đóng hộp kiến thức độc lập (Bento Box).
+- Mỗi section là một hộp hoàn chỉnh độc lập.
+- Điền 'cue' là Tên hộp, 'definition' là Khái niệm cốt lõi, 'bulletPoints' là các nguyên lý và ví dụ.`,
+  allinone: `Note tối thượng tích hợp.
+- Điền đầy đủ cả 'cue'/'note' (Cornell), 'bulletPoints' (Outline), và 'tableData' (Charting) trên các section khác nhau để kết hợp ưu thế đa phương pháp.`,
+  mindmap: `Sơ đồ tư duy dạng chữ (Text Mindmap).
+- Dùng 'bulletPoints' với định dạng thụt lề phân nhánh logic (ví dụ: "+ Chủ đề", "  - Nhánh 1", "    * Nhánh 2").`,
+  flashcard: `Bộ thẻ nhớ Active Recall.
+- Mỗi section là một thẻ nhớ.
+- BẮT BUỘC điền 'question' (Mặt trước - Khái niệm/Thuật ngữ) và 'answer' (Mặt sau - Giải thích ngắn gọn và ứng dụng thực tiễn).`,
+  'deep-research': `Báo cáo Nghiên cứu học thuật chuẩn khoa học.
+- Cấu trúc chặt chẽ gồm Abstract, Literature Review, Methodology, Findings và References.
+- Nêu rõ nguồn trích dẫn và bằng chứng thực nghiệm trong 'text'.`,
+  feynman: `Giải thích đơn giản hóa đa tầng.
+- Section 1: Giải thích bằng ngôn ngữ bình dân (cho trẻ em 10 tuổi hiểu được).
+- Section 2: Ví dụ thực tế hoặc phép ẩn dụ trực quan.
+- Section 3: Định nghĩa chuẩn học thuật và kỹ thuật chuyên sâu.
+- Section 4: Chỉ rõ các lỗ hổng tư duy đã phát hiện và cách lấp đầy.`,
+  'first-principles': `Bóc tách nguyên lý gốc.
+- Section 1: Liệt kê và bác bỏ các giả định thông thường (Assumptions).
+- Section 2: Chân lý vật lý / Sự thật cơ bản nhất không thể bóc tách thêm.
+- Section 3: Tái thiết lập giải pháp từ con số không dựa trên chân lý cơ bản.`,
+  syntopical: `Đọc tổng hợp đối chiếu đa nguồn.
+- So sánh các luận điểm đồng thuận và tranh cãi giữa nhiều tác giả/nguồn tài liệu.
+- BẮT BUỘC điền 'tableData' đối chiếu ý kiến của các bên.`,
+  '5w1h-action': `Khung hành động dự án 5W1H (Who, What, When, Where, Why, How).
+- Điền chi tiết bối cảnh, mốc thời gian, KPI và ma trận phân tích rủi ro có đo lường.`,
+  'quick-summary': `Tóm tắt siêu nhanh 1 trang. Lấy 3-5 ý cốt lõi nhất.`,
+  'executive-summary': `Tóm tắt cấp quản trị chiến lược, làm rõ mục tiêu, số liệu tài chính/đạt được và giải pháp then chốt.`,
+  custom: `Tuân thủ nghiêm ngặt mô tả phong cách tùy biến của người dùng.`,
+};
+
 /**
  * Intelligent AI Agent Engine:
  * Understands conversational queries, writes clean code, answers technical questions,
@@ -136,6 +193,9 @@ Ngôn ngữ giao tiếp chính: ${language === 'vi' ? 'Tiếng Việt' : 'Englis
    - "isNoteAction": true
    - "replyText": Lời phản hồi ngắn gọn, lịch sự thông báo bạn đã phân tích và tạo/cập nhật bản ghi chú học thuật vào Artifact Panel bên phải.
    - "note": Bản ghi chú có cấu trúc chất lượng cao (Structured Note) theo phương pháp "${method}" (${methodGuidance[method] || methodGuidance.auto}).
+
+BẮT BUỘC TUÂN THỦ HƯỚNG DẪN CHI TIẾT CHO PHƯƠNG PHÁP "${method === 'auto' ? 'cornell' : method}":
+${templateDetailedInstructions[method === 'auto' ? 'cornell' : method] || ''}
 
 BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON HỢP LỆ THEO SCHEMA SAU:
 {
