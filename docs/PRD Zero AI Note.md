@@ -286,21 +286,24 @@ Bot AI không tự động tạo note ngay khi user gửi — tuân thủ luồn
 
 **Nguyên tắc gate tính năng**: theo chi phí vận hành thực tế — tính năng tốn compute (Interactive Preview, mind map, xuất file cao cấp) vào gói Paid; tính năng giữ chân user (thư viện, chat tiếp theo nguồn) giữ Free để tối đa engagement.
 
-### Bảng Master Pricing Matrix (chuẩn)
+### Bảng Master Pricing Matrix (chuẩn 100% với website thực tế)
 
 | Hạng mục / Tính năng | Gói FREE (0đ) | Gói PRO (99.000đ/tháng) | Gói ULTRA (199.000đ/tháng) |
 |---|---|---|---|
-| **Giá thành** | **0đ** | **99.000đ / tháng** (~$4) | **199.000đ / tháng** (~$8) |
-| **Giới hạn lưu trữ Note** | **Tối đa 20 Notes** | **Tối đa 50 Notes** | **Không giới hạn** số lượng Note |
-| **Thời lượng & AI Engine** | Không giới hạn thời lượng, dùng chung Gemini Key mặc định hoặc Tự kết nối AI cá nhân | Không giới hạn thời lượng, dùng chung Gemini Key mặc định hoặc Tự kết nối AI cá nhân | Không giới hạn thời lượng, dùng chung Gemini Key mặc định hoặc Tự kết nối AI cá nhân |
+| **Giá thành** | **0đ** (vĩnh viễn) | **99.000đ / tháng** (~$4) | **199.000đ / tháng** (~$8) |
+| **Mô tả định vị** | Khám phá & trải nghiệm ghi chú học thuật chuẩn AI | Dành cho sinh viên, giảng viên & người làm việc hằng ngày | Chuyên gia nghiên cứu, đề án chuyên ngành & khối lượng lớn |
+| **Huy hiệu (Badge)** | Cơ Bản | Phổ Biến Nhất | Tối Thượng / Tất Cả Đặc Quyền |
+| **Giới hạn lưu trữ Note** | **Tối đa 20 Notes** | **Tối đa 50 Notes** | **KHÔNG GIỚI HẠN** số lượng Note |
+| **Hạn mức & AI Engine** | Dùng chung Gemini Key mặc định hoặc Tự kết nối AI cá nhân (Safety Valve mềm >90% quota) | Dùng chung Gemini Key mặc định hoặc Tự kết nối AI cá nhân (Safety Valve mềm >90% quota) | Dùng chung Gemini Key mặc định hoặc Tự kết nối AI cá nhân (Safety Valve mềm >90% quota) |
 | **Xem trước (In-App Preview)** | • Code Raw thô<br>• Preview Markdown đã render | • Toàn bộ của Free<br>• Preview HTML Tĩnh (layout CSS chuẩn) | • Toàn bộ của Pro<br>• Preview HTML Tương tác Động (JS, chart hover, animation) |
-| **Định dạng Xuất file** | 3 định dạng cơ bản (`.pdf`, `.docx`, `.md`) | 4 định dạng chuẩn (PDF, DOCX, MD, HTML Webpage tĩnh) | 4 định dạng cao cấp (PDF, DOCX, MD, Single-file Interactive HTML nhúng CSS/JS) |
-| **Cơ chế Tải xuống** | Tải đơn lẻ từng file một | Tải đơn lẻ từng file một | Tùy chọn đa dạng qua Checkbox (Tải song song / nén `.zip`) |
-| **Hệ thống Templates có sẵn** | **3 template nền tảng:**<br>• Cornell<br>• Outline<br>• Tóm tắt tổng quan | **9 template (Kế thừa Free + 6 chuyên sâu):**<br>• Tóm tắt cuộc họp<br>• Tóm tắt bài giảng<br>• Phân tích chi tiết<br>• Q&A<br>• Charting Method<br>• Boxing Method | **17 template (Kế thừa Free, Pro + 8 chuyên gia):**<br>• Take Note tổng hợp (All-in-One)<br>• Mindmap<br>• Flashcard<br>• Phân tích chuyên sâu<br>• Feynman Technique<br>• First Principles<br>• Syntopical Matrix<br>• 5W1H & Actionable |
-| **Tự tạo Template (Custom)** | Tối đa **5 templates** | Tối đa **25 templates** | **Không giới hạn** số lượng |
+| **Định dạng Xuất file** | 3 định dạng cơ bản (`.pdf`, `.docx`, `.md`) | 4 định dạng chuẩn (PDF, DOCX, MD, Webpage HTML tĩnh) | 4 định dạng cao cấp (PDF, DOCX, MD, Single-file Interactive HTML độc lập 100% offline) |
+| **Cơ chế Tải xuống** | Tải đơn lẻ từng file một | Tải đơn lẻ từng file một | Checkbox Multi-Export & Đóng gói tự động vào 1 file `.ZIP` duy nhất |
+| **Hệ thống Templates có sẵn** | **3 template nền tảng:**<br>• Cornell<br>• Outline<br>• Tóm tắt tổng quan | **9 template (Kế thừa Free + 6 chuyên sâu):**<br>• Tóm tắt cuộc họp<br>• Tóm tắt bài giảng<br>• Phân tích chi tiết<br>• Q&A<br>• Charting Method<br>• Boxing Method | **17 template (Trọn bộ Free, Pro + 8 chuyên gia):**<br>• Take Note tổng hợp (All-in-One)<br>• Mindmap<br>• Flashcard<br>• Phân tích chuyên sâu<br>• Feynman Technique<br>• First Principles<br>• Syntopical Matrix<br>• 5W1H & Actionable Matrix |
+| **Tự tạo Template (Custom)** | Tối đa **5 templates** | Tối đa **25 templates** | **KHÔNG GIỚI HẠN** số lượng |
+| **Hỗ trợ & Ưu tiên** | Tiêu chuẩn | Tiêu chuẩn | Ưu tiên tốc độ xử lý & hỗ trợ kỹ thuật 24/7 |
 
 > **Ghi chú pricing**: 
-> - **Không giới hạn giờ xử lý / độ dài file** trên lý thuyết cho cả 3 gói — nếu Gemini key hệ thống quá tải/nghẽn quota, user chờ reset hoặc chuyển sang "Tự kết nối AI".
+> - **Không giới hạn giờ xử lý / độ dài file** trên lý thuyết cho cả 3 gói — nếu Gemini/Groq key hệ thống quá tải/nghẽn quota, hệ thống kích hoạt Safety Valve mềm và thông báo người dùng chờ reset hoặc chuyển sang "Tự kết nối AI".
 > - Đơn vị tiền tệ hiển thị theo ngôn ngữ: tiếng Việt dùng `đ`, English dùng `$` (quy đổi ~25.500đ/$1).
 > - Không dùng từ "không giới hạn" mơ hồ trên landing — con số cụ thể hoặc placeholder rõ ràng.
 
