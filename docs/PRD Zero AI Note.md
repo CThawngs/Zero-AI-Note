@@ -12,6 +12,16 @@
 2. [Đối tượng người dùng](#2-đối-tượng-người-dùng)
 3. [Kiến trúc kỹ thuật](#3-kiến-trúc-kỹ-thuật)
 4. [Đặc tả tính năng](#4-đặc-tả-tính-năng)
+   - [4.1 Xử lý đầu vào (Ingestion)](#41-xử-lý-đầu-vào-ingestion)
+   - [4.1b Tách luồng: Chat thường vs Xử lý file đính kèm](#41b-tách-luồng-chat-thường-vs-luồng-xử-lý-file-đính-kèm-nguyên-tắc-bảo-vệ-context-window)
+   - [4.2 Điều khiển output](#42-điều-khiển-output)
+   - [4.3 Artifact Panel, Preview & Xuất file](#43-artifact-panel-xem-trước-preview--xuất-file)
+   - [4.4 Tổ chức & lưu trữ](#44-tổ-chức--lưu-trữ)
+   - [4.5 UX xử lý file dài](#45-ux-xử-lý-file-dài)
+   - [4.6 Giữ chân người dùng](#46-giữ-chân-người-dùng)
+   - [4.7 Quy trình AI chat thông minh](#47-quy-trình-ai-chat-thông-minh-đã-implement-2026-08-20)
+   - [4.8 Tính năng mở rộng](#48-tính-năng-mở-rộng-ưu-tiên-thấp-hơn-làm-sau)
+   - [4.9 Tự kết nối AI / Nhà cung cấp AI](#49-tự-kết-nối-ai--nhà-cung-cấp-ai-trước-đây-byok--bring-your-own-api-key)
 5. [Mô hình kinh doanh & Bảng giá](#5-mô-hình-kinh-doanh--bảng-giá)
 6. [Database Schema](#6-database-schema)
 7. [UI/UX](#7-uiux)
@@ -54,8 +64,8 @@ Sinh viên/giáo viên xử lý bài giảng dài, người đi họp cần ghi 
 | Media file storage (Presigned URL upload) | **Cloudflare R2** (S3-compatible) | Lưu trữ file media (Video/Audio/PDF/Docx/ppt...) khi tải lên qua **Presigned URL** — trình duyệt đẩy thẳng lên R2, không đi qua server Next.js (tránh giới hạn 4.5MB Vercel). Đa vùng, production ổn định, free tier 10GB |
 | ORM | **Drizzle ORM** (duy nhất) | Không lẫn Prisma/raw Supabase; driver Neon serverless (`@neondatabase/serverless`) |
 | Auth | **JWT tự phát hành** (`jose` + `bcryptjs`), session cookie HttpOnly | Đã thay thế Neon Auth trong quá trình triển khai — 1 cơ chế ký token duy nhất (`lib/auth/session.ts`), fail-closed khi thiếu `ZERO_JWT_SECRET`. Hỗ trợ email/password + Google OAuth (Google Identity Services popup) |
-| Job nền (xử lý file dài) | **Inngest hoặc Trigger.dev** | Chuyên cho chuỗi job AI dài nhiều bước, tách biệt hoàn toàn khỏi nơi hosting app chính. **Giới hạn song song**: key Gemini dùng chung chạy tối đa **1–2 job AI đồng thời**, các job còn lại xếp hàng chờ (Pending queue) để tránh vượt quota (15 RPM / 1M TPM) |
-| AI xử lý | Cloud API only — **Gemini API key dùng chung của hệ thống** (mặc định) + tính năng **"Tự kết nối AI / Nhà cung cấp AI"** (dùng API Key riêng qua chuẩn OpenAI-compatible) | Đã bỏ hướng on-device/local. Cả 3 gói dùng chung 1 Gemini key; khi key quá tải/nghẽn quota (`429 Resource Exhausted`) → job xếp hàng chờ hoặc user chuyển sang Tự kết nối AI. **Chống lộ key**: biến môi trường là `GEMINI_API_KEY` (KHÔNG có tiền tố `NEXT_PUBLIC_`), 100% cuộc gọi AI chạy qua API Route server-side hoặc worker — client không bao giờ gọi Google AI trực tiếp |
+| Job nền (xử lý file dài) | **Inngest** | Chuyên cho chuỗi job AI dài nhiều bước, tách biệt hoàn toàn khỏi nơi hosting app chính. **Giới hạn song song**: key Gemini dùng chung chạy tối đa **1–2 job AI đồng thời**, các job còn lại xếp hàng chờ (Pending queue) để tránh vượt quota (15 RPM / 1M TPM) |
+| AI xử lý & STT | Cloud API only — **Gemini API key dùng chung của hệ thống** (mặc định) + **Groq Whisper Large v3 Turbo** (STT pool thứ 2) + tính năng **"Tự kết nối AI / Nhà cung cấp AI"** (dùng API Key riêng qua chuẩn OpenAI-compatible) | Đã bỏ hướng on-device/local. Cả 3 gói dùng chung 1 Gemini key; khi key quá tải/nghẽn quota (`429 Resource Exhausted`) → job xếp hàng chờ hoặc route sang Groq STT hoặc user chuyển sang Tự kết nối AI. **Chống lộ key**: biến môi trường là `GEMINI_API_KEY` và `GROQ_API_KEY` (KHÔNG có tiền tố `NEXT_PUBLIC_`), 100% cuộc gọi AI/STT chạy qua API Route server-side hoặc worker — client không bao giờ gọi Google AI/Groq trực tiếp |
 | Billing | **Zero Tracking** (zeroinvoice-silk.vercel.app, tên mới của ZeroInvoice) | Tạo bill qua `POST /api/bills` (amount locked), render QR client-side `qrcode.react`, kiểm tra trạng thái qua polling + webhook `bill.paid`. API key đọc từ env (`ZERO_TRACKING_API_KEY`/`ZEROINVOICE_API_KEY`), không lộ client-side |
 | Nguồn UI ban đầu | Export từ Google AI Studio (React + TypeScript + Tailwind, đã component hoá) | Xem chi tiết luồng & vai trò ở mục 7.1 — chỉ lấy phần giao diện, không suy ra kiến trúc backend từ code này |
 
@@ -72,9 +82,9 @@ Sinh viên/giáo viên xử lý bài giảng dài, người đi họp cần ghi 
 ```
 User gửi file/link/text + (tùy chọn) chỉ định phương pháp ghi chú
   → Nếu thiếu phương pháp: AI hỏi lại trong chat, CHỈ SAU KHI đã nhận đủ nguồn
-  → Enqueue job nền (Inngest/Trigger.dev) — không xử lý trong request đồng bộ
+  → Enqueue job nền (Inngest) — không xử lý trong request đồng bộ
   → Giai đoạn 1: Trích transcript (ưu tiên phụ đề có sẵn nếu là YouTube;
-    ngược lại STT qua chunk + map-reduce cho file dài)
+    ngược lại STT qua chunk + map-reduce cho file dài bằng Gemini STT hoặc Groq Whisper)
   → Giai đoạn 2: Cấu trúc theo phương pháp đã chọn (dùng transcript làm
     nguồn, không xử lý lại audio/video thô — tăng độ chính xác, cho phép audit)
   → Giai đoạn 3: Sinh content_structured (Block-based JSON chuẩn) — nguồn duy nhất để
@@ -94,13 +104,14 @@ User gửi file/link/text + (tùy chọn) chỉ định phương pháp ghi chú
 ### 3.2b Luồng xử lý file dài (Video/Audio 10–25h) trên Server Cloud
 **Nguyên tắc**: Xử lý nặng chạy trên worker bất đồng bộ (không tại client, không tại Vercel sync). "Miễn phí" ở đây nghĩa là **miễn phí cho người dùng cuối**; operator (chủ dự án) chịu chi phí hạ tầng, tối ưu trong free tier các dịch vụ (R2 10GB, Inngest free, Resend 3000 mail/tháng, Gemini daily cap) và **có giới hạn** — không phải 0đ vô điều kiện.
 1. **Client → R2 (Presigned URL)**: trình duyệt đẩy file gốc thẳng lên Cloudflare R2, không qua Vercel (vượt giới hạn payload 4.5MB).
-2. **Inngest trigger → worker bất đồng bộ** (Lambda/Cloudflare Worker): demux luồng audio bằng `ffmpeg -c:a copy` (streaming copy, KHÔNG re-encode) + segment thành chunk **30–60 phút** → ghi thẳng từng chunk lên R2. Không load whole-file 20GB vào RAM; vượt qua giới hạn Lambda 15' timeout & /tmp 10GB.
-3. **Keyframes**: worker FFmpeg scene-change detection (giới hạn video <2h hoặc đã demux được) → R2, gắn timestamp.
-4. **STT từng chunk**: mỗi chunk (≈57k–115k tokens) → **Gemini STT** (free tier). Dùng **overlap 10–15s + silence detection** tại biên chunk để **không rớt 1 giây audio nào**, timestamp đầy đủ → đảm bảo nội dung trọn vẹn 100%.
+2. **Inngest trigger → worker bất đồng bộ**: demux luồng audio bằng `ffmpeg -c:a copy` (streaming copy, KHÔNG re-encode) + segment thành chunk **30–60 phút** → ghi thẳng từng chunk lên R2. Không load whole-file 20GB vào RAM. ⚠️ **Xác nhận lại (2026-08-21, nguồn: docs.inngest.com/usage-limits)**: timeout mỗi step Inngest phụ thuộc hosting provider, KHÔNG cố định 15 phút. Trên Vercel — nơi app đang host — Hobby (free) mặc định 10s, cần bật Fluid Compute mới lên tối đa 300s (5 phút); Pro tối đa ~800s. → Mỗi step demux/segment phải hoàn thành trong ≤300s. File gốc quá lớn khiến 1 lần tải+demux vượt 300s → PHẢI đọc file gốc từ R2 theo HTTP Range Request theo từng đoạn nhỏ, mỗi đoạn 1 step riêng (fan-out), không tải nguyên file trong 1 step. Việc cần làm TRƯỚC khi build: bật Fluid Compute trên Vercel project + viết spike đo thời gian demux thực tế trên file mẫu 5-10GB.
+3. **Keyframes**: áp dụng cho MỌI video bất kể thời lượng, chạy scene-change detection theo TỪNG segment 30-60p đã demux (không chạy trên file gốc nguyên khối), gắn timestamp theo offset cộng dồn. Video 10h+ → nhiều batch keyframe nhỏ theo từng segment, chạy độc lập/song song qua Inngest fan-out.
+4. **STT từng chunk**: mỗi chunk (≈57k–115k tokens) → **Gemini STT** (free tier) hoặc **Groq Whisper Large v3 Turbo** (STT pool thứ 2). Dùng **overlap 10–15s + silence detection** tại biên chunk để **không rớt 1 giây audio nào**, timestamp đầy đủ → đảm bảo nội dung trọn vẹn 100%.
 5. **YouTube**: caption fetch **tại client** (`youtubei.js`) — server-side bị Google IP-block. Không có caption → UI báo *"Video YouTube không phụ đề hiện chưa hỗ trợ"*.
 6. **Map-Reduce**: ghép transcript (giữ timestamp) → tổng hợp thành `content_structured` JSON → Neon.
 7. **Tracking**: Stepper 3 bước [Trích Transcript → Phân tích Cấu trúc → Hoàn thiện Note] + sub-progress *"Transcript 47/120"*; client polling `/api/notes/status/:jobId` 2–3s → in-app + **email Resend** khi xong.
-**Giới hạn free tier (để không vỡ quota)**: cap upload free = 2GB/file & 5h audio/video; vượt → yêu cầu nâng gói. Gemini: queue 1–2 job/shared key, 15 RPM, không hứa thời gian cụ thể (đúng PRD 4.5).
+8. **STT pool thứ 2 — Groq Whisper Large v3 Turbo (2026-08-21)**: free tier 20 RPM, 2.000 req/ngày, tối đa 7.200s audio/giờ & 28.800s audio/ngày (≈8h/ngày), file ≤25MB/request, endpoint OpenAI-compatible, tốc độ 228x real-time. Dùng cho: (a) lấp lỗ hổng STT cho Tự kết nối AI khi user chọn OpenAI/Claude (vốn không ingest audio thô); (b) cộng dồn quota hệ thống khi Gemini quá tải. Lưu ý: cap 25MB/request của Groq nhỏ hơn chunk 30-60p — backend tự chia nhỏ thêm các sub-chunk ≤25MB trước khi đẩy sang Groq.
+**Giới hạn free tier & Safety Valve (2026-08-21)**: BỎ cap cứng 2GB/5h cho free tier. Thay bằng safety valve MỀM: khi quota Gemini/Groq trong ngày đạt >90%, hệ thống tạm dừng nhận job MỚI (không huỷ job đang chạy), báo user chờ quota reset hoặc chuyển sang Tự kết nối AI. Gemini: queue 1–2 job/shared key, 15 RPM, không hứa thời gian cụ thể (đúng PRD 4.5).
 
 ### 3.3 Bảo mật & vận hành
 
@@ -110,7 +121,7 @@ User gửi file/link/text + (tùy chọn) chỉ định phương pháp ghi chú
 - Billing qua **Zero Tracking** (tên mới của ZeroInvoice): API key đọc từ env (fail-closed — KHÔNG hardcode key trong source; nếu `ZEROINVOICE_WEBHOOK_SECRET` đã set thì webhook bắt buộc xác minh chữ ký HMAC-SHA256 — signature sai → từ chối 401; khi CHƯA set secret thì fail-open để không chặn luồng tích hợp). Xử lý idempotent tránh cộng dồn subscription
 - **Zero Tracking (VietQR)**: tạo bill bằng `POST /api/bills` (chỉ cần `amount`), nhận `qr_data` → **render QR client-side bằng `qrcode.react`** (EMVCo VietQR payload: acqId + accountNo + amount + addInfo). amount + addInfo bị **LOCKED** bởi Zero Tracking, bill hết hạn sau **30 phút**. Check trạng thái bằng `GET /api/bills/:id` (polling) hoặc webhook `{event:"bill.paid", data:{bill_id, amount, paid_at}}` (header `x-webhook-signature`). Luồng chính của app: polling `/api/billing/check-status`; webhook `/api/billing/webhook` là kênh phụ
 - Phân quyền admin qua trường `role` trong DB, kiểm tra server-side ở mọi route — không chỉ ẩn UI. Admin email cấu hình 1 nơi `ADMIN_EMAIL` trong `.env.local`
-- Tự động xoá file gốc sau N ngày (giữ lại note), giảm chi phí lưu trữ + rủi ro riêng tư
+- Tự động xoá file gốc: file media >500MB xoá NGAY sau khi demux + STT hoàn tất thành công (không chờ N ngày) — chỉ giữ transcript text + content_structured. File <500MB giữ theo policy N ngày như cũ. Mục đích: tránh vỡ quota R2 10GB free khi nhiều file dài xử lý gần nhau.
 - **JWT fail-closed**: thiếu `ZERO_JWT_SECRET` → crash runtime, không fallback yếu
 
 ### 3.4 Công cụ phát triển — Chrome Remote Debugging (Windows)
@@ -138,12 +149,29 @@ Dùng cho **Hermes `browser_exec`** để điều khiển Chrome thật (đọc 
 - Nhận nhiều file/định dạng cùng lúc trong 1 request (video, audio, ảnh, PDF, slide, text paste)
 - Xử lý file dài hàng chục giờ/phiên qua kiến trúc chunk + map-reduce (giới hạn hào phóng nhưng thật — không theo hướng "không giới hạn TB", vừa phi thực tế về hạ tầng vừa mâu thuẫn với mục tiêu chính xác)
 - Timestamp-linking: note liên kết ngược về đúng khoảnh khắc trong file gốc
-- Đối chiếu song song slide + audio theo thời điểm
-- Tự nhận diện ngôn ngữ + xử lý code-switching Việt-Anh
-- Kiến trúc transcribe-trước-cấu trúc-sau (2 pha), cho phép audit lại khi nghi ngờ sai sót
-- Tách giọng theo người nói (speaker diarization) — mở rộng cho use case họp sau này
-- Nhận link website (reader-mode) và YouTube (ưu tiên caption có sẵn; YouTube không có caption → unsupported, không tải audio server-side vì CORS + IP-block cloud)
-- Tự động phân loại & gộp nhiều file rời rạc thành 1 bộ note liền mạch (có xác nhận lại từ user, AI không tự quyết định gộp mà không hỏi)
+|- Đối chiếu song song slide + audio theo thời điểm
+|- Tự nhận diện ngôn ngữ + xử lý code-switching Việt-Anh
+|- Kiến trúc transcribe-trước-cấu trúc-sau (2 pha), cho phép audit lại khi nghi ngờ sai sót
+|- Tách giọng theo người nói (speaker diarization) — mở rộng cho use case họp sau này
+|- Nhận link website (reader-mode) và YouTube (ưu tiên caption có sẵn; YouTube không có caption → unsupported, không tải audio server-side vì CORS + IP-block cloud)
+|- Tự động phân loại & gộp nhiều file rời rạc thành 1 bộ note liền mạch (có xác nhận lại từ user, AI không tự quyết định gộp mà không hỏi)
+|- **STT pool đa nguồn (2026-08-21)**: Bổ sung **Groq Whisper Large v3 Turbo** (free tier: 20 RPM, 2.000 req/ngày, tối đa 7.200s audio/giờ & 28.800s audio/ngày ≈ 8h/ngày, file ≤25MB/request, endpoint OpenAI-compatible, tốc độ 228x real-time) làm STT engine THỨ 2 chạy song song với Gemini. Mục đích: (a) lấp lỗ hổng STT cho nhánh Tự kết nối AI khi user chọn OpenAI/Claude — 2 provider này không ingest audio/video thô; (b) cộng dồn tổng quota hệ thống (Gemini quá tải → route sang Groq), theo tinh thần multi-provider pooling đã dùng ở 9Router/OmniRoute cho Hermes Agent. Lưu ý: cap 25MB/request của Groq nhỏ hơn chunk 30-60p hiện tại — backend tự chia nhỏ thêm các sub-chunk ≤25MB trước khi đẩy sang Groq.
+
+### 4.1b Tách luồng: Chat thường vs Luồng xử lý file đính kèm (nguyên tắc bảo vệ Context Window)
+
+**Nguyên tắc cốt lõi**: AI (model chat) KHÔNG BAO GIỜ nhận trực tiếp file thô (video/audio/PDF/slide/ảnh) vào context/prompt. Mọi file đều được HỆ THỐNG BACKEND xử lý triệt để trước (transcribe/trích xuất → text sạch qua pipeline mục 3.2/3.2b), AI chỉ tiếp nhận text đã qua xử lý. Đây là lý do bắt buộc của kiến trúc pipeline mục 3.2b: (1) tránh AI phải tự "nuốt" file dài hàng giờ trong 1 lần gọi — cực tốn token + rủi ro vượt context window dù model hỗ trợ 1M token, (2) giữ trải nghiệm chat mượt như ChatGPT/Gemini cho tin nhắn KHÔNG đính kèm file — đây là hệ thống chat AI bình thường trước tiên, pipeline file chỉ là lớp xử lý ngầm phía sau khi cần.
+
+**Luồng A — Chat thường (không đính kèm file)**:
+- Tin nhắn text thuần → gọi thẳng AI model (Gemini mặc định hoặc model user chọn qua Tự kết nối AI) → trả lời ngay như chatbot thông thường, KHÔNG qua Inngest/job nền, latency thấp.
+- Đây là luồng MẶC ĐỊNH, chiếm đa số tương tác hàng ngày (hỏi đáp, chat tiếp theo nguồn đã có ở mục 4.6, chỉnh sửa note, trò chuyện thường).
+
+**Luồng B — Có đính kèm 1 hoặc NHIỀU file cùng lúc**:
+1. Hệ thống phát hiện attachment(s) trong tin nhắn → KHÔNG gọi AI ngay — chuyển sang chế độ xử lý nền (enqueue Inngest, đúng luồng mục 3.2).
+2. Hiển thị NGAY một "Processing Card" — dạng bong bóng tin nhắn hệ thống xuất hiện TRỰC TIẾP trong khung chat (không phải màn hình/tab riêng) — gồm: danh sách từng file đang xử lý kèm trạng thái riêng, Stepper các bước (mục 4.5), đồng hồ đếm thời gian đã trôi qua (chạy real-time phía client), ETA ước tính (không cam kết cứng, đúng nguyên tắc mục 4.5).
+3. Card cập nhật qua polling 2-3s đã chốt (`/api/notes/status/:jobId`), nhưng render TẠI VỊ TRÍ tin nhắn đó trong lịch sử chat — user cuộn lại vẫn thấy tiến trình đã qua, không mất ngữ cảnh hội thoại.
+4. Nhiều file cùng lúc: xử lý song song (trong giới hạn concurrency Inngest — mục 3.1/10), Processing Card hiển thị trạng thái riêng từng file, ví dụ: "File 1/3: Video bài giảng.mp4 — 47/120 chunk", "File 2/3: Slide.pdf — Hoàn tất ✓", "File 3/3: Audio.mp3 — Đang chờ hàng đợi". 1 file lỗi KHÔNG chặn các file còn lại.
+5. CHỈ SAU KHI TẤT CẢ file xử lý xong 100%, hệ thống mới gộp toàn bộ transcript/text sạch (không phải file gốc) làm context đưa cho AI → tiếp tục đúng luồng mục 4.7 (AI xác nhận trước khi Take Note) hoặc trả lời câu hỏi user đã hỏi kèm lúc đính kèm.
+6. User vẫn gõ được tin nhắn khác trong lúc Processing Card đang chạy (không khoá chat) — tin nhắn không liên quan đi qua Luồng A bình thường; nếu hỏi thêm về file đang xử lý → AI trả lời dựa trạng thái hiện có, nói rõ file chưa xử lý xong nên chưa đủ nội dung.
 
 **Ràng buộc hạ tầng Vercel Serverless — bắt buộc tuân thủ**:
 - **Giới hạn Request Payload 4.5MB**: File lớn >4.5MB **KHÔNG** gửi qua form/sheet thông thường tới API Route Next.js — Vercel sẽ sập.
@@ -238,7 +266,7 @@ Bot AI không tự động tạo note ngay khi user gửi — tuân thủ luồn
 - Spaced repetition cho template Flashcard
 - ~~Chế độ on-device Gemma~~ — đã tạm gác (mâu thuẫn với quyết định full-cloud; quay lại nếu có nhu cầu doanh nghiệp thật, khi đó triển khai qua WebGPU/ONNX Runtime Web trên trình duyệt user, không phải server Zero)
 
-### 4.8 Tự kết nối AI / Nhà cung cấp AI (trước đây: BYOK — Bring Your Own API Key)
+### 4.9 Tự kết nối AI / Nhà cung cấp AI (trước đây: BYOK — Bring Your Own API Key)
 
 > **Đổi tên**: toàn bộ giao diện, bảng giá và tài liệu dùng cụm từ **"Tự kết nối AI / Nhà cung cấp AI"** (hoặc "Dùng API Key riêng"). **Đã loại bỏ hoàn toàn** tính năng Auto-Sync model free và bảng cache `provider_free_models_cache` — không dùng cron job polling giá model bên thứ ba.
 
@@ -576,7 +604,8 @@ Tiêu chí chấm điểm không đòi hỏi billing thật/"Tự kết nối AI
 - ✅ **YouTube caption client-side** (`youtubei.js`): server-side bị Google IP-block. Không có caption → UI báo unsupported.
 - ✅ **Email notify**: **Resend** (free tier 3000/tháng) khi Note xong.
 - ✅ "Free" = **miễn phí người dùng cuối**, operator tối ưu free tier **có giới hạn** (KHÔNG "free 100% vận hành" / "0đ vô điều kiện").
-- ✅ **Cap free tier**: 2GB/file, 5h source — vượt → yêu cầu nâng gói (tránh vỡ quota R2 10GB & Gemini daily cap).
+- ✅ **Đã xác nhận (2026-08-21): BỎ cap cứng 2GB/5h cho free tier — khớp lại quyết định gốc 2026-08-18 ('cả 3 gói không giới hạn giờ xử lý/độ dài file'). Thay bằng safety valve MỀM: khi quota Gemini/Groq trong ngày đạt >90%, hệ thống tạm dừng nhận job MỚI (không huỷ job đang chạy), báo user chờ quota reset thay vì chặn cứng theo dung lượng/thời lượng.**
+- ✅ **STT pool đa nguồn (2026-08-21)**: Bổ sung **Groq Whisper Large v3 Turbo** làm STT pool thứ 2 (20 RPM, 2.000 req/ngày, 8h audio/ngày, free tier) chạy song song với Gemini STT.
 - ✅ **Model lõi: `gemini-3.7-flash` (mới nhất, Stable/GA) làm PRIMARY**, `gemini-2.5-flash` + `gemini-2.0-flash` làm **FALLBACK cascade tự động** (theo chỉ đạo Chủ tịch 2026-08-20: 3.7 chính → lỗi/429 → 2.5 → 2.0). Dispatcher phải implement **failover chain 3 bậc**: gọi 3.7 Flash, bắt `429 Resource Exhausted` / lỗi → retry 2.5 → 2.0 (cùng shared key `GEMINI_API_KEY`). 3.7 Flash giữ nguyên 1M context + 65k output + native audio/video như 2.5. ⚠️ RPM free-tier 3.7 Flash **CHƯA verify được** (login-wall AI Studio, giống 2.5) → failover đảm bảo pipeline không kẹt. Operator nên check RPM 3.7 trong console để tối ưu queue size.
 - ✅ **Runtime model = model USER CHỌN từ Model Selector** (lưu trong `AppContext`), KHÔNG hardcode default. Pipeline rẽ nhánh 2 giai đoạn: (1) **STT (audio→text)**: nếu user chọn Gemini → Gemini native audio; nếu user chọn non-Gemini (OpenAI/Claude) → bắt buộc qua **transcription service** (Whisper/equivalent) vì **Claude/OpenAI KHÔNG ingest raw audio/video** (chỉ text+image); (2) **Synthesis (text→note)**: dùng model user chọn (mọi provider đều làm được vì đã là text). User không chọn / chọn Auto → dùng Gemini chung operator (cascade 3.7→2.5→2.0). **BYOK = user trả token riêng** → vừa đỡ tốn Gemini chung, vừa mở model khác (khớp PRD 4.8).
 - ❌ Loại bỏ đề xuất "chunk 5 phút" (dựa trên số "free tier 5 phút" KHÔNG có trong Google docs — myth). Chunk chuẩn = 30–60 phút.
@@ -592,6 +621,7 @@ Tiêu chí chấm điểm không đòi hỏi billing thật/"Tự kết nối AI
 
 | Ngày | Nội dung |
 |---|---|
+| 2026-08-21 | **Bổ sung nguyên tắc tách luồng Chat thường vs Luồng xử lý file (mục 4.1b)** — bảo vệ context window, AI không nhận file thô, hệ thống xử lý triệt để trước rồi mới đưa AI. Verify lại kiến trúc file dài (10h+) qua docs chính chủ Inngest/Vercel/Groq: bỏ mâu thuẫn cap 5h (thay bằng safety valve mềm khi quota >90%), sửa giả định sai timeout worker (Vercel Fluid Compute 300s không phải Lambda 15'), bổ sung Groq Whisper Large v3 Turbo làm STT pool thứ 2, làm rõ keyframe cho video 10h+ theo từng segment, cụ thể hoá policy xoá file media >500MB ngay sau STT để tiết kiệm R2, chốt dứt điểm Inngest. Đổi tên mục BYOK thành 4.9. |
 | 2026-08-18 | **Loại bỏ mục Kickoff prompt cho Hermes Agent** (đã qua giai đoạn bắt đầu dự án từ lâu). Đánh số lại: mục 12 "Lịch sử thay đổi" → thành mục 11. Chốt chiến lược kinh doanh: lấy **khả năng upload + xử lý file không giới hạn** làm lợi thế cạnh tranh trực tiếp so với các AI Chatbot (Gemini/ChatGPT/Claude) vốn bị giới hạn upload file — dùng cho marketing, SEO và định vị thị trường. |
 | 2026-08-18 | **Bịt 5 điểm nghẽn kỹ thuật + 5 điểm cấn ngầm (Edge Cases & Architectural Traps) trước khi code**: (1) Presigned URL upload + bóc tách audio client-side (Web Audio API/FFmpeg.wasm) + YouTube chỉ audio/captions — tránh giới hạn 4.5MB Vercel; (2) giới hạn AI job song song 1–2 trên key dùng chung (Inngest queue) tránh `429 Resource Exhausted`; (3) bổ sung auth fields (email/password_hash/google_id) vào `profiles` + thêm bảng `subscriptions` (bill_id, plan, amount, status, qr_data, paid_at, renews_at); (4) Block-based `content_structured` chuẩn (heading/paragraph/cue_box/table/card_grid/callout) + Export Engine DUY NHẤT — tránh 17×3=51 converter; (5) Interactive Single-file HTML dùng template tĩnh mẫu + inject `window.__NOTE_DATA__` — không AI tự viết JS. Kèm: Auto Template gating theo gói (chống tier bypass), Polling 2–3s thay vì stream SSE/WebSocket, chống lộ Gemini key (`GEMINI_API_KEY` không `NEXT_PUBLIC_`), luồng thanh toán VietQR production chi tiết (create-bill → render QR qrcode.react → countdown 30 phút → polling 3s + webhook HMAC idempotent). |
 | 2026-08-18 | **Đồng bộ Zero Tracking mới** (ZeroInvoice đổi tên): QR thanh toán render client-side bằng `qrcode.react` (EMVCo VietQR payload từ `qr_data`, amount/addInfo locked, bỏ `img.vietqr.io`); sửa `checkZeroInvoiceBillStatus` parse nested `data.bill`; webhook hỗ trợ event `bill.paid` + `data` payload; bỏ hardcode Zero Tracking API key (đọc từ env, fail-closed), webhook fail-open khi chưa set secret. Thêm mục 3.4 hướng dẫn Chrome Remote Debugging cho Hermes `browser_exec`. |
