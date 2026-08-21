@@ -11,6 +11,11 @@
 1. [Định vị sản phẩm](#1-định-vị-sản-phẩm)
 2. [Đối tượng người dùng](#2-đối-tượng-người-dùng)
 3. [Kiến trúc kỹ thuật](#3-kiến-trúc-kỹ-thuật)
+   - [3.2c Tách biệt 2 Engine AI & Dynamic Runtime Identity](#32c-tách-biệt-tuyệt-đối-2-engine-ai--dynamic-runtime-identity-2026-08-21)
+   - [3.2d Map-Reduce 2 Tầng](#32d-map-reduce-2-tầng-cho-file-dài)
+   - [3.2e RAG pgvector](#32e-rag-chat-với-neon-pgvector-source_embeddings)
+   - [3.2f Template Registry](#32f-config-driven-template-registry-libtemplatesregistryts)
+   - [3.2g Export Engine](#32g-universal-block-based-export-engine-libexport)
 4. [Đặc tả tính năng](#4-đặc-tả-tính-năng)
    - [4.1 Xử lý đầu vào (Ingestion)](#41-xử-lý-đầu-vào-ingestion)
    - [4.1b Tách luồng: Chat thường vs Xử lý file đính kèm](#41b-tách-luồng-chat-thường-vs-luồng-xử-lý-file-đính-kèm-nguyên-tắc-bảo-vệ-context-window)
@@ -112,6 +117,32 @@ User gửi file/link/text + (tùy chọn) chỉ định phương pháp ghi chú
 7. **Tracking**: Stepper 3 bước [Trích Transcript → Phân tích Cấu trúc → Hoàn thiện Note] + sub-progress *"Transcript 47/120"*; client polling `/api/notes/status/:jobId` 2–3s → in-app + **email Resend** khi xong.
 8. **STT pool thứ 2 — Groq Whisper Large v3 Turbo (2026-08-21)**: free tier 20 RPM, 2.000 req/ngày, tối đa 7.200s audio/giờ & 28.800s audio/ngày (≈8h/ngày), file ≤25MB/request, endpoint OpenAI-compatible, tốc độ 228x real-time. Dùng cho: (a) lấp lỗ hổng STT cho Tự kết nối AI khi user chọn OpenAI/Claude (vốn không ingest audio thô); (b) cộng dồn quota hệ thống khi Gemini quá tải. Lưu ý: cap 25MB/request của Groq nhỏ hơn chunk 30-60p — backend tự chia nhỏ thêm các sub-chunk ≤25MB trước khi đẩy sang Groq.
 **Giới hạn free tier & Safety Valve (2026-08-21)**: BỎ cap cứng 2GB/5h cho free tier. Thay bằng safety valve MỀM: khi quota Gemini/Groq trong ngày đạt >90%, hệ thống tạm dừng nhận job MỚI (không huỷ job đang chạy), báo user chờ quota reset hoặc chuyển sang Tự kết nối AI. Gemini: queue 1–2 job/shared key, 15 RPM, không hứa thời gian cụ thể (đúng PRD 4.5).
+
+### 3.2c Tách biệt tuyệt đối 2 Engine AI & Dynamic Runtime Identity (2026-08-21)
+1. **Chat Assistant Engine**:
+   - Trò chuyện tự nhiên, Q&A trên tài liệu bằng RAG chunks.
+   - Dynamic Runtime Identity: khi khởi tạo, hệ thống đọc Provider/Model active từ session/`byok_providers` và inject động vào system prompt (`{{active_provider_name}}`, `{{active_model_id}}`). Tuyệt đối không hardcode chuỗi tĩnh như "Bạn là Gemini".
+   - Hỗ trợ SSE Streaming Token cho khung chat.
+2. **Note Generator Engine (Headless JSON Generator)**:
+   - Không trò chuyện, không chào hỏi.
+   - Đầu ra bắt buộc 100% JSON theo Universal Block Schema.
+   - Validation qua `Zod Schema` + Auto-Repair Loop (`repairMalformedJson()`, tối đa 2 retries trước khi báo lỗi).
+
+### 3.2d Map-Reduce 2 Tầng cho File Dài
+1. **Tầng 1 — STT Map-Reduce**: Audio cắt chunk 30–45 phút (overlap 30s) → STT song song/tuần tự → Transcript gộp kèm Timestamps.
+2. **Tầng 2 — Structuring Map-Reduce**:
+   - **Map Phase**: Transcript chia section 3.000–5.000 từ → Note Generator sinh Local JSON Blocks.
+   - **Reduce/Polish Phase**: Lượt AI cuối gộp tiêu đề + summary → Executive Overview, Unified Glossary, Global Timestamps → `content_structured`.
+
+### 3.2e RAG Chat với Neon pgvector (`source_embeddings`)
+- Extension `vector` trên Neon DB.
+- Khi user đặt câu hỏi tiếp theo trong chat: sinh vector embedding câu hỏi → query Cosine Similarity Top 3–5 chunks kèm timestamp → gửi vào context Chat Assistant Engine (tiết kiệm 95% token).
+
+### 3.2f Config-Driven Template Registry (`lib/templates/registry.ts`)
+- Khai báo 17 templates tập trung, loại bỏ hoàn toàn `if/else` hoặc `switch/case` hardcode theo tên template.
+
+### 3.2g Universal Block-Based Export Engine (`lib/export/`)
+- Đầu ra thống nhất Block JSON → 1 bộ renderer duy nhất xuất MD, DOCX, PDF, Static HTML, Interactive HTML (nhúng Alpine.js + Mermaid.js offline 100%).
 
 ### 3.3 Bảo mật & vận hành
 
@@ -634,3 +665,4 @@ Tiêu chí chấm điểm không đòi hỏi billing thật/"Tự kết nối AI
 | 2026-08-16 | Chuyển từ Supabase sang Neon, bổ sung BYOK chi tiết (Import/Sync free models, Test Connection/Check Model — sau này bỏ Auto-Sync, đổi tên Tự kết nối AI) |
 | 2026-08-20 | **Thống nhất Pipeline xử lý file dài (Video/Audio 10–25h) chạy server-cloud**: Client → R2 (presigned) → Inngest worker demux `ffmpeg -c:a copy` streaming + segment 30–60p (KHÔNG re-encode, vượt Lambda 15'/tmp 10GB) → STT từng chunk (overlap 10–15s + silence detection, trọn vẹn 100%, timestamp đầy đủ) → Map-Reduce → `content_structured` → Neon. YouTube caption **client-side** (`youtubei.js`, tránh IP-block); không caption → unsupported. Email notify qua **Resend** free. Ghi rõ "Free" = miễn phí người dùng cuối, operator tối ưu free tier **có giới hạn** (bỏ "free 100% vận hành"). Cap free: 2GB/file, 5h source. **Model: `gemini-3.7-flash` PRIMARY + `gemini-2.5-flash` + `gemini-2.0-flash` FALLBACK cascade tự động (failover chain 3 bậc trên 429)** — theo chỉ đạo Chủ tịch; RPM 3.7 free chưa verify (login-wall) nên cần failover. Bỏ đề xuất "chunk 5 phút" (dựa trên số ảo). |
 | 2026-08-20 | **Runtime model = model USER CHỌN** từ Model Selector (`AppContext`), không hardcode. Pipeline rẽ nhánh: STT (Gemini native nếu user chọn Gemini; transcription service nếu user chọn OpenAI/Claude vì 2 provider này **KHÔNG ingest raw audio/video**) → Synthesis (model user chọn, đã là text). User không chọn/Auto → Gemini chung operator cascade 3.7→2.5→2.0. BYOK = user trả token riêng, đỡ tốn Gemini chung. |
+| 2026-08-21 | **TÁI CẤU TRÚC TOÀN DIỆN (PRD mục 3.2, 3.3, 3.5, 3.6, 3.7)** — Dual-Engine AI Pipeline (`chat-assistant.ts` + `note-generator.ts`), Config-Driven Template Registry (`lib/templates/registry.ts` 17 templates), Universal Block Schema + Zod Validator + Auto-Repair Loop (2 lần retry), Map-Reduce 2 tầng (STT chunk 30–45' + Structuring chunk 3.000–5.000 từ), RAG Pipeline với Neon pgvector (`source_embeddings`), Universal Export Engine (`lib/export/` md/docx/pdf/static-html/interactive-html). Migration SQL chuẩn hóa `profiles` + `subscriptions` (chuẩn Zero Tracking duy nhất) + `source_embeddings` (pgvector). **Build 0 errors.** |

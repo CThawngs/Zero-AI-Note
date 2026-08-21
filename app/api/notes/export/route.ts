@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateDocxBuffer } from '@/lib/export/docx';
 import { generateHtmlExport, generateInteractiveHtmlExport } from '@/lib/export/html';
 import { StructuredNoteOutput } from '@/lib/ai/gemini';
+import { adaptLegacyNoteToNoteOutput } from '@/lib/export/adapter';
 import JSZip from 'jszip';
 
 export const runtime = 'nodejs';
@@ -23,13 +24,15 @@ export async function POST(request: NextRequest) {
       .replace(/[^a-zA-Z0-9_\-\u00C0-\u024F\u1EA0-\u1EF9]/g, '_')
       .substring(0, 50);
 
+    const adapted = adaptLegacyNoteToNoteOutput(note);
+
     // ZIP Multi-Export (Ultra exclusive)
     if (format === 'zip' || (Array.isArray(formats) && formats.length > 1)) {
       const zip = new JSZip();
       const targetFormats = formats.length > 0 ? formats : ['docx', 'md', 'html'];
 
       if (targetFormats.includes('docx')) {
-        const docxBuffer = await generateDocxBuffer(note);
+        const docxBuffer = await generateDocxBuffer(adapted);
         zip.file(`${safeTitle}.docx`, docxBuffer);
       }
       if (targetFormats.includes('md')) {
@@ -59,7 +62,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (format === 'docx') {
-      const buffer = await generateDocxBuffer(note);
+      const buffer = await generateDocxBuffer(adapted);
       return new NextResponse(new Uint8Array(buffer), {
         headers: {
           'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',

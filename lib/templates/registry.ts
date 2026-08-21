@@ -1,0 +1,147 @@
+export interface TemplateConfig {
+  id: string;
+  name: string;
+  tier: 'free' | 'pro' | 'ultra';
+  description: string;
+  requiredBlocks: Array<'heading' | 'paragraph' | 'cue_box' | 'table' | 'card_grid' | 'callout' | 'mindmap_tree'>;
+  systemInstruction: string;
+}
+
+export const TEMPLATE_REGISTRY: Record<string, TemplateConfig> = {
+  cornell: {
+    id: 'cornell',
+    name: 'Cornell Notes',
+    tier: 'free',
+    description: 'Khung ghi chú 2 cột kinh điển: Cues, Ghi chú chi tiết, và Tóm tắt.',
+    requiredBlocks: ['heading', 'paragraph', 'cue_box', 'callout'],
+    systemInstruction: `Mỗi cue_box phải có trường "cue" (Câu hỏi ngắn/Từ khóa bên trái) và "notes" (Danh sách gạch đầu dòng giải thích chi tiết bên phải). Điền "summary" trong phần meta đầy đủ.`,
+  },
+  outline: {
+    id: 'outline',
+    name: 'Outline Notes',
+    tier: 'free',
+    description: 'Dàn ý phân cấp logic từ tổng quan đến chi tiết.',
+    requiredBlocks: ['heading', 'paragraph', 'callout'],
+    systemInstruction: `Sử dụng cấu trúc phân tầng rõ ràng I > A > 1 > a. Cấp độ tiêu đề lớn tương ứng level 1-2, các gạch đầu dòng con trình bày mạch lạc thụt lề bằng ký tự space hoặc tab.`,
+  },
+  summary: {
+    id: 'summary',
+    name: 'Executive Summary',
+    tier: 'free',
+    description: 'Tóm tắt điều hành cấp quản trị súc tích và actionable.',
+    requiredBlocks: ['heading', 'paragraph', 'callout', 'table'],
+    systemInstruction: `Tập trung 100% vào tóm tắt chiến lược, mục tiêu, kết quả và giải pháp then chốt. Đúc kết 3-5 Actionable Key Takeaways rõ ràng trong callout style 'tip'.`,
+  },
+  meeting: {
+    id: 'meeting',
+    name: 'Meeting Minutes',
+    tier: 'pro',
+    description: 'Biên bản cuộc họp chi tiết: Thành phần, Thảo luận, Quyết định và Action Items.',
+    requiredBlocks: ['heading', 'paragraph', 'table', 'callout'],
+    systemInstruction: `BẮT BUỘC sử dụng block "table" để phân công Action Items: [Người phụ trách, Nhiệm vụ, Deadline, Trạng thái] kèm mốc thời gian rõ ràng.`,
+  },
+  lecture: {
+    id: 'lecture',
+    name: 'Lecture Protocol',
+    tier: 'pro',
+    description: 'Ghi chép bài giảng: Glossary định nghĩa, ví dụ minh họa và câu hỏi giảng viên.',
+    requiredBlocks: ['heading', 'paragraph', 'card_grid', 'callout'],
+    systemInstruction: `Sử dụng card_grid làm Flashcards/Glossary giải nghĩa các khái niệm kỹ thuật và thuật ngữ mới được giảng viên nhấn mạnh trong bài học.`,
+  },
+  analysis: {
+    id: 'analysis',
+    name: 'Deep Analysis',
+    tier: 'pro',
+    description: 'Mổ xẻ luận điểm, dữ liệu bằng chứng, phân tích nguyên nhân - kết quả.',
+    requiredBlocks: ['heading', 'paragraph', 'table', 'callout'],
+    systemInstruction: `Phân tích đa chiều bối cảnh, thực nghiệm, số liệu thống kê bằng block table, và tổng hợp bài học kinh nghiệm / rủi ro vào block callout cảnh báo.`,
+  },
+  qa: {
+    id: 'qa',
+    name: 'Q&A Active Recall',
+    tier: 'pro',
+    description: 'Hệ thống câu hỏi ôn tập kích thích tư duy tự động.',
+    requiredBlocks: ['heading', 'paragraph', 'card_grid', 'callout'],
+    systemInstruction: `Thiết lập các cặp Câu hỏi (Front) và Câu trả lời (Back) thông qua block card_grid để ôn tập theo phương pháp lặp lại ngắt quãng (Spaced Repetition).`,
+  },
+  charting: {
+    id: 'charting',
+    name: 'Charting Matrix',
+    tier: 'pro',
+    description: 'Ma trận đối chiếu đa tiêu chí song song dạng bảng biểu.',
+    requiredBlocks: ['heading', 'paragraph', 'table'],
+    systemInstruction: `Sử dụng block "table" làm trục xương sống, liệt kê các đối tượng so sánh theo hàng ngang và các tiêu chuẩn đối chiếu theo cột dọc rõ rệt.`,
+  },
+  boxing: {
+    id: 'boxing',
+    name: 'Bento Boxing',
+    tier: 'pro',
+    description: 'Nhóm các cụm kiến thức độc lập vào các khối hộp (Bento Box) trực quan.',
+    requiredBlocks: ['heading', 'paragraph', 'cue_box', 'callout'],
+    systemInstruction: `Phân vùng thông tin thành các hộp bento thông tin bằng cue_box độc lập: Concept Box, Principles Box, Examples Box, Pitfalls Box.`,
+  },
+  allinone: {
+    id: 'allinone',
+    name: 'All-in-One Master',
+    tier: 'ultra',
+    description: 'Mẫu note tối thượng tích hợp Cornell, Outline, Charting và Flashcards.',
+    requiredBlocks: ['heading', 'paragraph', 'cue_box', 'table', 'card_grid', 'callout', 'mindmap_tree'],
+    systemInstruction: `Kết hợp thông thái giữa các block: Tóm tắt ở callout, cột Cornell ở cue_box, sơ đồ nhánh ở mindmap_tree, đối chiếu ở table và flashcards ở card_grid.`,
+  },
+  mindmap: {
+    id: 'mindmap',
+    name: 'Text Mindmap',
+    tier: 'ultra',
+    description: 'Sơ đồ tư duy dạng cây phân cấp trực quan biểu diễn mối liên hệ tri thức.',
+    requiredBlocks: ['heading', 'paragraph', 'mindmap_tree'],
+    systemInstruction: `BẮT BUỘC sinh block mindmap_tree với cấu trúc đệ quy từ gốc (root) phát đi các nhánh con (children). Mỗi nút mang nhãn "label" súc tích.`,
+  },
+  flashcard: {
+    id: 'flashcard',
+    name: 'Flashcards Standard',
+    tier: 'ultra',
+    description: 'Bộ thẻ ghi nhớ thông minh mặt trước (Front) và mặt sau (Back).',
+    requiredBlocks: ['heading', 'card_grid'],
+    systemInstruction: `Duy nhất tập trung sinh block card_grid chứa các thẻ học thuật tinh gọn: định nghĩa, thuật ngữ ngoại ngữ hoặc công thức kèm giải thích ở mặt sau.`,
+  },
+  'deep-research': {
+    id: 'deep-research',
+    name: 'Deep Research Report',
+    tier: 'ultra',
+    description: 'Báo cáo nghiên cứu học thuật chuẩn khoa học đầy đủ các chương mục.',
+    requiredBlocks: ['heading', 'paragraph', 'table', 'callout'],
+    systemInstruction: `Cấu trúc chặt chẽ gồm: Abstract, Literature Review, Methodology, Findings và References trích dẫn đầy đủ tài liệu nguồn.`,
+  },
+  feynman: {
+    id: 'feynman',
+    name: 'Feynman Technique',
+    tier: 'ultra',
+    description: 'Giải thích khái niệm phức tạp bằng ngôn ngữ bình dân siêu đơn giản.',
+    requiredBlocks: ['heading', 'paragraph', 'callout', 'cue_box'],
+    systemInstruction: `Trình bày theo 4 bước: Giải thích cho học sinh 10 tuổi hiểu (paragraph), Dùng phép ẩn dụ (callout), Bổ sung kỹ thuật (cue_box), Sửa lỗ hổng tư duy (callout warning).`,
+  },
+  'first-principles': {
+    id: 'first-principles',
+    name: 'First Principles',
+    tier: 'ultra',
+    description: 'Bóc tách vấn đề về những chân lý cơ bản nhất và tái cấu trúc giải pháp.',
+    requiredBlocks: ['heading', 'paragraph', 'cue_box', 'callout'],
+    systemInstruction: `Cấu trúc 3 giai đoạn: Nhận diện giả định sai lầm (callout), Phân rã về sự thật vật lý/nguyên lý gốc (cue_box), và Thiết kế mô hình mới (paragraph).`,
+  },
+  syntopical: {
+    id: 'syntopical',
+    name: 'Syntopical Synthesis',
+    tier: 'ultra',
+    description: 'So sánh đối chiếu đa nguồn, chỉ rõ điểm tranh luận của các tác giả.',
+    requiredBlocks: ['heading', 'paragraph', 'table', 'callout'],
+    systemInstruction: `Xây dựng ma trận table đối chiếu quan điểm của tác giả A, tác giả B, tác giả C về một câu hỏi cốt lõi, tìm ra điểm thống nhất và tranh cãi.`,
+  },
+  '5w1h-action': {
+    id: '5w1h-action',
+    name: '5W1H Action Framework',
+    tier: 'ultra',
+    description: 'Lập kế hoạch hành động dự án theo mô hình Who, What, When, Where, Why, How.',
+    requiredBlocks: ['heading', 'paragraph', 'table', 'callout'],
+    systemInstruction: `Cung cấp câu trả lời rành mạch cho 5W1H kèm bảng phân tích rủi ro và các mốc đo lường KPI cụ thể trong tương lai.`,
+  },
+};

@@ -33,7 +33,8 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "uuid": "^14.0.1",
-    "vietnam-qr-pay": "^1.5.1"
+    "vietnam-qr-pay": "^1.5.1",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",

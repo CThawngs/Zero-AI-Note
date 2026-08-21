@@ -1,272 +1,95 @@
-import {
-  Document,
-  Packer,
-  Paragraph,
-  TextRun,
-  HeadingLevel,
-  Table,
-  TableRow,
-  TableCell,
-  WidthType,
-  BorderStyle,
-  AlignmentType,
-} from 'docx';
-import { StructuredNoteOutput } from '../ai/gemini';
+import { NoteOutput } from '@/lib/ai/validators/block-schema';
 
-/**
- * Generate a real Microsoft Word .docx Document buffer from content_structured
- */
-export async function generateDocxBuffer(note: StructuredNoteOutput): Promise<Buffer> {
-  const children: (Paragraph | Table)[] = [];
+export type { NoteOutput };
 
-  // Title
+export async function renderToDocx(note: NoteOutput): Promise<Buffer> {
+  const docxLib = await import('docx');
+  const { Document, Packer, Paragraph, HeadingLevel, TextRun, Table, TableRow, TableCell, WidthType } = docxLib;
+
+  const children: any[] = [];
+
   children.push(
     new Paragraph({
-      text: note.title,
+      text: note.meta.title,
       heading: HeadingLevel.TITLE,
-      spacing: { after: 200 },
-      alignment: AlignmentType.CENTER,
-    })
+    }),
   );
-
-  // Metadata Block
   children.push(
     new Paragraph({
       children: [
-        new TextRun({ text: `Phương pháp: `, bold: true }),
-        new TextRun({ text: `${note.method.toUpperCase()}    ` }),
-        new TextRun({ text: `Danh mục: `, bold: true }),
-        new TextRun({ text: `${note.category}    ` }),
-        new TextRun({ text: `Ngày tạo: `, bold: true }),
-        new TextRun({ text: `${new Date().toLocaleDateString('vi-VN')}` }),
+        new TextRun({ text: `Method: ${note.meta.method.toUpperCase()}  ·  Tier: ${note.meta.tier.toUpperCase()}  ·  Lang: ${note.meta.language}`, italics: true, size: 20 }),
       ],
-      spacing: { after: 300 },
-    })
+    }),
   );
+  children.push(new Paragraph({ text: '' }));
+  children.push(new Paragraph({ text: '📌 Tóm tắt', heading: HeadingLevel.HEADING_1 }));
+  children.push(new Paragraph({ text: note.meta.summary }));
+  children.push(new Paragraph({ text: '' }));
 
-  // Summary Section
-  children.push(
-    new Paragraph({
-      text: '📌 Tóm Tắt Tổng Quan',
-      heading: HeadingLevel.HEADING_1,
-      spacing: { before: 200, after: 120 },
-    })
-  );
-  children.push(
-    new Paragraph({
-      children: [new TextRun({ text: note.summary, italics: true })],
-      spacing: { after: 250 },
-    })
-  );
-
-  // Keywords
-  if (note.keywords && note.keywords.length > 0) {
-    children.push(
-      new Paragraph({
-        children: [
-          new TextRun({ text: 'Từ khóa cốt lõi: ', bold: true }),
-          new TextRun({ text: note.keywords.join(' • ') }),
-        ],
-        spacing: { after: 250 },
-      })
-    );
-  }
-
-  // Core Questions
-  if (note.coreQuestions && note.coreQuestions.length > 0) {
-    children.push(
-      new Paragraph({
-        text: '❓ Câu Hỏi Ôn Tập Cốt Lõi',
-        heading: HeadingLevel.HEADING_2,
-        spacing: { before: 200, after: 120 },
-      })
-    );
-    for (const q of note.coreQuestions) {
-      children.push(
-        new Paragraph({
-          text: `• ${q}`,
-          spacing: { after: 80 },
-        })
-      );
-    }
-  }
-
-  // Method-Specific Layout
-  if (note.method === 'cornell') {
-    children.push(
-      new Paragraph({
-        text: '📖 Bố Cục Cornell (Cues & Ghi Chú Chi Tiết)',
-        heading: HeadingLevel.HEADING_1,
-        spacing: { before: 300, after: 150 },
-      })
-    );
-
-    const rows: TableRow[] = [
-      new TableRow({
-        children: [
-          new TableCell({
-            width: { size: 30, type: WidthType.PERCENTAGE },
-            children: [
-              new Paragraph({
-                children: [new TextRun({ text: 'Cột Gợi Ý (Cues / Keywords)', bold: true })],
-              }),
-            ],
-            shading: { fill: 'F3F4F6' },
-          }),
-          new TableCell({
-            width: { size: 70, type: WidthType.PERCENTAGE },
-            children: [
-              new Paragraph({
-                children: [new TextRun({ text: 'Ghi Chú Chi Tiết (Class Notes)', bold: true })],
-              }),
-            ],
-            shading: { fill: 'F3F4F6' },
-          }),
-        ],
-      }),
-    ];
-
-    for (const s of note.content.sections) {
-      const cueCellContent: Paragraph[] = [
-        new Paragraph({
-          children: [new TextRun({ text: s.cue || s.title, bold: true })],
-          spacing: { after: 100 },
-        }),
-      ];
-
-      const noteCellContent: Paragraph[] = [
-        new Paragraph({
-          children: [new TextRun({ text: s.title, bold: true })],
-          spacing: { after: 80 },
-        }),
-      ];
-
-      if (s.definition) {
-        noteCellContent.push(
-          new Paragraph({
-            children: [new TextRun({ text: s.definition, italics: true })],
-            spacing: { after: 80 },
-          })
-        );
-      }
-
-      if (s.text) {
-        noteCellContent.push(
-          new Paragraph({
-            text: s.text,
-            spacing: { after: 80 },
-          })
-        );
-      }
-
-      if (s.bulletPoints && s.bulletPoints.length > 0) {
-        for (const bp of s.bulletPoints) {
-          noteCellContent.push(
-            new Paragraph({
-              text: `• ${bp}`,
-              spacing: { after: 40 },
-            })
-          );
-        }
-      }
-
-      rows.push(
-        new TableRow({
-          children: [
-            new TableCell({
-              width: { size: 30, type: WidthType.PERCENTAGE },
-              children: cueCellContent,
-            }),
-            new TableCell({
-              width: { size: 70, type: WidthType.PERCENTAGE },
-              children: noteCellContent,
-            }),
-          ],
-        })
-      );
-    }
-
-    children.push(
-      new Table({
-        rows,
-        width: { size: 100, type: WidthType.PERCENTAGE },
-      })
-    );
-  } else {
-    // Standard Outline / Sections
-    children.push(
-      new Paragraph({
-        text: '📖 Nội Dung Chi Tiết',
-        heading: HeadingLevel.HEADING_1,
-        spacing: { before: 300, after: 150 },
-      })
-    );
-
-    for (const s of note.content.sections) {
-      children.push(
-        new Paragraph({
-          text: s.title,
-          heading: HeadingLevel.HEADING_2,
-          spacing: { before: 180, after: 80 },
-        })
-      );
-
-      if (s.definition) {
+  note.blocks.forEach((block) => {
+    switch (block.type) {
+      case 'heading':
         children.push(
           new Paragraph({
-            children: [new TextRun({ text: `Định nghĩa: ${s.definition}`, italics: true })],
-            spacing: { after: 80 },
-          })
+            text: block.text,
+            heading: block.level === 1 ? HeadingLevel.HEADING_1 : block.level === 2 ? HeadingLevel.HEADING_2 : HeadingLevel.HEADING_3,
+          }),
         );
-      }
-
-      if (s.text) {
+        break;
+      case 'paragraph':
+        children.push(new Paragraph({ text: block.text }));
+        break;
+      case 'cue_box':
+        children.push(new Paragraph({ children: [new TextRun({ text: `Cue: ${block.cue}`, bold: true })] }));
+        block.notes.forEach((n) => children.push(new Paragraph({ text: `• ${n}` })));
+        break;
+      case 'callout':
         children.push(
           new Paragraph({
-            text: s.text,
-            spacing: { after: 100 },
-          })
+            children: [new TextRun({ text: `[${block.style.toUpperCase()}] ${block.title}: `, bold: true }), new TextRun({ text: block.text })],
+          }),
         );
-      }
-
-      if (s.bulletPoints && s.bulletPoints.length > 0) {
-        for (const bp of s.bulletPoints) {
-          children.push(
-            new Paragraph({
-              text: `• ${bp}`,
-              spacing: { after: 40 },
-            })
-          );
-        }
-      }
+        break;
+      case 'table':
+        children.push(
+          new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            rows: [
+              new TableRow({
+                children: block.headers.map((h) => new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: h, bold: true })] })] })),
+              }),
+              ...block.rows.map((row) => new TableRow({ children: row.map((c) => new TableCell({ children: [new Paragraph({ text: c })] })) })),
+            ],
+          }),
+        );
+        children.push(new Paragraph({ text: '' }));
+        break;
+      case 'card_grid':
+        block.cards.forEach((c) => {
+          children.push(new Paragraph({ children: [new TextRun({ text: `❓ ${c.front}`, bold: true })] }));
+          children.push(new Paragraph({ text: `💡 ${c.back}` }));
+        });
+        break;
+      case 'mindmap_tree':
+        children.push(new Paragraph({ children: [new TextRun({ text: `Mindmap Root: ${block.root.label}`, bold: true })] }));
+        const walk = (node: any, depth: number) => {
+          node.children?.forEach((child: any) => {
+            children.push(new Paragraph({ text: '  '.repeat(depth) + '↳ ' + child.label }));
+            walk(child, depth + 1);
+          });
+        };
+        walk(block.root, 1);
+        break;
     }
-  }
-
-  // Summary footer
-  if (note.content.summaryText) {
-    children.push(
-      new Paragraph({
-        text: '🎯 Kết Luận & Điểm Cốt Lõi',
-        heading: HeadingLevel.HEADING_1,
-        spacing: { before: 300, after: 120 },
-      })
-    );
-    children.push(
-      new Paragraph({
-        text: note.content.summaryText,
-        spacing: { after: 200 },
-      })
-    );
-  }
-
-  const doc = new Document({
-    sections: [
-      {
-        properties: {},
-        children,
-      },
-    ],
   });
 
+  const doc = new Document({ sections: [{ children }] });
   return await Packer.toBuffer(doc);
+}
+
+/**
+ * Alias để tương thích với code cũ (lib/export/docx được dùng bởi app/api/notes/export).
+ */
+export async function generateDocxBuffer(note: NoteOutput): Promise<Buffer> {
+  return renderToDocx(note);
 }

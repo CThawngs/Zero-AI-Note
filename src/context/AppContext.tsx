@@ -1408,7 +1408,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return sendChatMessage(originalUserText || text, attachedSources);
   };
 
-  const sendChatMessage = async (text: string, attachedSources?: ChatAttachment[]) => {
+  const sendChatMessage = async (text: string, attachedSources?: ChatAttachment[], templateId?: string) => {
     if (!text.trim() && (!attachedSources || attachedSources.length === 0)) return;
 
     const userMsgId = 'msg_user_' + Date.now();

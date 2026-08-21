@@ -59,8 +59,11 @@ export async function POST(request: NextRequest) {
           where id = ${templateId}
           limit 1
         `;
-        if (rows && rows.length > 0) {
-          customTemplatePrompt = rows[0].description_prompt;
+        if (rows && Array.isArray(rows) && rows.length > 0) {
+          const row = rows[0] as { description_prompt?: string };
+          if (row?.description_prompt) {
+            customTemplatePrompt = row.description_prompt;
+          }
         }
       } catch (err) {
         console.warn('[GET /api/notes/generate] failed to fetch custom template:', err);
