@@ -11,10 +11,10 @@
 
 ## Tổng quan (audit trung thực 2026-08-22)
 - **Tổng mục CẤP 4**: 180
-- **Đã xong `[X]`**: 111 (61.7%)
+- **Đã xong `[X]`**: 113 (62.8%)
 - **Đang làm dở `[~]`**: 1
-- **Chưa làm `[ ]`**: 68
-- **% Hoàn thành thực**: ~62% — audit: cha chỉ `[X]` khi 100% con `[X]`. Mới: verify quota/coupon/Test-Connection có thật; implement BYOK AES-256-GCM + SSRF + template gating + retention >500MB.
+- **Chưa làm `[ ]`**: 66
+- **% Hoàn thành thực**: ~63% — audit: cha chỉ `[X]` khi 100% con `[X]`. Mới: verify quota/coupon/Test-Connection; implement BYOK AES-256-GCM + SSRF + template gating + retention >500MB + atomic quota reservation + 90% safety valve + Inngest cron.
 
 ---
 
@@ -45,9 +45,9 @@
   - [X] CẤP 4: API route `app/api/upload/put/route.ts` (45 lines)
 - [ ] CẤP 3: Multipart/Resumable upload (TUS)
   - [ ] CẤP 4: Chưa scaffold — cần cho file >4.5GB
-- [~] CẤP 3: Retention policy tự động xoá file media >500MB sau STT
+- [X] CẤP 3: Retention policy tự động xoá file media >500MB sau STT [2026-08-22]
   - [X] CẤP 4: `storageService.purgeLargeProcessedMedia()` (lib/storage.ts): select uploads completed >500MB → DeleteObjectCommand R2 → mark deleted; presign route giờ ghi `size_bytes` vào uploads (trước đây null nên retention không thể chạy) [2026-08-22]
-  - [ ] CẤP 4: Cron trigger chạy purge định kỳ (chưa wire — Inngest cron hoặc Vercel Cron)
+  - [X] CẤP 4: Cron trigger `r2-retention-purge` (Inngest cron 03:00 VN daily, register trong /api/inngest) gọi purgeLargeProcessedMedia(50)/lượt [2026-08-22]
 
 ### [X] CẤP 2: Authentication (JWT HS256)
 - [X] CẤP 3: JWT tự phát hành + HttpOnly cookie
@@ -73,10 +73,10 @@
 ### [ ] CẤP 2: Architecture v1 advanced features (defer sau deadline)
 - [ ] CẤP 3: Atomic quota reservation (SELECT FOR UPDATE)
   - [ ] CẤP 4: Chưa có `lib/quota/reserve.ts` + `release.ts`
-- [ ] CẤP 3: 90% safety valve (auto-pause khi quota đạt ngưỡng)
-  - [ ] CẤP 4: Chưa implement
+- [X] CẤP 3: 90% safety valve (auto-pause khi quota đạt ngưỡng) [2026-08-22]
+  - [X] CẤP 4: Trong reserveQuota: committed+reserved ≥ floor(limit×0.9) → từ chối job mới với pausedByValve=true + message 'quá tải tạm thời' (khác message hết quota thường) [2026-08-22]
 - [ ] CẤP 3: Daily cron quota reconciliation
-  - [ ] CẤP 4: Chưa có cron job
+  - [ ] CẤP 4: Chưa có — cron Inngest đầu tiên đã wire cho R2 retention ('r2-retention-purge', 03:00 VN daily); reconcile quotas (reset consumed/reserved sang period mới) vẫn pending
 
 ---
 
