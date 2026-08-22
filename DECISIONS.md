@@ -613,6 +613,8 @@
 - Parse JSON khoan dung: bóc markdown fence ```json, tìm `{...}` đầu-cuối; numbers chuẩn hoá `"value|context"`.
 - Re-extract INSERT version mới, không UPDATE đè — giữ lịch sử KO theo thời gian.
 - Coverage idempotent theo source_id (upsert on conflict do nothing); cờ `section_included`/`note_included` hook sẵn cho hierarchical/note pipeline đánh sau.
+- **FK guard** (E2E production phát hiện): client có thể gửi `sources[].id` tự chế → FK violation trên coverage_ledger. Fix commit 8bf79d5: `sourceExists()` check trước upsert/insert; markCoverage try/catch. Fail-soft đã hoạt động đúng — note vẫn tạo dù KO fail.
+- **Hạn chế serverless**: fire-and-forget sau response có thể bị freeze trước khi hoàn tất trên Vercel — KO là enrichment best-effort, không phải đường dẫn tới note. Khi cần đảm bảo 100%, chuyển sang Inngest step (đã có sẵn hạ tầng).
 
 ### Files
 - `docs/migrations/add_knowledge_coverage.sql` + `scripts/run-ko-migration.mjs` (APPLIED, verify to_regclass).
