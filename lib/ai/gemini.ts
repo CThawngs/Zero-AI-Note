@@ -203,8 +203,31 @@ Không bao giờ bịa dữ liệu thời gian thực — luôn search trước 
         note: null,
       };
     } catch (agentErr) {
-      console.warn('[Gemini Agent Engine] agent-tools pass failed, trying OpenRouter chat fallback:', agentErr);
-      // Fallback chat thuần (không ép JSON) trước khi rơi xuống note engine
+      console.warn('[Gemini Agent Engine] agent-tools pass failed, trying OpenRouter agent fallback:', agentErr);
+      // Fallback 1: agent-loop VỚI TOOLS qua OpenRouter free (FC format OpenAI-compatible)
+      // — giữ tính năng web_search/get_weather cả khi Gemini rate-limit/401.
+      try {
+        const { runChatAgentLoop } = await import('./tools/agent-loop');
+        const { buildChatAssistantSystemPrompt } = await import('./prompts/chat-assistant');
+        const loopRes = await runChatAgentLoop({
+          backend: 'openai',
+          apiKey: process.env.OPENROUTER_API_KEY || '',
+          endpointUrl: 'https://openrouter.ai/api/v1',
+          model: 'openrouter/free',
+          systemPrompt: buildChatAssistantSystemPrompt({
+            activeProviderName: 'OpenRouter free (fallback — Gemini tạm thời không khả dụng)',
+            activeModelId: 'openrouter/free',
+            activeProviderId: 'google-system',
+          }),
+          userMessage: params.inputText,
+        });
+        if (loopRes.text) {
+          return { replyText: loopRes.text, isNoteAction: false, note: null };
+        }
+      } catch (orLoopErr) {
+        console.warn('[Gemini Agent Engine] OpenRouter agent-loop failed:', orLoopErr);
+      }
+      // Fallback 2 (cuối): chat thuần không tools
       try {
         return await generateOpenRouterFreeResponse({
           inputText: params.inputText,
