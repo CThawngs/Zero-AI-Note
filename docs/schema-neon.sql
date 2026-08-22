@@ -491,6 +491,10 @@ create policy "user reads own conflicts" on conflicts for select using (auth_uid
 create policy "user writes own conflicts" on conflicts for insert with check (auth_uid() = user_id);
 
 -- 23. usage — Metered AI calls (Architecture v1 §20)
+-- ⚠️ LƯU Ý (2026-08-23): bảng `usage` ĐÃ TẠO THẬT trên DB legacy đang chạy với cấu trúc
+-- RÚT GỌN 8 cột: id, user_id, provider, model, operation, input_tokens, output_tokens, timestamp.
+-- Định nghĩa đầy đủ bên dưới là thiết kế v1 (khi migrate projects/files/jobs) — hiện tại
+-- recordTavilyUsage + quota guard chỉ dùng nhóm cột chung đã tồn tại.
 create table if not exists usage (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references profiles(id) on delete cascade,
