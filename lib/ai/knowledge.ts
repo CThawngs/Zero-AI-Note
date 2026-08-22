@@ -30,17 +30,31 @@ const EMPTY_KO: KnowledgeObject = {
 
 type Sql = ReturnType<typeof import('@/lib/db').getSql>;
 
-/** Upsert coverage row cho source; trả id. Idempotent theo source_id. */
+/** Kiểm tra source_id tồn tại thật trong sources — client có thể gửi id tự chế. */
+async function sourceExists(sql: Sql, sourceId: string): Promise<boolean> {
+  const rows = (await sql`select 1 from sources where id = ${sourceId} limit 1`) as unknown[];
+  return rows.length > 0;
+}
+
+/** Upsert coverage row cho source; trả id. Idempotent theo source_id.
+ *  sourceId không tồn tại trong sources → bỏ qua (tránh FK violation). */
 export async function upsertCoverage(
   sql: Sql,
   data: { userId: string; sourceId: string | null; notebookId: string | null }
-): Promise<void> {
-  if (!data.sourceId) return;
-  await sql`
-    insert into coverage_ledger (user_id, source_id, notebook_id, extracted)
-    values (${data.userId}::uuid, ${data.sourceId}::uuid, ${data.notebookId}::uuid, true)
-    on conflict do nothing
-  `;
+): Promise<boolean> {
+  if (!data.sourceId) return false;
+  try {
+    if (!(await sourceExists(sql, data.sourceId))) return false;
+    await sql`
+      insert into coverage_ledger (user_id, source_id, notebook_id, extracted)
+      values (${data.userId}::uuid, ${data.sourceId}::uuid, ${data.notebookId}::uuid, true)
+      on conflict do nothing
+    `;
+    return true;
+  } catch (err) {
+    console.warn('[KO] upsertCoverage skipped:', err);
+    return false;
+  }
 }
 
 /** Đánh dấu 1 cờ coverage=true cho source (idempotent). */
@@ -50,8 +64,12 @@ export async function markCoverage(
   column: 'knowledge_extracted' | 'section_included' | 'note_included'
 ): Promise<void> {
   if (!sourceId) return;
-  const col = { knowledge_extracted: 'knowledge_extracted', section_included: 'section_included', note_included: 'note_included' }[column];
-  await sql.query(`update coverage_ledger set ${col} = true, updated_at = now() where source_id::text = $1`, [sourceId]);
+  try {
+    const col = { knowledge_extracted: 'knowledge_extracted', section_included: 'section_included', note_included: 'note_included' }[column];
+    await sql.query(`update coverage_ledger set ${col} = true, updated_at = now() where source_id::text = $1`, [sourceId]);
+  } catch (err) {
+    console.warn('[KO] markCoverage skipped:', err);
+  }
 }
 
 /** Coverage % của notebook — dùng cho ProcessingCard/Stepper sau này. */
@@ -132,6 +150,7 @@ export async function saveKnowledgeObject(
 ): Promise<string | null> {
   if (!data.sourceId) return null;
   try {
+    if (!(await sourceExists(sql, data.sourceId))) return null;
     const rows = (await sql`
       insert into knowledge_objects
         (user_id, source_id, notebook_id, summary, facts, topics, entities, numbers, dates, decisions, action_items, questions, quotes, model_version)
