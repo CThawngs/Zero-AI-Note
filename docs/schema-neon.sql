@@ -24,6 +24,7 @@ create table if not exists notebooks (
   is_merged boolean default false,
   archived_at timestamptz,
   deleted_at timestamptz,
+  notification_sent_at timestamptz, -- dedupe email hoàn tất batch (set trong transaction khi claim gửi)
   created_at timestamptz default now()
 );
 
@@ -39,9 +40,11 @@ create table if not exists sources (
   duration_seconds int,
   status text default 'pending' check (status in ('pending','processing','processed','error')),
   transcript text,
+  batch_group_id uuid, -- batch email: N file cùng 1 tin nhắn dùng chung 1 UUID (NULL = file lẻ)
   retention_delete_at timestamptz,
   created_at timestamptz default now()
 );
+create index if not exists idx_sources_batch_group on sources(batch_group_id) where batch_group_id is not null;
 
 -- 4. custom_note_templates
 create table if not exists custom_note_templates (

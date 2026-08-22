@@ -9,12 +9,12 @@
 - Cha (CẤP 2/3) chỉ `[X]` khi 100% con `[X]`; toàn `[ ]` → `[ ]`; còn lại → `[~]`.
 - Mỗi mục CẤP 3 phải có ≥1 CẤP 4 con cụ thể.
 
-## Tổng quan (audit trung thực 2026-08-22)
-- **Tổng mục CẤP 4**: 182
-- **Đã xong `[X]`**: 116 (63.7%)
+## Tổng quan (audit trung thực 2026-08-23)
+- **Tổng mục CẤP 4**: 188
+- **Đã xong `[X]`**: 122 (64.9%)
 - **Đang làm dở `[~]`**: 2
 - **Chưa làm `[ ]`**: 64
-- **% Hoàn thành thực**: ~64% — MỚI NHẤT: file extraction thật (Gemini multimodal/mammoth/reader/YouTube) + agent tools (Google Search grounding + read_web_page) + chatOnly fallback. BLOCKER: GEMINI_API_KEY (local + Vercel) sai loại — cần AI Studio key AIza...
+- **% Hoàn thành thực**: ~65% — MỚI NHẤT: email hoàn tất BATCH (schema Neon đã migrate thật + trigger logic + template Resend + 13/13 test); file extraction thật + agent tools (Google Search grounding). BLOCKER: GEMINI_API_KEY sai loại (cần AIza...), RESEND_API_KEY chưa có trên Vercel
 
 ---
 
@@ -81,6 +81,17 @@
 ---
 
 ## [~] CẤP 1: Ingestion & Xử lý file dài (PRD mục 4.0, 4.1, 4.1b, 3.2b, Phase 2-3)
+
+### [X] CẤP 2: Email notification batch (2026-08-23, DECISIONS.md §25)
+- [X] CẤP 3: Schema — batch_group_id + notification_sent_at
+  - [X] CẤP 4: Migration `docs/migrations/add_batch_notification.sql` ĐÃ CHẠY trên Neon thật — verify information_schema có cả 2 cột + partial index idx_sources_batch_group; schema-neon.sql đồng bộ
+- [X] CẤP 3: Logic trigger batch-complete
+  - [X] CẤP 4: Backend sinh batch_group_id khi nhận N>1 sources/1 request (`/api/notes/generate` stamp theo file_url/file_name, fail-open)
+  - [X] CẤP 4: Inngest step `batch-email-check` sau mỗi file xong (`lib/inngest/functions.ts`) — NULL→hành vi cũ; còn pending→dừng; đủ điều kiện→claim ATOMIC `update ... where notification_sent_at is null returning id`
+  - [X] CẤP 4: Test race condition — `scripts/test-batch-notification.ts` TEST 1: claim thứ 2 trả false, chỉ 1 email (13/13 PASS)
+  - [X] CẤP 4: Test ngưỡng 2 phút — TEST 2: 1 phút tuổi → không gửi, 5 phút → gửi
+- [X] CẤP 3: Template email batch (liệt kê trạng thái từng file)
+  - [X] CẤP 4: `lib/notifications/batch.ts` sendBatchCompletionEmail qua Resend — subject "Note của bạn đã sẵn sàng"/"X/N file đã xử lý xong", friendly-error cho file lỗi, link thẳng notebook; test với case 1 file lỗi (TEST 4). CHƯA test E2E với Resend thật — cần RESEND_API_KEY trên Vercel
 
 ### [~] CẤP 2: Project & File model (Architecture v1 §9)
 - [X] CẤP 3: `projects` table schema

@@ -489,7 +489,42 @@
 
 ---
 
-## 25. References
+## 25. Email hoàn tất theo BATCH (2026-08-23)
+
+### Decision
+- N file đính kèm cùng 1 tin nhắn → gửi ĐÚNG 1 email khi tất cả xong, không gửi từng file.
+- Áp dụng trên schema legacy `notebooks/sources/notes` (đang chạy thật; `projects/files/jobs` chưa migrate).
+
+### Lý do cần khái niệm "batch"
+- Cần gom trạng thái nhiều file cùng 1 lượt đính kèm để biết "hết hàng" trước khi báo mail — schema legacy không có đơn vị batch (sẽ có chính thức khi migrate sang `projects/files`).
+- Tránh spam: user đính 5 file thì nhận 1 email tổng hợp, không 5 email rời.
+
+### Schema
+- `sources.batch_group_id uuid` (nullable) — N row tạo từ 1 tin nhắn dùng chung 1 UUID; file lẻ để NULL. Index partial `idx_sources_batch_group WHERE batch_group_id IS NOT NULL`.
+- `notebooks.notification_sent_at timestamptz` (nullable) — dedupe, chống race 2 job hoàn tất gần như đồng thời.
+
+### Trigger logic (chạy cuối mỗi job xử lý 1 source)
+1. `batch_group_id` NULL → file lẻ, giữ hành vi cũ.
+2. Batch còn file `pending`/`processing` → dừng, không làm gì.
+3. Tất cả `processed`/`error` VÀ note đã sinh (`notes.content_structured` tồn tại) → claim ATOMIC: `update notebooks set notification_sent_at = now() where id = X and notification_sent_at is null returning id` — race 2 job chỉ 1 thắng; thua bỏ qua gửi.
+4. Ngưỡng chống spam: tuổi batch (`now() - MIN(sources.created_at)`) < 2 phút → vẫn claim nhưng KHÔNG gọi Resend (user đang xem Processing Card trực tiếp).
+
+### Email (Resend)
+- Subject: "Note của bạn đã sẵn sàng" (1 file) hoặc "X/N file đã xử lý xong" (batch).
+- File lỗi liệt kê kèm lý do thân thiện ("Định dạng không hỗ trợ", "Không lấy được nội dung video") — không log kỹ thuật thô.
+- Link mở thẳng notebook. KHÔNG gửi mail trung gian khi job tạm dừng Safety Valve — chỉ 1 email cuối.
+
+### Implementation (2026-08-23)
+- Migration: `docs/migrations/add_batch_notification.sql` — ĐÃ CHẠY trên Neon thật (verify information_schema: cả 2 cột + index tồn tại).
+- `lib/notifications/batch.ts` (mới): `claimBatchNotification()` / `checkBatchCompletion()` / `sendBatchCompletionEmail()`.
+- Backend sinh UUID khi `/api/notes/generate` nhận >1 sources — stamp theo khớp `file_url`/`file_name` của user, fail-open nếu lỗi.
+- Inngest step `batch-email-check` cuối `processNotePipeline`.
+- Env mới: `RESEND_API_KEY`, `RESEND_FROM_EMAIL` (cần thêm trên Vercel).
+- Test: `scripts/test-batch-notification.ts` — 13/13 PASS (race claim, ngưỡng 2 phút, completion states, subject/friendly-error rules).
+
+---
+
+## 26. References
 - [Neon Documentation](https://neon.tech/docs)
 - [Drizzle ORM](https://orm.drizzle.team)
 - [gitleaks](https://github.com/gitleaks/gitleaks)

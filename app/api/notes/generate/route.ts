@@ -129,6 +129,34 @@ export async function POST(request: NextRequest) {
       userPlan = (session.plan || 'free') as 'free' | 'pro' | 'ultra';
     }
 
+    // Batch group (DECISIONS.md §25): N file cùng 1 request dùng chung 1 UUID
+    // để email hoàn tất gửi ĐÚNG 1 lần cho cả batch. File lẻ → NULL.
+    if (sources && sources.length > 1 && userId) {
+      const batchGroupId = crypto.randomUUID();
+      try {
+        const sql = getSql();
+        // Match sources rows vừa tạo (client upload từng file rồi generate):
+        // cùng user, chưa có batch, khớp theo tên/URL của danh sách sources này.
+        const names = sources.map(s => s.name);
+        const urls = sources.map(s => s.url).filter(Boolean) as string[];
+        // neon-http: mỗi điều kiện 1 query đơn giản — stamp lần lượt (N nhỏ, ≤10 file)
+        for (const u of urls) {
+          await sql`
+            update sources set batch_group_id = ${batchGroupId}
+            where user_id = ${userId} and batch_group_id is null and file_url = ${u}
+          `;
+        }
+        for (const nm of names) {
+          await sql`
+            update sources set batch_group_id = ${batchGroupId}
+            where user_id = ${userId} and batch_group_id is null and file_name = ${nm}
+          `;
+        }
+      } catch (bgErr) {
+        console.warn('[generate] stamp batch_group_id failed:', bgErr); // fail-open: coi như file lẻ
+      }
+    }
+
     // Call Universal Agent Dispatcher
     const agentRes = await dispatchAgentResponse({
       inputText,

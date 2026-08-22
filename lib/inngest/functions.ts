@@ -4,6 +4,11 @@ import { dispatchStructuredNote } from '@/lib/ai/dispatcher';
 import { createNote } from '@/lib/neon/queries';
 import { reserveQuota, commitQuota, releaseQuota } from '@/lib/quota/reserve';
 import { storageService } from '@/lib/storage';
+import {
+  claimBatchNotification,
+  checkBatchCompletion,
+  sendBatchCompletionEmail,
+} from '@/lib/notifications/batch';
 
 /**
  * Worker xử lý pipeline note (PRD mục 3.2):
@@ -86,6 +91,56 @@ export const processNotePipeline = inngest.createFunction(
     await step.run('commit-quota', async () => {
       await commitQuota(userId, 'ai_tokens', 1_000);
       return true;
+    });
+
+    // ── Batch email notification (DECISIONS.md §25): chạy cuối mỗi job.
+    // File lẻ (batch_group_id NULL) → gửi ngay. Batch → chỉ file CUỐI cùng
+    // hoàn tất mới claim + gửi ĐÚNG 1 email cho cả batch.
+    await step.run('batch-email-check', async () => {
+      const srcRows = (await sql`
+        select id, batch_group_id, notebook_id from sources
+        where id = ${sourceKey} or file_url = ${sourceKey}
+        limit 1
+      `) as unknown as { id: string; batch_group_id: string | null; notebook_id: string | null }[];
+
+      const src = srcRows[0];
+      if (!src?.batch_group_id || !src.notebook_id) {
+        return { skipped: 'single-file (không có batch_group_id) — giữ hành vi cũ' };
+      }
+
+      const batch = await checkBatchCompletion(src.batch_group_id);
+      if (!batch.isComplete) {
+        return { skipped: 'batch chưa hoàn tất (còn file pending/processing hoặc chưa có note)' };
+      }
+
+      // Chống spam: batch xong <2 phút kể từ file đầu → user đang xem trực tiếp,
+      // vẫn claim flag nhưng không gọi Resend.
+      const ageMs = batch.oldestCreatedAt ? Date.now() - batch.oldestCreatedAt.getTime() : Infinity;
+      if (ageMs < 2 * 60 * 1000) {
+        const claimed = await claimBatchNotification(src.notebook_id);
+        return { skipped: claimed ? 'batch xong <2 phút — user đang xem trực tiếp, không gửi mail' : 'đã claim trước đó', claimed };
+      }
+
+      // Claim ATOMIC — race 2 job: chỉ 1 thắng.
+      const claimed = await claimBatchNotification(src.notebook_id);
+      if (!claimed) {
+        return { skipped: 'email đã được gửi bởi job khác (notification_sent_at đã set)' };
+      }
+
+      const nbRows = (await sql`
+        select title from notebooks where id = ${src.notebook_id} limit 1
+      `) as unknown as { title: string }[];
+      const userRows = (await sql`
+        select email from profiles where id = ${userId} limit 1
+      `) as unknown as { email: string }[];
+
+      const result = await sendBatchCompletionEmail({
+        userEmail: userRows[0]?.email || '',
+        notebookId: src.notebook_id,
+        notebookTitle: nbRows[0]?.title || 'Note của bạn',
+        files: batch.files,
+      });
+      return { sent: result.sent, skipped: result.skipped };
     });
 
     return { jobId, status: 'done', title: generated.title };
