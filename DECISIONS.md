@@ -524,7 +524,35 @@
 
 ---
 
-## 26. References
+## 26. Tool-calling Chat Assistant — Tavily + Open-Meteo (2026-08-23)
+
+### Decision
+- Engine A (Chat Assistant) thêm 2 tool chuẩn function-calling: `web_search` (Tavily) + `get_weather` (Open-Meteo), đồng nhất mọi BYOK provider.
+- System prompt redesign: trả lời tự nhiên mọi input trước tiên; danh tính inject runtime; chỉ kích hoạt luồng tài liệu khi có đính kèm hoặc user chủ động hỏi về note cũ.
+
+### Lý do chọn Tavily (verify thật tại tavily.com/pricing + docs.tavily.com, 23/08)
+- Free 1.000 API credits/tháng, KHÔNG cần thẻ — đủ cho quy mô đồ án; basic search = 1 credit/lần gọi.
+- So alternatives cùng mức free: Brave 2.000 query/tháng nhưng cần đăng ký thẻ? (không), Exa $250 free credit (hết hạn kiểu credit), Perplexity Sonar 100 query/ngày (khó dự đoán hết quota theo tháng). Tavily đơn giản nhất về billing mental-model (credit/tháng cố định) và phổ biến nhất trong agent frameworks.
+
+### Lý do chọn Open-Meteo (verify thật tại open-meteo.com + /en/terms, 23/08)
+- Không cần API key, không sign-up — geocoding + forecast đều free.
+- **License**: data CC BY 4.0 (được dùng lại kể cả thương mại, cần attribution); API free tier ghi rõ "non-commercial use up to 10,000 daily API calls". Chấp nhận được giai đoạn đồ án (chưa thu phí thật). ⚠️ Khi thương mại hoá thật với traffic lớn: xem lại license/nâng gói trả phí thấp nhất của Open-Meteo hoặc chuyển provider khác.
+
+### Guard quota Tavily
+- Bảng `usage` có sẵn: đếm `provider='tavily' AND operation='tavily_search' AND created_at >= date_trunc('month', now())`.
+- Ngưỡng chặn 950 (buffer 50 trước limit 1.000). Khi gate chặn: tool KHÔNG chạy, model nhận `{error}` và tự trả lời "không thể tra cứu web lúc này" từ kiến thức sẵn có — không lỗi cứng.
+
+### Implementation (2026-08-23)
+- `lib/ai/tools/registry.ts` (mới): ToolDef interface, schema song song 3 format (Gemini functionDeclarations / OpenAI tools / Anthropic tools), executor JS thuần, `wmoToVietnamese()`, `checkTavilyQuota()`.
+- `lib/ai/tools/agent-loop.ts` (mới): vòng lặp max 3 rounds, hỗ trợ cả 3 backend (gemini SDK / openai-compatible fetch / anthropic messages), gate `onToolCall` cho quota.
+- `lib/ai/prompts/chat-assistant.ts`: viết lại toàn bộ theo nguyên tắc phần A (tự nhiên-first, dynamic identity, document-flow gating).
+- `lib/ai/dispatcher.ts`: agent-loop pass chạy TRƯỚC legacy engine khi câu hỏi không trông giống yêu cầu tạo note (regex heuristic); fail → rơi xuống engine cũ, không chết request.
+- Env mới: `TAVILY_API_KEY` (cần user đăng ký tavily.com rồi thêm Vercel).
+- Test: `scripts/test-tools.ts` 16/16 PASS (get_weather LIVE Hà Nội 25.2°C mưa phùn khớp curl trực tiếp; Tavily mock; 3 format schema); `scripts/test-chat-prompt.ts` 13/13 PASS (dynamic identity, tool khai báo, document-flow gating).
+
+---
+
+## 27. References
 - [Neon Documentation](https://neon.tech/docs)
 - [Drizzle ORM](https://orm.drizzle.team)
 - [gitleaks](https://github.com/gitleaks/gitleaks)

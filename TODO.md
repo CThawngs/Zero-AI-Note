@@ -10,11 +10,11 @@
 - Mỗi mục CẤP 3 phải có ≥1 CẤP 4 con cụ thể.
 
 ## Tổng quan (audit trung thực 2026-08-23)
-- **Tổng mục CẤP 4**: 188
-- **Đã xong `[X]`**: 122 (64.9%)
+- **Tổng mục CẤP 4**: 196
+- **Đã xong `[X]`**: 128 (65.3%)
 - **Đang làm dở `[~]`**: 2
-- **Chưa làm `[ ]`**: 64
-- **% Hoàn thành thực**: ~65% — MỚI NHẤT: email hoàn tất BATCH (schema Neon đã migrate thật + trigger logic + template Resend + 13/13 test); file extraction thật + agent tools (Google Search grounding). BLOCKER: GEMINI_API_KEY sai loại (cần AIza...), RESEND_API_KEY chưa có trên Vercel
+- **Chưa làm `[ ]`**: 66
+- **% Hoàn thành thực**: ~65% — MỚI NHẤT: email BATCH (schema Neon migrate thật); Chat Assistant tool-calling (web_search Tavily + get_weather Open-Meteo LIVE verified, agent loop 3 backend, prompt redesign). BLOCKER: GEMINI_API_KEY sai loại; cần user thêm TAVILY_API_KEY
 
 ---
 
@@ -162,6 +162,19 @@
 ---
 
 ## [~] CẤP 1: AI Pipeline & Note Generation (PRD mục 3.2c-g, 4.0.7-12, Phase 4-6)
+
+### [~] CẤP 2: Tool-calling cho Chat Assistant (2026-08-23)
+- [X] CẤP 3: System prompt redesign (trả lời tự nhiên, danh tính động, chỉ kích hoạt tài liệu khi liên quan)
+  - [X] CẤP 4: Viết lại system prompt theo Phần A — `lib/ai/prompts/chat-assistant.ts` rewrite toàn bộ: natural-first, identity inject runtime từ provider đang chạy request, document-flow gating 2 điều kiện (có đính kèm / user chủ động hỏi note cũ) [2026-08-23]
+  - [X] CẤP 4: Test câu hỏi off-topic — `scripts/test-chat-prompt.ts` 13/13 PASS (dynamic identity ×2 provider, khai báo tool, gating rules); production curl "Bạn là ai/model gì" trả đúng trọng tâm qua fallback chat [2026-08-23]
+- [~] CẤP 3: Tool web_search (Tavily)
+  - [ ] CẤP 4: Đăng ký Tavily key, thêm .env — CHỜ USER đăng ký tavily.com (free 1.000 credit/tháng, không thẻ — đã verify pricing) rồi thêm `TAVILY_API_KEY` vào Vercel
+  - [X] CẤP 4: Implement function-calling schema + gọi API — `lib/ai/tools/registry.ts` `webSearch()` POST api.tavily.com/search basic depth; test mock fetch 16/16 PASS [2026-08-23]
+  - [X] CẤP 4: Guard quota 1.000 credit/tháng — `checkTavilyQuota()` đếm usage operation='tavily_search' tháng hiện tại, chặn ở 950 (buffer 50); gate trong agent-loop trả {error} cho model → trả lời "không thể tra cứu" thay vì lỗi cứng [2026-08-23]
+- [X] CẤP 3: Tool get_weather (Open-Meteo)
+  - [X] CẤP 4: Implement geocode + forecast 2 bước — LIVE TEST THẬT: Hà Nội → geocode 21.02/105.84 → forecast 25.2°C mưa phùn 93% khớp curl trực tiếp; địa điểm không tồn tại trả error không crash [2026-08-23]
+  - [X] CẤP 4: Map weather_code sang mô tả tiếng Việt — `wmoToVietnamese()` 25 codes WMO (0 quang, 45 sương mù, 51-55 mưa phùn, 61-67 mưa, 71-77 tuyết, 95-99 dông); test PASS [2026-08-23]
+- [ ] CẤP 4: Test cả 2 tool hoạt động đúng khi user BYOK ≠ Gemini (OpenAI/Claude/OpenRouter) — code đã map đủ 3 format schema (test 16/16), CHƯA test E2E thật với key BYOK từng provider
 
 ### [X] CẤP 2: Dual Engine AI (PRD mục 3.2c)
 - [X] CẤP 3: Chat Assistant Engine (Engine A)

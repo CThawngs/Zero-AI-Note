@@ -1,10 +1,13 @@
 import { 
   generateAgentResponse as generateGeminiAgentResponse, 
   generateStructuredNote as generateGeminiNote, 
+  getGeminiApiKey,
   StructuredNoteOutput, 
   AgentResponseOutput 
 } from './gemini';
 import { generateOpenRouterFreeResponse } from './openrouter-fallback';
+import { runChatAgentLoop } from './tools/agent-loop';
+import { checkTavilyQuota } from './tools/registry';
 import { NoteMethod } from '@/src/types';
 
 export interface AIModelRequest {
@@ -157,6 +160,53 @@ export async function dispatchAgentResponse(params: AIModelRequest): Promise<Age
       : method;
 
   const effectiveModel = model || 'gemini-2.0-flash';
+
+  // ── AGENT-LOOP PASS (PRD 3.2c): hội thoại/câu hỏi chung → agent có tools
+  // (web_search Tavily + get_weather Open-Meteo), prompt tự nhiên mới.
+  // Chỉ nhảy qua khi trông giống yêu cầu tạo note (đính từ kho tổng hợp).
+  const looksLikeNoteRequest = /\b(tạo|làm|tổng hợp|phân tích|viết)\s+(note|ghi chú|bài|bản ghi|tóm tắt|summary|outline|cornell|mindmap|sơ đồ|flashcard|quiz)\b/i.test(inputText);
+  if (!looksLikeNoteRequest) {
+    try {
+      const tavilyQuota = await checkTavilyQuota('system');
+      const identity = {
+        activeProviderName: endpointUrl
+          ? (providerId === 'anthropic' ? 'Anthropic Claude' : providerId === 'google' ? 'Google Gemini' : 'Custom OpenAI-compatible')
+          : 'Google Gemini (hệ thống)',
+        activeModelId: effectiveModel,
+        activeProviderId: providerId || 'google-system',
+      };
+      const { buildChatAssistantSystemPrompt } = await import('./prompts/chat-assistant');
+      const systemPrompt = buildChatAssistantSystemPrompt(identity);
+
+      let backend: 'gemini' | 'openai' | 'anthropic' = 'gemini';
+      if (endpointUrl) {
+        if (endpointUrl.includes('googleapis.com') || providerId === 'google') backend = 'gemini';
+        else if (endpointUrl.includes('anthropic.com') || providerId === 'anthropic') backend = 'anthropic';
+        else backend = 'openai';
+      }
+
+      const loopRes = await runChatAgentLoop({
+        backend,
+        apiKey: apiKey || (backend === 'gemini' ? getGeminiApiKey() : undefined),
+        endpointUrl,
+        model: effectiveModel,
+        systemPrompt,
+        userMessage: inputText,
+        onToolCall: toolName => {
+          if (toolName === 'web_search' && !tavilyQuota.ok) return Promise.resolve(false); // gate quota
+          return Promise.resolve(true);
+        },
+      });
+
+      if (loopRes.text) {
+        return { replyText: loopRes.text, isNoteAction: false, note: null };
+      }
+      // text rỗng → rơi xuống engine cũ
+    } catch (agentErr) {
+      console.warn('[AI Dispatcher] agent-loop pass failed, falling back to legacy engine:', agentErr);
+      // rơi xuống dưới — không chết request
+    }
+  }
 
   // 1. Built-in Google Gemini Free Tier Pool (+ tầng 4 OpenRouter free nếu cascade fail)
   if (!endpointUrl || providerId === 'google-system' || providerId === 'system') {

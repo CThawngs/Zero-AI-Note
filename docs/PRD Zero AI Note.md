@@ -103,6 +103,7 @@ Sinh viên/giáo viên xử lý bài giảng dài, người đi họp cần ghi 
 | AI — BYOK / Tự kết nối AI | 8 providers (Google, OpenAI, Anthropic Claude, OpenRouter, Groq, NVIDIA NIM, Local Ollama, Custom Endpoint OpenAI-compatible) | User API key riêng, BYOK bypass system quota. Dynamic runtime identity inject vào system prompt |
 | Billing | **Zero Tracking** (`zeroinvoice-silk.vercel.app`) — project riêng dùng Supabase | Tạo bill `POST /api/bills` (amount locked), QR render client-side `qrcode.react` (EMVCo VietQR payload), 30-min expiry. Polling `/api/billing/check-status` 2.5s + webhook HMAC-SHA256 verified (`x-webhook-signature`) |
 | Email | **Resend** (free tier 3.000 mail/tháng) | Notification khi Note xong |
+| Tools — Chat Assistant | Tavily (web_search, free 1.000 credit/tháng) + Open-Meteo (get_weather, free không cần key, 10k call/ngày) | Function-calling chuẩn, đồng nhất mọi BYOK provider qua dispatcher.ts |
 
 **Đã cân nhắc và loại bỏ**:
 - **Supabase** (cả Auth + Storage): free tier giới hạn 2 project hoạt động cùng lúc — vượt giới hạn ở thời điểm triển khai
@@ -148,6 +149,12 @@ Xử lý nặng chạy trên Inngest worker bất đồng bộ (không tại Ver
 ### 3.2c Tách biệt tuyệt đối 2 Engine AI
 1. **Chat Assistant Engine (Engine A)**: Q&A, trò chuyện tự nhiên. Dynamic Identity (nhận diện động provider/model từ session/`byok_providers`, không hardcode).
 2. **Note Generator Engine (Engine B)**: Headless JSON Generator (không chào hỏi, JSON Universal Block Schema, Zod validation + Auto-repair loop max 2 retries).
+
+**Tool-calling Chat Assistant (2026-08-23)**: Engine A có 2 tool chuẩn function-calling, hoạt động đồng nhất mọi provider qua `lib/ai/dispatcher.ts` + `lib/ai/tools/`:
+- **`web_search(query)` — Tavily**: tin tức/sự kiện/giá cả thời gian thực. Free 1.000 credit/tháng (đã verify tavily.com/pricing), key server-side `TAVILY_API_KEY`. Guard quota: đếm `usage` operation=`tavily_search` trong tháng, gần chạm 1.000 → agent trả lời "không thể tra cứu web lúc này" thay vì lỗi cứng.
+- **`get_weather(location)` — Open-Meteo**: geocode → forecast 2 bước, không cần key. Map WMO weather_code sang tiếng Việt (`wmoToVietnamese`). License non-commercial (10k call/ngày) — chấp nhận giai đoạn đồ án, xem lại khi thương mại hoá.
+- **System prompt** (`lib/ai/prompts/chat-assistant.ts`): trả lời tự nhiên mọi input trước tiên như chat assistant thông thường; danh tính inject runtime từ provider đang chạy; chỉ vào luồng tài liệu/note khi có file đính kèm HOẶC user chủ động hỏi về note của họ; model tự quyết gọi tool (chỉ khi cần dữ liệu thời gian thực — tiết kiệm quota Tavily dùng chung).
+- **Agent loop** (`lib/ai/tools/agent-loop.ts`, max 3 rounds): map tool schema đúng format từng provider — Gemini `functionDeclarations` (@google/genai SDK), OpenAI-compatible `tools` (OpenAI/Groq/OpenRouter/NVIDIA/Local), Anthropic `tools`; execute JS thuần rồi trả kết quả cho model vòng sau.
 
 **Cascade chung 2 engine (qua `lib/ai/dispatcher.ts`)**: Gemini 3.7→2.5→2.0 Flash → Tầng 4 (last-resort, chỉ khi cả 3 tầng Gemini 429/quota hết): **OpenRouter free** qua alias `openrouter/free` (auto-router nội bộ của OpenRouter, tự chọn model free còn khả dụng — KHÔNG hardcode model ID vì danh sách free rotate liên tục, tránh vỡ khi 1 model bị gỡ). ⚠️ Lưu ý rủi ro riêng cho Note Generator (Engine B): model open-weight qua OpenRouter free độ tin cậy JSON schema thấp hơn Gemini Flash — dựa vào `repair-loop.ts` (auto-repair, max 2 retries, đã có sẵn) làm lưới an toàn. Chat Assistant (Engine A) rủi ro thấp hơn vì output tự do, không strict schema. OpenRouter free KHÔNG dùng cho STT (catalog free không có model Whisper/STT).
 
