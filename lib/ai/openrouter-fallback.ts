@@ -61,6 +61,8 @@ export async function generateOpenRouterFreeResponse(params: {
   inputText: string;
   method: NoteMethod;
   language: 'vi' | 'en';
+  /** Chat thuần (hỏi xoay trời/thời tiết/identity): trả text trực tiếp, không ép JSON. */
+  chatOnly?: boolean;
 }): Promise<AgentResponseOutput> {
   const apiKey = getOpenRouterApiKey();
   if (!apiKey) {
@@ -69,6 +71,41 @@ export async function generateOpenRouterFreeResponse(params: {
         ? 'All Gemini tiers are exhausted and the OpenRouter fallback is not configured (missing OPENROUTER_API_KEY). Please retry after quota reset.'
         : 'Toàn bộ cascade Gemini đang quá tải/hết quota và fallback OpenRouter chưa được cấu hình (thiếu OPENROUTER_API_KEY). Vui lòng thử lại sau khi quota reset.'
     );
+  }
+
+  // Chat thuần: prompt tối giản, không response_format json_object —
+  // free model nhỏ sinh JSON phức tạp rất dễ hỏng ("User Safety: safe"...).
+  if (params.chatOnly) {
+    const chatRes = await fetch(OPENROUTER_CHAT_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+        'HTTP-Referer': 'https://zero-ai-note.vercel.app',
+        'X-Title': 'Zero AI Note',
+      },
+      body: JSON.stringify({
+        model: OPENROUTER_FREE_MODEL,
+        messages: [
+          {
+            role: 'system',
+            content: `Bạn là Zero AI Note Agent (fallback OpenRouter free — model này KHÔNG có Google Search; nếu câu hỏi cần dữ liệu thời gian thực mà bạn không chắc chắn, hãy nói thật là bạn không tra cứu được lúc này). Ngôn ngữ: ${params.language === 'vi' ? 'Tiếng Việt' : 'English'}. Trả lời trực tiếp, đúng trọng tâm, Markdown tự nhiên. KHÔNG trả về JSON.`,
+          },
+          { role: 'user', content: params.inputText },
+        ],
+        temperature: 0.4,
+      }),
+    });
+    if (!chatRes.ok) {
+      const errText = await chatRes.text().catch(() => '');
+      throw new Error(`OpenRouter free fallback lỗi HTTP ${chatRes.status}: ${errText.substring(0, 150)}`);
+    }
+    const chatData = await chatRes.json();
+    return {
+      replyText: chatData.choices?.[0]?.message?.content || '',
+      isNoteAction: false,
+      note: null,
+    };
   }
 
   const res = await fetch(OPENROUTER_CHAT_URL, {

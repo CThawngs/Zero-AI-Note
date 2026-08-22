@@ -84,6 +84,22 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // ── EXTRACT file contents (CỐT LÕI): PDF/audio/video/image qua Gemini multimodal,
+    // DOCX qua mammoth, web qua reader, YouTube native — thay vì chỉ nhét tên file vào prompt.
+    const { getGeminiApiKey } = await import('@/lib/ai/gemini');
+    const { extractAllSources } = await import('@/lib/ai/extract');
+    const extractKey = getGeminiApiKey();
+    let extractedContent = '';
+    if (sources && sources.length > 0 && extractKey) {
+      try {
+        const ex = await extractAllSources(sources, extractKey);
+        extractedContent = ex.combined;
+      } catch (exErr) {
+        console.error('[generate] source extraction failed:', exErr);
+        extractedContent = '';
+      }
+    }
+
     // Combine prompt and full source information with extracted text
     let inputText = prompt || '';
     if (sources && sources.length > 0) {
@@ -93,8 +109,8 @@ export async function POST(request: NextRequest) {
         if (s.url) {
           inputText += `- Đường dẫn/URL: ${s.url}\n`;
         }
-        if (s.content) {
-          inputText += `- Nội dung trích xuất từ tệp:\n"""\n${s.content}\n"""\n`;
+        if (extractedContent) {
+          inputText += `- Nội dung trích xuất từ tệp:\n"""\n${extractedContent.slice(0, 400_000)}\n"""\n`;
         }
       });
       inputText += '\n============================================\n';

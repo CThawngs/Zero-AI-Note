@@ -1,6 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import { NoteMethod } from '@/src/types';
 import { generateAutonomousAgentResponse } from './autonomousAgent';
+import { runAgentWithTools } from './tools';
 import { generateOpenRouterFreeResponse } from './openrouter-fallback';
 
 export interface StructuredNoteOutput {
@@ -37,7 +38,7 @@ export interface AgentResponseOutput {
   note?: StructuredNoteOutput | null;
 }
 
-function getGeminiApiKey(): string {
+export function getGeminiApiKey(): string {
   const key = process.env.GEMINI_API_KEY || '';
   return key.trim().replace(/^["']|["']$/g, '');
 }
@@ -174,6 +175,49 @@ export async function generateAgentResponse(params: {
   }
 
   const ai = new GoogleGenAI({ apiKey });
+
+  // ── AGENT PASS (trước note pass): hội thoại/câu hỏi chung → trả lời trực tiếp
+  // với tools (Google Search grounding + read_web_page). KHÔNG hardcode:
+  // model tự quyết định nội dung; pass này chỉ áp dụng khi KHÔNG rõ là note-action.
+  const noteActionSignals = /(tạo ghi|tạo note|tạo notes|tóm tắt|summar|ghi chú theo|cornell|outline|mindmap|flashcard|feynman|đặt câu hỏi|quiz|dàn ý|soạn bài|phân tích tài liệu|chuyển thành|make a note|create.*note)/i;
+  const hasAttachment = /=== TÀI LIỆU & TỆP ĐÍNH KÈM|=== HƯỚNG DẪN MẪU TÙY CHỈNH ===/.test(params.inputText);
+  if (!noteActionSignals.test(params.inputText.slice(0, 2000)) && !hasAttachment) {
+    try {
+      const agentRes = await runAgentWithTools({
+        apiKey,
+        model: activeModelName.includes('2.0') ? 'gemini-2.0-flash' : undefined,
+        systemPrompt: `Bạn là Zero AI Note Agent — trợ lý AI agent thực thụ của nền tảng ghi chú học thuật Zero AI Note.
+Mô hình đang chạy: "${params.model || activeModelName}" (provider: Google Gemini — thông tin này do hệ thống inject, luôn trả lời đúng nếu được hỏi).
+Bạn CÓ tools: Google Search (tra dữ liệu thời tiết/tin tức/giá/ sự kiện thời gian thực) và đọc web page. Dùng chúng khi câu hỏi cần dữ liệu ngoài kiến thức của bạn.
+Phong cách: trả lời trực tiếp, đúng trọng tâm, thông minh, tự nhiên; Markdown đầy đủ; ngôn ngữ ${language === 'vi' ? 'Tiếng Việt' : 'English'} theo người dùng.
+Nếu người dùng muốn tạo ghi chú/tóm tắt tài liệu, hướng dẫn họ đính kèm file hoặc dán nội dung rồi chọn phương pháp ghi chú (bạn không tạo note trong chế độ chat này).
+Không bao giờ bịa dữ liệu thời gian thực — luôn search trước khi trả lời loại câu hỏi đó.`,
+        userContent: params.inputText,
+        language,
+      });
+      return {
+        replyText: agentRes.replyText || (language === 'vi'
+          ? 'Xin lỗi, tôi chưa xử lý được yêu cầu này. Bạn thử diễn đạt lại nhé.'
+          : 'Sorry, I could not process this request. Please try rephrasing.'),
+        isNoteAction: false,
+        note: null,
+      };
+    } catch (agentErr) {
+      console.warn('[Gemini Agent Engine] agent-tools pass failed, trying OpenRouter chat fallback:', agentErr);
+      // Fallback chat thuần (không ép JSON) trước khi rơi xuống note engine
+      try {
+        return await generateOpenRouterFreeResponse({
+          inputText: params.inputText,
+          method,
+          language,
+          chatOnly: true,
+        });
+      } catch (chatFallbackErr) {
+        console.warn('[Gemini Agent Engine] OpenRouter chat fallback failed, falling through to note engine:', chatFallbackErr);
+        // rơi xuống note engine bình thường — không chết request
+      }
+    }
+  }
 
   const systemInstruction = `Bạn là Zero AI Note Agent — Trợ lý Nghiên cứu & Ghi chú Học thuật Thông minh kiêm Kỹ sư Phần mềm Cao cấp (Senior Software & AI Engineer).
 Mô hình AI bạn đang chạy: "${params.model || activeModelName}".
