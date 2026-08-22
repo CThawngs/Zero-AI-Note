@@ -44,6 +44,20 @@ function executeTool(name: string, args: Record<string, unknown>): Promise<unkno
   return tool.execute(args).catch(e => ({ error: e instanceof Error ? e.message : String(e) }));
 }
 
+/** Ghi 1 credit Tavily vào bảng usage sau mỗi lần search THÀNH CÔNG (guard đếm row này). */
+async function recordTavilyUsage(): Promise<void> {
+  try {
+    const { getSql } = await import('@/lib/db');
+    const sql = getSql();
+    await sql`
+      insert into usage (user_id, provider, model, operation, input_tokens, output_tokens)
+      values (null, 'tavily', 'tavily-basic-search', 'tavily_search', 1, 0)
+    `;
+  } catch (e) {
+    console.warn('[agent-loop] recordTavilyUsage failed (không chặn tool):', e);
+  }
+}
+
 async function callOpenAI(p: AgentLoopParams, history: unknown[]): Promise<unknown> {
   const cleanEndpoint = (p.endpointUrl || 'https://api.openai.com/v1').replace(/\/+$/, '');
   const url = cleanEndpoint.endsWith('/chat/completions') ? cleanEndpoint : `${cleanEndpoint}/chat/completions`;
@@ -137,6 +151,7 @@ export async function runChatAgentLoop(p: AgentLoopParams): Promise<AgentLoopRes
         let gateOk = true;
         if (f.name === 'web_search' && p.onToolCall) gateOk = await p.onToolCall('web_search', args);
         const result = gateOk ? await executeTool(f.name!, args) : { error: 'Hết quota tra cứu web tháng này. Hãy trả lời từ kiến thức sẵn có và nói với người dùng rằng không thể tra cứu web lúc này.' };
+        if (gateOk && f.name === 'web_search' && !('error' in (result as object))) await recordTavilyUsage();
         contents.push({
           role: 'user',
           parts: [{ functionResponse: { name: f.name!, response: result as Record<string, unknown> } }],
@@ -177,6 +192,7 @@ export async function runChatAgentLoop(p: AgentLoopParams): Promise<AgentLoopRes
         let gateOk = true;
         if (c.function.name === 'web_search' && p.onToolCall) gateOk = await p.onToolCall('web_search', args);
         const result = gateOk ? await executeTool(c.function.name, args) : { error: 'Hết quota tra cứu web tháng này — hãy trả lời từ kiến thức sẵn có.' };
+        if (gateOk && c.function.name === 'web_search' && !('error' in (result as object))) await recordTavilyUsage();
         history.push({ role: 'tool', tool_call_id: c.id, content: JSON.stringify(result).substring(0, 8000) });
       }
     } else {
@@ -200,6 +216,7 @@ export async function runChatAgentLoop(p: AgentLoopParams): Promise<AgentLoopRes
         let gateOk = true;
         if (name === 'web_search' && p.onToolCall) gateOk = await p.onToolCall('web_search', args);
         const result = gateOk ? await executeTool(name, args) : { error: 'Hết quota tra cứu web tháng này — hãy trả lời từ kiến thức sẵn có.' };
+        if (gateOk && name === 'web_search' && !('error' in (result as object))) await recordTavilyUsage();
         history.push({
           role: 'user',
           content: [{ type: 'tool_result', tool_use_id: tu.id, content: JSON.stringify(result).substring(0, 8000) }],

@@ -117,7 +117,7 @@ export async function checkTavilyQuota(userId: string): Promise<{ ok: boolean; u
   const rows = (await sql`
     select count(*)::int as n from usage
     where provider = 'tavily' and operation = 'tavily_search'
-      and created_at >= date_trunc('month', now())
+      and "timestamp" >= date_trunc('month', now())
   `) as unknown as { n: number }[];
   void userId;
   return { ok: rows[0].n < 950, usedThisMonth: rows[0].n }; // buffer 50 trước limit 1000
