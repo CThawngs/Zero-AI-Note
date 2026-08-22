@@ -165,18 +165,21 @@ export async function dispatchAgentResponse(params: AIModelRequest): Promise<Age
   // (web_search Tavily + get_weather Open-Meteo), prompt tự nhiên mới.
   // Chỉ nhảy qua khi trông giống yêu cầu tạo note (đính từ kho tổng hợp).
   const looksLikeNoteRequest = /\b(tạo|làm|tổng hợp|phân tích|viết)\s+(note|ghi chú|bài|bản ghi|tóm tắt|summary|outline|cornell|mindmap|sơ đồ|flashcard|quiz)\b/i.test(inputText);
+  const tavilyQuota = looksLikeNoteRequest ? null : await checkTavilyQuota('system').catch(() => ({ ok: true, usedThisMonth: 0 }));
+  const buildIdentity = () => ({
+    activeProviderName: endpointUrl
+      ? (providerId === 'anthropic' ? 'Anthropic Claude' : providerId === 'google' ? 'Google Gemini' : 'Custom OpenAI-compatible')
+      : 'Google Gemini (hệ thống)',
+    activeModelId: effectiveModel,
+    activeProviderId: providerId || 'google-system',
+  });
+  const toolGate = (toolName: string) =>
+    toolName === 'web_search' && tavilyQuota && !tavilyQuota.ok ? Promise.resolve(false) : Promise.resolve(true);
+
   if (!looksLikeNoteRequest) {
     try {
-      const tavilyQuota = await checkTavilyQuota('system');
-      const identity = {
-        activeProviderName: endpointUrl
-          ? (providerId === 'anthropic' ? 'Anthropic Claude' : providerId === 'google' ? 'Google Gemini' : 'Custom OpenAI-compatible')
-          : 'Google Gemini (hệ thống)',
-        activeModelId: effectiveModel,
-        activeProviderId: providerId || 'google-system',
-      };
       const { buildChatAssistantSystemPrompt } = await import('./prompts/chat-assistant');
-      const systemPrompt = buildChatAssistantSystemPrompt(identity);
+      const systemPrompt = buildChatAssistantSystemPrompt(buildIdentity());
 
       let backend: 'gemini' | 'openai' | 'anthropic' = 'gemini';
       if (endpointUrl) {
@@ -192,10 +195,7 @@ export async function dispatchAgentResponse(params: AIModelRequest): Promise<Age
         model: effectiveModel,
         systemPrompt,
         userMessage: inputText,
-        onToolCall: toolName => {
-          if (toolName === 'web_search' && !tavilyQuota.ok) return Promise.resolve(false); // gate quota
-          return Promise.resolve(true);
-        },
+        onToolCall: toolGate,
       });
 
       if (loopRes.text) {
@@ -218,9 +218,28 @@ export async function dispatchAgentResponse(params: AIModelRequest): Promise<Age
         model: effectiveModel,
       });
     } catch (err: any) {
-      // Tầng 4 (last-resort, CHỈ text engine): OpenRouter free khi cascade Gemini 3.7→2.5→2.0 đều fail.
-      console.error('[AI Dispatcher] System Gemini cascade failed, trying OpenRouter free fallback:', err);
-      return generateOpenRouterFreeResponse({ inputText, method: resolvedMethod, language });
+      // Gemini cascade fail (vd rate-limit chờ reset) → thử VẪN cho agent tools
+      // qua OpenRouter free (format OpenAI-compatible, model free hỗ trợ FC)
+      console.error('[AI Dispatcher] System Gemini cascade failed, trying agent-loop via OpenRouter free:', err);
+      try {
+        const { buildChatAssistantSystemPrompt } = await import('./prompts/chat-assistant');
+        const loopRes = await runChatAgentLoop({
+          backend: 'openai',
+          apiKey: process.env.OPENROUTER_API_KEY || '',
+          endpointUrl: 'https://openrouter.ai/api/v1',
+          model: 'openrouter/free',
+          systemPrompt: buildChatAssistantSystemPrompt({ ...buildIdentity(), activeProviderName: 'OpenRouter free fallback', activeModelId: 'openrouter/free' }),
+          userMessage: inputText,
+          onToolCall: toolGate,
+        });
+        if (loopRes.text) {
+          return { replyText: loopRes.text, isNoteAction: false, note: null };
+        }
+      } catch (orAgentErr) {
+        console.warn('[AI Dispatcher] agent-loop via OpenRouter also failed:', orAgentErr);
+      }
+      // Cuối cùng: chatOnly thuần không tools (đảm bảo có phản hồi)
+      return generateOpenRouterFreeResponse({ inputText, method: resolvedMethod, language, chatOnly: !looksLikeNoteRequest });
     }
   }
 
