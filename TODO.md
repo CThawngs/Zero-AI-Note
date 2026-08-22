@@ -272,8 +272,8 @@
 - [X] CẤP 3: CRUD phiên chat + notes backend
   - [X] CẤP 4: `lib/neon/queries.ts` — renameChatSession, pinChatSession, archiveChatSession, deleteChatSessionPermanently
   - [X] CẤP 4: API notes route list/create
-- [ ] CẤP 3: Grid/list toggle + tabs (Tất cả / Đã ghim / Có Note / Chia sẻ)
-  - [ ] CẤP 4: Cần verify UI
+- [X] CẤP 3: Grid/list toggle + tabs (Tất cả / Đã ghim / Có Note / Chia sẻ)
+  - [X] CẤP 4: VERIFY TRONG CODE: LibraryScreen.tsx `libraryViewMode` + tabs 'Đã ghim/pinned/Có Note/Chia sẻ' đầy đủ [2026-08-23]
 
 ### [X] CẤP 2: Màn 3 — Cài đặt Tài khoản & Billing
 - [X] CẤP 3: Profile + plan management
