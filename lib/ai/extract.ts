@@ -140,10 +140,24 @@ export async function extractSource(
 
       let text: string;
       const isDocx = src.name.toLowerCase().endsWith('.docx');
+      const isPptx = src.name.toLowerCase().endsWith('.pptx');
       if (isDocx) {
         const mammoth = await import('mammoth');
         const { value } = await mammoth.extractRawText({ buffer: buf });
         text = value;
+      } else if (isPptx) {
+        // PARSE_PPTX (PRD 4.0.2): slide-by-slide qua jszip — không tốn Gemini call,
+        // giữ speaker notes làm evidence; chỉ khi rỗng mới fallback Gemini OCR.
+        const { parsePptx, renderPptxMarkdown } = await import('./pptx');
+        const slides = await parsePptx(buf);
+        text = renderPptxMarkdown(slides);
+        if (!text.trim()) {
+          text = await callGeminiExtract(
+            apiKey,
+            'Trích xuất TOÀN BỘ nội dung văn bản của tài liệu này. Giữ đúng cấu trúc và thứ tự. Chỉ trả về nội dung.',
+            [{ inlineData: { mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', data: buf.toString('base64') } }]
+          );
+        }
       } else if (buf.length <= INLINE_LIMIT) {
         const mime = guessMime(src.name, src.type);
         text = await callGeminiExtract(
