@@ -38,6 +38,25 @@ export async function POST(request: NextRequest) {
       return fail('Unsupported file type', 400);
     }
 
+    // ≥100MB → multipart mode: tạo uploadId, client yêu cầu sign từng part qua /api/upload/multipart
+    if (fileSize >= 100 * 1024 * 1024) {
+      const { getSql } = await import('@/lib/db');
+      const sql = getSql();
+      const key = `uploads/${session.sub}/${Date.now()}-${fileName.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+      const client = await (storageService as any).getClient();
+      const bucket = (storageService as any).bucketName ?? process.env.R2_BUCKET_NAME;
+      const { CreateMultipartUploadCommand } = await import('@aws-sdk/client-s3');
+      const mpu = await client.send(new CreateMultipartUploadCommand({
+        Bucket: bucket, Key: key, ContentType: contentType,
+      }));
+      return ok({
+        mode: 'multipart' as const,
+        key,
+        uploadId: mpu.UploadId,
+        partSize: 10 * 1024 * 1024, // 10MB/part (DECISIONS.md §31)
+      });
+    }
+
     // Generate REAL Cloudflare R2 presigned URL via storage abstraction layer
     const { uploadUrl, key } = await storageService.generatePresignedUploadUrl(
       session.sub,
