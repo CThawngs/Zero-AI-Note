@@ -1,6 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import { NoteMethod } from '@/src/types';
 import { generateAutonomousAgentResponse } from './autonomousAgent';
+import { generateOpenRouterFreeResponse } from './openrouter-fallback';
 
 export interface StructuredNoteOutput {
   title: string;
@@ -272,13 +273,19 @@ Lưu ý: Nếu isNoteAction là false, trường "note" phải là null.`;
       }
     }
 
-    // Seamlessly execute autonomous intelligence engine
-    return generateAutonomousAgentResponse({
-      inputText: params.inputText,
-      method,
-      language,
-      model: params.model || activeModelName,
-    });
+    // Tầng 4 (last-resort, CHỈ text engine): OpenRouter free khi cascade Gemini 3.7→2.5→2.0 fail.
+    // Nếu OpenRouter cũng hết quota/chưa cấu hình → autonomous engine cục bộ (không bao giờ throw).
+    try {
+      return await generateOpenRouterFreeResponse({ inputText: params.inputText, method, language });
+    } catch (openrouterErr: any) {
+      console.error('[Gemini Agent Engine] OpenRouter fallback failed, using local autonomous engine:', openrouterErr);
+      return generateAutonomousAgentResponse({
+        inputText: params.inputText,
+        method,
+        language,
+        model: params.model || activeModelName,
+      });
+    }
   }
 }
 

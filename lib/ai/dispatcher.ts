@@ -4,6 +4,7 @@ import {
   StructuredNoteOutput, 
   AgentResponseOutput 
 } from './gemini';
+import { generateOpenRouterFreeResponse } from './openrouter-fallback';
 import { NoteMethod } from '@/src/types';
 
 export interface AIModelRequest {
@@ -157,14 +158,20 @@ export async function dispatchAgentResponse(params: AIModelRequest): Promise<Age
 
   const effectiveModel = model || 'gemini-2.0-flash';
 
-  // 1. Built-in Google Gemini Free Tier Pool
+  // 1. Built-in Google Gemini Free Tier Pool (+ tầng 4 OpenRouter free nếu cascade fail)
   if (!endpointUrl || providerId === 'google-system' || providerId === 'system') {
-    return await generateGeminiAgentResponse({
-      inputText,
-      method: resolvedMethod,
-      language,
-      model: effectiveModel,
-    });
+    try {
+      return await generateGeminiAgentResponse({
+        inputText,
+        method: resolvedMethod,
+        language,
+        model: effectiveModel,
+      });
+    } catch (err: any) {
+      // Tầng 4 (last-resort, CHỈ text engine): OpenRouter free khi cascade Gemini 3.7→2.5→2.0 đều fail.
+      console.error('[AI Dispatcher] System Gemini cascade failed, trying OpenRouter free fallback:', err);
+      return generateOpenRouterFreeResponse({ inputText, method: resolvedMethod, language });
+    }
   }
 
   // 2. BYOK Google Gemini with custom API Key

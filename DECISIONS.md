@@ -467,7 +467,29 @@
 
 ---
 
-## 24. References
+## 24. Đơn giản hoá STT pool + thêm OpenRouter fallback cho text (2026-08-22)
+
+### Decision
+- **Bỏ Groq khỏi vai trò STT pool #2** (lý do thực tế: không lấy được API key, không phải vấn đề kỹ thuật) — dồn toàn bộ transcribe về Gemini duy nhất, dùng chung cho mọi user bất kể BYOK nào được chọn cho chat/note-generation (transcribe là hạ tầng ngầm, tách biệt khỏi lựa chọn model của user).
+- Cân nhắc thay Groq bằng OpenRouter free cho STT nhưng KHÔNG khả thi — verify: catalog free OpenRouter không có model Whisper/STT, chỉ có model text-completion.
+- OpenRouter free (20 RPM/50-1.000 req/ngày chung toàn tài khoản, roster rotate liên tục) được thêm làm tầng fallback thứ 4 (last-resort) CHỈ cho Chat Assistant + Note Generator (2 engine text), đứng sau cascade Gemini 3.7→2.5→2.0 Flash, dùng alias `openrouter/free` (không hardcode model ID cụ thể).
+
+### Căn cứ (verify thật, không đoán)
+- OpenRouter free tier (verify 2026): 20 request/phút, 50 request/ngày (tăng lên 1.000/ngày nếu từng nạp $10 — không còn free 100% nữa) — giới hạn tính CHUNG cho toàn bộ tài khoản, không phải riêng từng model.
+- OpenRouter KHÔNG có model Whisper/STT nào trong danh mục free — toàn bộ catalog free là model text-completion (Llama, DeepSeek, Qwen, Gemma...). Vì vậy không thể dùng thay Groq cho việc transcribe audio.
+- Danh sách model free của OpenRouter liên tục đổi/bị gỡ không báo trước (giảm từ 20 xuống 14 model chỉ trong vài tuần) — không đáng tin cậy nếu hardcode 1 model ID cụ thể.
+- Groq bị loại vì Zero hiện không lấy được API key, không phải vì kỹ thuật kém hơn.
+
+### Implementation (2026-08-22)
+- `lib/ai/openrouter-fallback.ts` (mới) — `generateOpenRouterFreeResponse()`: POST `https://openrouter.ai/api/v1/chat/completions`, model alias `openrouter/free`, header `HTTP-Referer` + `X-Title`, `response_format: json_object`. Fail-closed khi thiếu `OPENROUTER_API_KEY`.
+- Wire point 1 — `lib/ai/gemini.ts` (catch-block `generateAgentResponse`): cascade Gemini fail → thử OpenRouter free trước; OpenRouter cũng fail → autonomous engine cục bộ (không bao giờ throw).
+- Wire point 2 — `lib/ai/dispatcher.ts` (system-pool branch): Gemini path throw xuyên → catch → OpenRouter free.
+- Env: `OPENROUTER_API_KEY` (đã có trên Vercel Environment Variables; thêm vào `.env.example` với chú thích ràng buộc text-only).
+- Test: `scripts/test-openrouter-fallback.ts` (bun, mock fetch, không gọi API thật) — ALL TESTS PASSED: cascade 429 → fallback gọi đúng endpoint/model alias/headers, JSON note parse OK, thiếu key throw rõ ràng.
+
+---
+
+## 25. References
 - [Neon Documentation](https://neon.tech/docs)
 - [Drizzle ORM](https://orm.drizzle.team)
 - [gitleaks](https://github.com/gitleaks/gitleaks)

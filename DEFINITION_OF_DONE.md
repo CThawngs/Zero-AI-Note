@@ -1,73 +1,112 @@
-# DEFINITION OF DONE — Zero AI Note
+# Definition of Done — Zero AI Note
 
-> Checklist Mục 9 của master prompt. Tick theo tiến độ thật — chỉ báo "xong" khi đạt hết.
+> Reference: [`docs/ARCHITECTURE_V1.md`](./docs/ARCHITECTURE_V1.md), [`docs/MIGRATION_PLAN.md`](./docs/MIGRATION_PLAN.md)
 
-## Giai đoạn 0 — Audit & đóng gói code AI Studio
-- [x] Audit theo PRD 7.4: màu hardcode = 0, pre-select Auto đúng, icon thao tác đủ (ghi DECISIONS.md)
-- [x] Đóng gói vào Next.js app router — `next build` pass (compile + TS + prerender), `next start` HTTP 200, UI render đúng (commit 3294988)
-- [x] 3 file quản lý dự án tồn tại (ARCHITECTURE/DECISIONS/DEFINITION_OF_DONE)
-- [x] Fix lỗi type ẩn: TranslationKey thiếu 18 keys (vi/en), t() trả string[], setSettingsActiveTab thiếu 'appearance', localStorage SSR guard
+## Phase 1 — Foundation ✅
+- [x] Next.js App Router scaffolded (Vercel)
+- [x] Neon PostgreSQL + Drizzle ORM
+- [x] Cloudflare R2 (signed URL upload) — storage-only, không compute
+- [x] JWT auth (`jose` + `bcryptjs`)
+- [x] Project + File model
 
-## Tuần 1-2 — Nền tảng
-- [x] Auth scaffold + JWT routes (login/register/session) + bcrypt password hashing (commit ee5c502)
-- [x] `/api/auth/*` hoạt động, cookie HttpOnly 7 ngày, bcrypt + jose đã cài
-- [x] Google OAuth (GIS + google-auth-library token verification server-side) ✅
-- [x] Schema PRD mục 6 tạo đủ (11 bảng + RLS + indexes) — trên Neon Postgres
-- [x] Tạo Neon project + migrate schema thật + cập nhật `.env.local` `NEON_DATABASE_URL`
-- [x] `/api/health` trả kết nối DB thật (verified 200 OK)
-- [x] Gate Free/Paid/Ultra bằng `profiles.plan` + `processing_minutes_used`/`processing_minutes_limit` (Free=120, Pro=1200, Ultra=6000/phút)
-- [ ] Hàng đợi job nền **Inngest** (Trigger.dev đã loại bỏ) dựng xong, test 1 job giả lập chạy được
+## Phase 2 — File Ingestion ✅ (partial)
+- [x] Direct upload via R2 signed URL
+- [x] Multipart support (basic)
+- [ ] **Resume upload via TUS** (deferred to MediaProcessor abstraction)
+- [x] Job manifest (Inngest)
 
-## Tuần 3-4 — MVP lõi
-- [x] 1 file thật / prompt → transcribe & phân tích thật bằng **Gemini 3.7 Flash (primary) + failover 2.5/2.0** → note Cornell/tóm tắt nhanh → Artifact Panel (commit mới)
-- [x] Copy/Download hoạt động thật (DOCX thật qua docx package, PDF chuẩn print, Markdown, HTML — không placeholder)
-- [x] `content_structured` là nguồn DUY NHẤT để render Preview và sinh mọi file export (MD/DOCX/PDF/HTML)
+## Phase 3 — Processing ⚠️ (in progress)
+- [x] Gemini STT (primary)
+- [x] Groq Whisper v3 Turbo (STT pool #2)
+- [x] 30-60 min chunk + overlap + silence detection
+- [x] ffprobe metadata extraction
+- [ ] **MediaProcessor abstraction** (CloudflareStreamProcessor + ExternalFFmpegProcessor)
+- [ ] DOCX parser (giữ heading/list/table) — partial
+- [ ] PPTX parser (slide-by-slide)
+- [ ] Normalized Content model (Architecture v1 §13)
 
-## Tuần 5-7b — Pipeline file dài 10–25h (theo PRD 3.2b, đã lock 2026-08-20)
-- [ ] Upload file 10–25h → R2 (presigned) → Inngest worker demux `ffmpeg -c:a copy` streaming + segment 30–60p (KHÔNG re-encode)
-- [ ] STT từng chunk (overlap 10–15s + silence detection, trọn vẹn 100%, timestamp đầy đủ) → Map-Reduce → `content_structured` → Neon
-- [ ] YouTube caption client-side (`youtubei.js`); không caption → unsupported
-- [ ] **Dispatcher dùng model USER CHỌN từ AppContext**, rẽ nhánh STT (Gemini native / transcription service cho OpenAI-Claude) ↔ Synthesis; failover cascade 3.7→2.5→2.0 trên 429
-- [ ] Stepper 3 bước + sub-progress + email Resend khi xong; test thực tế 1 file 10h end-to-end
-- [x] Đọc hiểu & Trích xuất nội dung đa định dạng: Tệp mã nguồn, text, markdown (.txt, .md, .json, .py, .ts,...), PDF, DOCX, Video/Audio transcripts và link YouTube/Web ✅
-- [x] Trực quan hóa Markdown phong phú & Khối mã nguồn CodeBlock chuyên nghiệp kèm nút Sao chép 1-Click (`MarkdownView.tsx`) ✅
-- [x] Kiến trúc Dual-Mode AI Agent: Hội thoại suy luận sâu, lập trình Frontend / UI-UX sạch đẹp, tự động thu thập thông tin và kiến tạo Note chuyên sâu ✅
-- [x] Hệ thống 17 templates học thuật chuẩn hóa + Auto Mode + Hạn mức Custom Templates phân cấp rõ ràng ✅
-- [x] Xuất 4 định dạng MD/DOCX/PDF/HTML, preview chuẩn từng cấp độ (Raw / Static HTML / Interactive HTML JS) ✅
+## Phase 4 — Knowledge ⚠️ (in progress)
+- [x] pgvector extension + `source_embeddings` table
+- [x] Chunking cơ bản (~400 từ)
+- [ ] **Knowledge Objects structured extraction** (Architecture v1 §14)
+- [ ] `content_chunks` table với location metadata
+- [ ] Coverage Ledger
+- [ ] Entity normalization
 
-## Tuần 8-9 — UX giữ chân & Thư viện Ghi chú
-- [x] Thư viện Ghi chú (Notes Library) với kiến trúc Living Note (1 Session = 1 Living Note in-place upsert) ✅
-- [x] Fast Switcher "Cuộc trò chuyện gần đây" (Recent Chats) trên Sidebar ✅
-- [x] Cơ chế Lưu trữ & Thùng rác 30 ngày (Trash & Archives) với đếm ngược tự động và Khôi phục 1-Click ✅
-- [x] Chia sẻ Note (Share Link view-only modal) & Ghim Note lên đầu ✅
-- [x] Tối ưu hóa UI/UX: Loại bỏ scrollbar ngang Windows trên toàn bộ Tabs và Filter controls ✅
+## Phase 5 — Summarization ⚠️ (partial)
+- [x] Map-Reduce 2 tầng (STT + Structuring) — basic
+- [ ] **Section summary**
+- [ ] **File summary**
+- [ ] **Cross-file analysis + conflict detection**
+- [ ] **Project summary**
+- [ ] `summaries` table với scope ref
 
-## Tuần 10-11 — Kinh doanh hoá & Phân cấp Gói
-- [x] Master Pricing Matrix & Hạn mức Custom Templates (Free 5 / Pro 25 / Ultra không giới hạn) ✅
-- [x] Dynamic Quota Badges & Nâng cấp thời gian thực trên Sidebar, Settings, Header ✅
-- [x] Webhook ZeroInvoice & Thanh toán VietQR Napas EMVCo payload chuẩn ✅
-- [x] Thanh toán VietQR Tự Động 100% Zero-Click: Polling 2.5s, không cần nút xác nhận thủ công, kích hoạt tức thì ✅
-- [x] Cổng quản trị Admin Coupon bảo vệ nghiêm ngặt chỉ cho phép email chỉ định (`ADMIN_EMAIL`) ✅
-- [x] Coupon CRUD thật qua Admin (role server-side, 100% chiết khấu %, kích hoạt 0đ tức thì) ✅
-- [x] Ràng buộc 1 tài khoản = 1 mã coupon duy nhất (bảng `user_coupons` trên Neon) ✅
-- [x] Zero Tracking realtime payee switch: combobox đổi TK/Ví (bank/MoMo/ZaloPay) per-checkout ✅
-- [x] BYOK & Custom Endpoints đầy đủ: Khóa bảo vệ Verified Providers, Hỗ trợ Đa máy chủ Custom Endpoint (Auto-slug), Optional Default Model, Test connection thực tế qua /api/providers/test và tích hợp Model Selector trên Header ✅
+## Phase 6 — Note System ✅ (partial)
+- [x] 17 templates config-driven (`lib/templates/registry.ts`)
+- [x] Universal Block JSON (heading/paragraph/cue_box/table/card_grid/callout/quote/mindmap)
+- [x] Zod validation
+- [x] Auto-repair loop (max 2 retries)
+- [x] Universal Export Engine (MD/DOCX/PDF/Static HTML/Interactive HTML)
 
-## Tuần 12+ — Khác biệt/nâng cao
-- [ ] Mind map, TTS, action item, đồng bộ Notion/Calendar, spaced repetition
+## Phase 7 — Chat ⚠️ (partial)
+- [x] RAG Chat với pgvector cosine similarity
+- [x] Hybrid (vector + keyword basic)
+- [x] Dynamic Runtime Identity (không hardcode provider/model)
+- [ ] **Hybrid retrieval chuẩn** (vector + keyword + metadata + hierarchy)
+- [ ] **Evidence tracing UI**
+- [ ] Streaming response (chat hiện tại polling/await)
 
-## Launch
-- [ ] Deploy Vercel production, domain hoạt động
-- [ ] Chạy thử luồng chính trọn vẹn: đăng ký → upload → nhận note → nâng cấp → thanh toán thật
+## Phase 8 — Scale ❌ (not started)
+- [ ] 10h+ video benchmark (verify MediaProcessor abstraction)
+- [ ] Multi-file concurrent users stress test
+- [ ] Quota optimization under load
+- [ ] Conflict detection production test
 
----
+## Cross-cutting
 
-## Checklist chung (Mục 9 master prompt) — áp dụng cuối mỗi giai đoạn
-- [ ] 1. Chạy được với dữ liệu thật, không còn mock data sót
-- [ ] 2. RLS bật + test 2 tài khoản (user A không đọc được user B)
-- [ ] 3. Không màu hardcode mới (đổi thử 2-3 theme)
-- [ ] 4. Không API key/secret lộ client bundle (kiểm tra Network tab)
-- [ ] 5. `content_structured` vẫn là nguồn duy nhất
-- [ ] 6. Mọi quyết định tự đưa ra đã ghi DECISIONS.md (bao gồm quyết định model 3.7-primary/failover + pipeline server-cloud + runtime=user-selected)
-- [ ] 7. File này đã cập nhật đúng tiến độ
-- [ ] 8. Test luồng lỗi — không crash trắng trang/treo vô hạn
+### Free-tier / Quota Policy (ADR-007) ⚠️
+- [x] 3 plans (Free/Pro/Ultra)
+- [x] Note count limit (20/50/∞) — server-side check
+- [x] Custom template limit (5/25/∞) — server-side check
+- [ ] **Atomic quota reservation** (SELECT FOR UPDATE)
+- [ ] **90% safety valve**
+- [ ] **Quota table + cron reconciliation**
+- [ ] **Retention cleanup** (xoá file media >500MB sau STT)
+- [x] Zero Tracking billing integration
+
+### Security (ADR-007) ⚠️
+- [x] JWT HS256 HttpOnly cookie
+- [x] RLS policies trên các bảng chính
+- [x] BYOK API key encryption
+- [x] Webhook HMAC verification
+- [x] SSRF protection
+- [ ] **Audit log** (login_failed, quota_exceeded, safety_valve)
+
+### Observability ❌
+- [ ] Stage duration tracking
+- [ ] AI Neurons usage tracking
+- [ ] Retry/failure rate
+- [ ] Quota remaining dashboards
+
+## Acceptance Criteria (Production-Ready)
+
+Một project được coi là "AI đã xử lý toàn bộ" khi:
+
+1. **Upload**: Large file upload resumable (TUS) ✅ (signed URL works for basic cases)
+2. **Processing**: Job can resume / retry / partial failure không restart project ❌ (cần idempotency table)
+3. **AI**: ASR + Knowledge + Summarization + Cross-file synthesis ✅ (basic) / ⚠️ (production)
+4. **Retrieval**: Relevant evidence retrievable ✅ (basic RAG)
+5. **Notes**: Output conforms to Block JSON schema ✅
+6. **Evidence**: Claims map back to source ❌ (cần `evidence` table + UI)
+7. **Multi-file**: Synthesis across formats ✅ (basic)
+8. **Context**: Project > model context mà vẫn xử lý được ✅ (RAG)
+9. **Cost**: Quota prevents uncontrolled cloud spend ❌ (cần safety valve + atomic reservation)
+
+## Definition of Done per Phase
+
+Một phase "done" khi:
+1. Code implemented + tests pass
+2. Schema migration applied to Neon
+3. Documentation updated (canonical reference)
+4. Migration plan updated (gap → resolved)
+5. ADR updated nếu thay đổi quyết định kiến trúc
