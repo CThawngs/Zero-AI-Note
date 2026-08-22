@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
       endpointUrl?: string;
       apiKey?: string;
       sources: {
+        id?: string;
         type: 'pdf' | 'youtube' | 'audio' | 'doc' | 'image' | 'video' | 'text';
         name: string;
         url?: string;
@@ -91,9 +92,11 @@ export async function POST(request: NextRequest) {
     const extractKey = getGeminiApiKey();
     let extractedContent = '';
     let hierarchicalContext = '';
+    let exPerSource: Array<{ sourceName: string; sourceType: string; content: string }> = [];
     if (sources && sources.length > 0 && extractKey) {
       try {
         const ex = await extractAllSources(sources, extractKey);
+        exPerSource = ex.perSource;
         // ── HIERARCHICAL SUMMARIZATION (PRD 4.0.8/3.2d): N nguồn lớn → map-reduce.
         // Dưới ngưỡng → single-pass như cũ (summarize.ts tự quyết).
         try {
@@ -174,6 +177,28 @@ export async function POST(request: NextRequest) {
         console.warn('[generate] stamp batch_group_id failed:', bgErr); // fail-open: coi như file lẻ
       }
     }
+
+    
+
+    // ── KNOWLEDGE OBJECTS + COVERAGE (PRD 4.0.7/4.0.9): per-source extraction.
+    // Fire-and-forget: không chặn response; fail-soft log-only.
+    void (async () => {
+      try {
+        const { getSql } = await import('@/lib/db');
+        const ksql = getSql();
+        const { extractKnowledgeObject, saveKnowledgeObject, upsertCoverage, markCoverage } = await import('@/lib/ai/knowledge');
+        for (const [idx, ps] of exPerSource.entries()) {
+          const srcId = sources[idx]?.id ?? null;
+          await upsertCoverage(ksql, { userId: userId!, sourceId: srcId, notebookId: null });
+          const ko = await extractKnowledgeObject({ inputText: ps.content, sourceName: ps.sourceName, language: language === 'en' ? 'en' : 'vi' });
+          await saveKnowledgeObject(ksql, { userId: userId!, sourceId: srcId, notebookId: null, ko, model });
+          await markCoverage(ksql, srcId, 'knowledge_extracted');
+        }
+        console.log(`[generate] knowledge objects extracted for ${exPerSource.length} sources`);
+      } catch (koErr) {
+        console.warn('[generate] knowledge objects failed (non-fatal):', koErr);
+      }
+    })();
 
     // Call Universal Agent Dispatcher
     const agentRes = await dispatchAgentResponse({
