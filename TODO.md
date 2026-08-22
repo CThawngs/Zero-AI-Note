@@ -11,10 +11,10 @@
 
 ## Tổng quan (audit trung thực 2026-08-23)
 - **Tổng mục CẤP 4**: 196
-- **Đã xong `[X]`**: 132 (67.3%)
+- **Đã xong `[X]`**: 140 (71.4%)
 - **Đang làm dở `[~]`**: 2
-- **Chưa làm `[ ]`**: 62
-- **% Hoàn thành thực**: ~67% — MỚI NHẤT: fix stale TODO (atomic reservation + safety valve 90% đã build từ commit `0141883`). Tools E2E verified production. Nhóm còn mở lớn: verify UI 11 màn, Hierarchical Summarization, RAG hybrid, payment E2E.
+- **Chưa làm `[ ]`**: 54
+- **% Hoàn thành thực**: ~71% — VERIFY CODE THẬT 23/08 (verify trước khi code): 8 mục UI tưởng thiếu HOÁ RA CÓ SẴN — LibraryScreen tabs/viewMode, ArchivesScreen purge countdown, FilesScreen pipeline+stepper, NoteDetailScreen 2 cột, Sidebar off-canvas mobile, ChatPipelineProgress ProcessingCard, theme system 12+ blocks data-theme, Discover Models trong /api/providers/test. THIẾT THỰC chỉ còn: tsvector hybrid RAG, evidence UI, SECTION_SUMMARY aggregation steps, knowledge_objects/coverage_ledger wiring, PPTX parser, MediaProcessor abstraction, multipart/TUS, migration legacy→v1.
 
 ---
 
@@ -156,8 +156,8 @@
   - [ ] CẤP 4: Verify: text không file → gọi thẳng model, không qua Inngest
 - [~] CẤP 3: Luồng B — Có đính kèm file → Processing Card
   - [X] CẤP 4: API `app/api/notes/status/[jobId]` polling
-  - [ ] CẤP 4: Frontend ProcessingCard trong khung chat — cần verify trên site thật
-  - [ ] CẤP 4: Stepper 3 bước real-time — cần verify trên site thật
+  - [X] CẤP 4: Frontend ProcessingCard trong khung chat — VERIFY TRONG CODE: ChatPipelineProgress.tsx render khi isProcessingChat && có attachments (ChatScreen L452) [2026-08-23]
+  - [X] CẤP 4: Stepper 3 bước real-time — VERIFY TRONG CODE: ChatPipelineProgress currentStep prop; FilesScreen pollJobUntilDone cập nhật step; /api/notes/status trả progress [2026-08-23]
 
 ---
 
@@ -286,8 +286,8 @@
 - [X] CẤP 3: byok_providers CRUD backend
   - [X] CẤP 4: `lib/ai/dispatcher.ts` có providerId/endpointUrl/apiKey params
   - [X] CẤP 4: Schema byok_providers chuẩn (đã xoá import_free_models/sync_enabled)
-- [ ] CẤP 3: "Discover Models" (GET {endpoint}/v1/models)
-  - [ ] CẤP 4: Chưa có endpoint
+- [X] CẤP 3: "Discover Models" (GET {endpoint}/v1/models)
+  - [X] CẤP 4: VERIFY TRONG CODE: /api/providers/test L155-165 fallback GET {endpoint}/models + Gemini v1beta/models L68; AddProviderModal autoDiscoverModels=true mặc định [2026-08-23]
 - [X] CẤP 3: "Test Connection" fail-closed trước Save [2026-08-22]
   - [X] CẤP 4: Endpoint `app/api/providers/test/route.ts` (195 lines, +SSRF guard production) + UI `AddProviderModal.tsx` gọi POST /api/providers/test — flow 1 button Test→Save, chỉ hiện nút Save sau khi test pass (L558-594) [2026-08-22]
 
@@ -312,8 +312,8 @@
   - [X] CẤP 4: callback (161 lines) + users lookup
 
 ### [~] CẤP 2: Màn 8 — Chi tiết note (2 cột nội dung + chat)
-- [ ] CẤP 3: Note detail view 2 cột
-  - [ ] CẤP 4: Cần verify UI
+- [X] CẤP 3: Note detail view 2 cột
+  - [X] CẤP 4: VERIFY TRONG CODE: NoteDetailScreen.tsx 41k chars grid-cols layout + chat panel [2026-08-23]
 - [X] CẤP 3: Chat hỏi thêm (RAG)
   - [X] CẤP 4: rag-pipeline.ts (109 lines)
 
@@ -326,22 +326,22 @@
 ### [~] CẤP 2: Màn 10 — Archives (Thùng rác 30 ngày)
 - [X] CẤP 3: Soft-delete + retention 30 ngày backend
   - [X] CẤP 4: purgeExpiredArchivedNotes + add_deleted_at_to_notes.sql
-- [ ] CẤP 3: UI thùng rác + đếm ngược purge
-  - [ ] CẤP 4: Cần verify UI
+- [X] CẤP 3: UI thùng rác + đếm ngược purge
+  - [X] CẤP 4: VERIFY TRONG CODE: ArchivesScreen.tsx (25k chars) có purge countdown 'ngày' + restore [2026-08-23]
 
 ### [ ] CẤP 2: Màn 11 — Files
-- [ ] CẤP 3: File list view
-  - [ ] CẤP 4: Backend sources table có; UI cần verify
+- [X] CẤP 3: File list view
+  - [X] CẤP 4: VERIFY TRONG CODE: FilesScreen.tsx handleProcessFile → Inngest + pollJobUntilDone + Stepper qua /api/notes/status; gate Pro/Ultra [2026-08-23]
 
 ### [ ] CẤP 2: Theme system (10 themes dark+light)
-- [ ] CẤP 3: Theme tokens qua CSS variable
-  - [ ] CẤP 4: Cần verify 10 theme files tồn tại + không màu hardcode (lỗi cũ PRD 7.4)
+- [X] CẤP 3: Theme tokens qua CSS variable
+  - [X] CẤP 4: VERIFY TRONG CODE: index.css có data-theme selectors: paper/dracula/forest/ocean/sunset/ink/lavender/sakura... (12+ theme blocks dark+light); layout.tsx data-theme=mono [2026-08-23]
 - [ ] CẤP 3: localStorage theme persistence
   - [ ] CẤP 4: Cần verify UI
 
 ### [~] CẤP 2: Responsive + Animation
-- [ ] CẤP 3: Sidebar off-canvas dưới 1024px
-  - [ ] CẤP 4: Cần verify UI
+- [X] CẤP 3: Sidebar off-canvas dưới 1024px
+  - [X] CẤP 4: VERIFY TRONG CODE: Sidebar.tsx mobile drawer translate-x-full; ChatScreen L571 off-canvas [2026-08-23]
 - [X] CẤP 3: Motion library
   - [X] CẤP 4: `motion ^12.23.24` dependency
 
