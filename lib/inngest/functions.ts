@@ -110,3 +110,30 @@ export const r2RetentionPurge = inngest.createFunction(
     return { purged };
   }
 );
+
+/**
+ * Cron hằng ngày 03:30 VN: quota reconciliation (Architecture v1 §21).
+ * Ngày mới tự có row mới (unique per period_start) nên việc chính là
+ * dọn row lịch sử >35 ngày. ponytail: orphaned reservations (job fail
+ * sau retries mà release không chạy) chưa track được per-job — cần
+ * quotas.job_link khi đo đếm chính xác từng lõi.
+ */
+export const quotaReconcile = inngest.createFunction(
+  {
+    id: 'quota-reconcile',
+    name: 'Daily Quota Reconciliation',
+    triggers: [{ cron: 'TZ=Asia/Ho_Chi_Minh 30 3 * * *' }],
+  },
+  async ({ step }) => {
+    const deleted = await step.run('purge-stale-quota-rows', async () => {
+      const sql = getSql();
+      const rows = (await sql`
+        delete from quotas
+        where period_start < current_date - interval '35 days'
+        returning id
+      `) as unknown as { id: string }[];
+      return rows.length;
+    });
+    return { deleted };
+  }
+);

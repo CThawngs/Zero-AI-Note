@@ -1,6 +1,6 @@
 import { serve } from 'inngest/next';
 import { inngest } from '@/lib/inngest/client';
-import { processNotePipeline, r2RetentionPurge } from '@/lib/inngest/functions';
+import { processNotePipeline, r2RetentionPurge, quotaReconcile } from '@/lib/inngest/functions';
 
 /**
  * Inngest serve endpoint — cho phép Inngest Cloud gọi vào worker.
@@ -8,5 +8,5 @@ import { processNotePipeline, r2RetentionPurge } from '@/lib/inngest/functions';
  */
 export const { GET, POST, PUT } = serve({
   client: inngest,
-  functions: [processNotePipeline, r2RetentionPurge],
+  functions: [processNotePipeline, r2RetentionPurge, quotaReconcile],
 });

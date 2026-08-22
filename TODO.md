@@ -11,10 +11,10 @@
 
 ## Tổng quan (audit trung thực 2026-08-22)
 - **Tổng mục CẤP 4**: 180
-- **Đã xong `[X]`**: 113 (62.8%)
+- **Đã xong `[X]`**: 114 (63.3%)
 - **Đang làm dở `[~]`**: 1
-- **Chưa làm `[ ]`**: 66
-- **% Hoàn thành thực**: ~63% — audit: cha chỉ `[X]` khi 100% con `[X]`. Mới: verify quota/coupon/Test-Connection; implement BYOK AES-256-GCM + SSRF + template gating + retention >500MB + atomic quota reservation + 90% safety valve + Inngest cron.
+- **Chưa làm `[ ]`**: 65
+- **% Hoàn thành thực**: ~63% — audit: cha chỉ `[X]` khi 100% con `[X]`. Mới xong: security (BYOK AES/SSRF), template gating, retention + cron R2, atomic quota + safety valve + reconcile cron.
 
 ---
 
@@ -75,8 +75,8 @@
   - [ ] CẤP 4: Chưa có `lib/quota/reserve.ts` + `release.ts`
 - [X] CẤP 3: 90% safety valve (auto-pause khi quota đạt ngưỡng) [2026-08-22]
   - [X] CẤP 4: Trong reserveQuota: committed+reserved ≥ floor(limit×0.9) → từ chối job mới với pausedByValve=true + message 'quá tải tạm thời' (khác message hết quota thường) [2026-08-22]
-- [ ] CẤP 3: Daily cron quota reconciliation
-  - [ ] CẤP 4: Chưa có — cron Inngest đầu tiên đã wire cho R2 retention ('r2-retention-purge', 03:00 VN daily); reconcile quotas (reset consumed/reserved sang period mới) vẫn pending
+- [X] CẤP 3: Daily cron quota reconciliation [2026-08-22]
+  - [X] CẤP 4: MỚI `quotaReconcile` (Inngest cron 03:30 VN daily, register /api/inngest): delete quotas row >35 ngày (returning id đếm số). Ngày mới tự có row mới nhờ unique(user,resource,period_start). ponytail: orphaned reservation per-job cần quotas.job_link — ghi trong code comment [2026-08-22]
 
 ---
 
