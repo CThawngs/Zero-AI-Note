@@ -11,10 +11,10 @@
 
 ## Tổng quan (audit trung thực 2026-08-23)
 - **Tổng mục CẤP 4**: 196
-- **Đã xong `[X]`**: 130 (66.3%)
+- **Đã xong `[X]`**: 132 (67.3%)
 - **Đang làm dở `[~]`**: 2
-- **Chưa làm `[ ]`**: 64
-- **% Hoàn thành thực**: ~66% — MỚI NHẤT (23/08 tối): TOOLS SỐNG TRÊN PRODUCTION qua OpenRouter FC fallback — get_weather + web_search E2E verified (weather 25.1°C, giá vàng SJC, usage row ghi Neon); bảng `usage` tạo thật trên DB legacy; Gemini vẫn 401 (key sai loại — user chờ xử lý). Nhóm Tool-calling Chat Assistant ĐÓNG FULL.
+- **Chưa làm `[ ]`**: 62
+- **% Hoàn thành thực**: ~67% — MỚI NHẤT: fix stale TODO (atomic reservation + safety valve 90% đã build từ commit `0141883`). Tools E2E verified production. Nhóm còn mở lớn: verify UI 11 màn, Hierarchical Summarization, RAG hybrid, payment E2E.
 
 ---
 
@@ -384,8 +384,8 @@
 - [ ] CẤP 3: Project file/duration/storage enforcement
   - [ ] CẤP 4: permissions.ts (207 lines) tồn tại — cần verify đủ check cho projects/files/duration/storage
   - [ ] CẤP 4: Trả lỗi rõ ràng khi vượt plan limit, đề xuất nâng gói
-- [ ] CẤP 3: Atomic reservation SELECT FOR UPDATE
-  - [ ] CẤP 4: Chưa có
+- [X] CẤP 3: Atomic reservation SELECT FOR UPDATE
+  - [X] CẤP 4: `lib/quota/reserve.ts` (132 lines) reserve/commit/release atomic `FOR UPDATE` trên bảng quotas — commit `0141883`, test 7/7 PASS [2026-08-23]
 
 ---
 
@@ -426,9 +426,9 @@
 - [X] CẤP 3: Billing webhook signature verified
   - [X] CẤP 4: webhook route (160 lines)
 
-### [ ] CẤP 2: Quota safety valve (PRD mục 3.3)
-- [ ] CẤP 3: 90% valve enforce
-  - [ ] CẤP 4: PRD chốt concept; code chưa có (defer sau deadline)
+### [X] CẤP 2: Quota safety valve (PRD mục 3.3)
+- [X] CẤP 3: 90% valve enforce
+  - [X] CẤP 4: `pausedByValve` trong `lib/quota/reserve.ts` — reserve trả flag khi usage >= 90% limit; wire vào processNotePipeline commit `0141883` [2026-08-23]
 
 ---
 
