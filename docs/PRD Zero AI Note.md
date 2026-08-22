@@ -141,7 +141,7 @@ User gửi file/link/text + (tùy chọn) chỉ định phương pháp
 Xử lý nặng chạy trên Inngest worker bất đồng bộ (không tại Vercel sync request / client):
 1. **Direct upload → R2**: Trình duyệt đẩy thẳng file gốc lên Cloudflare R2 qua Signed URL.
 2. **Inngest job trigger → MediaProcessor (InngestFFmpeg)**: Demux luồng audio bằng `ffmpeg -c:a copy` (streaming copy, KHÔNG re-encode) + segment thành chunk 30–60 phút (overlap 10–15s + silence detection) ghi lên R2. File gốc lớn khiến 1 lần tải+demux vượt 300s → đọc theo HTTP Range Request từng đoạn nhỏ, mỗi đoạn 1 Inngest step riêng (fan-out), để nằm trong giới hạn timeout 300s của Vercel Function (Hobby + Fluid Compute).
-3. **Keyframes**: Chạy scene-change detection theo từng segment 30-60p, gán timestamp cộng dồn.
+3. **Keyframes**: Chạy scene-change detection theo từng segment 30-60p, gán timestamp cộng dồn. Implement (2026-08-23): `ffmpeg -i segment.mp4 -vf "select='gt(scene,0.3)',showinfo" -f null -` chạy TỪNG segment đã demux (không chạy trên file gốc nguyên khối) — output frame pts chuyển thành timestamp giây + offset của segment. Ngưỡng scene 0.3 chỉnh được theo loại nội dung.
 4. **ASR / Transcription**: Mọi transcribe — bất kể user chọn BYOK nào (Gemini/OpenAI/Claude/khác) để xử lý chat/note-generation phía sau — đều LUÔN chạy qua Gemini API key dùng chung của hệ thống ở bước STT này. Lý do: transcribe là hạ tầng ngầm tách biệt khỏi lựa chọn model của user, không cần khớp. Sau khi có transcript sạch, mới chuyển tiếp cho model user đã chọn xử lý cấu trúc hoá/chat (mục 3.2c).
 5. **Map-Reduce 2 tầng**: Ghép transcript có timestamp (Tầng 1) → Chia section 3k-5k từ → Note Generator sinh Local Blocks → Reduce gộp thành Global Note (Tầng 2).
 6. **RAG pgvector**: Chunk transcript (400 từ) → Embed → Lưu `source_embeddings`. Câu hỏi sau đó trong chat query Cosine similarity Top-K chunks đưa vào context Chat Assistant (tiết kiệm 95% token).
@@ -298,6 +298,14 @@ MediaProcessor
 
 Không cần selection logic — chỉ 1 implementation. Giữ interface `MediaProcessor` (ADR-002) để dễ mở rộng sau này nếu cần processor khác.
 
+**Chi tiết kỹ thuật InngestFFmpegProcessor (2026-08-23, DECISIONS.md §31)**:
+- `inspect(key)`: HEAD object R2 — trả size/mime/duration ước tính, không tải body.
+- `extractAudio(key)`: ffmpeg `-vn -c:a copy` (stream copy, KHÔNG re-encode) — output `.m4a`/`.aac` tùy container nguồn; đọc R2 qua HTTP Range từng chunk 500MB/step để nằm trong 300s/step (Vercel Fluid Compute).
+- `createSegments(key, targetMinutes=45)`: demux theo keyframe (`-f segment -segment_time 2700 -c copy -avoid_negative_ts make_zero`) — cắt theo keyframe nên không re-encode, segment thực tế 30-60p.
+- `getStatus(jobId)`: đọc progress từ Inngest step state.
+- `handleFailure(err)`: phân loại — file hỏng (ffmpeg exit ≠0 + log "Invalid data") → mark source `error` lý do thân thiện; timeout → retry step (Inngest retries=2); quota hết → `require_upgrade`.
+- Chỉ kích hoạt cho file audio/video ≥ ngưỡng (xem 4.1 multipart): file nhỏ hơn đi đường `extract.ts` Gemini native như hiện tại.
+
 Nếu processor không khả dụng → `queue | pause | require_upgrade`. **Không auto-charge**.
 
 #### 4.0.5 Normalized Content Model
@@ -424,8 +432,7 @@ Pipeline RAG + Hierarchical xử lý project 700k+ tokens với model 128K conte
 - **Upload qua Presigned URL**: Trình duyệt client gọi API Route `/api/upload/presign` (chỉ cần tên file + loại + size) → nhận URL Presigned từ R2 → **đẩy thẳng file lên Cloudflare R2** (không qua server Next.js). Server chỉ lưu `file_url` (R2 key) trong table `sources`.
 - **Bóc tách Audio trên worker cloud (cho file Video tải lên trực tiếp)**: Sau khi file gốc lên R2, **Inngest worker** chạy `ffmpeg -c:a copy` streaming + segment 30–60p để tách luồng âm thanh (KHÔNG re-encode, không chạy FFmpeg.wasm/MEMFS tại client — client không nuốt nổi file 2–20GB). Kết quả audio chunk (~14MB/chunk) đẩy thẳng lên R2. Worker chạy bất đồng bộ, vượt giới hạn Vercel 60s & Lambda 15'/tmp 10GB.
 - **Link YouTube**: caption fetch **tại client** qua `youtubei.js` (IP dân, tránh Google IP-block trên cloud). Ưu tiên phụ đề có sẵn (0đ, 0 compute); **không có caption → unsupported** (backend không tải audio YouTube vì CORS + IP-block cloud). Không tải video 4K full.
-
-### 4.2 Điều khiển output
+- **Upload ngưỡng (2026-08-23)**: file ≤100MB → PUT trực tiếp qua `/api/upload/put` (presigned, 1 request). File >100MB → multipart qua `@aws-sdk/lib-storage` Upload class (S3-compatible, R2 hỗ trợ native) — part 10MB, resume được khi mất kết nối giữa chừng. Ngưỡng 100MB chọn vì: PUT đơn đã chạy ổn tới ~95MB thực tế, multipart chỉ bật khi thật cần.### 4.2 Điều khiển output
 - Chọn phương pháp ghi chú qua ngôn ngữ tự nhiên trong prompt: Cornell, Outline, Mindmap dạng text, Q&A, Flashcard, tóm tắt điều hành, tóm tắt nhanh, hoặc custom template
 - **Chế độ "Auto" (mặc định)**: khi user không chỉ định phương pháp cụ thể (không chọn pill, không nhắc trong prompt), AI tự phân tích nội dung nguồn và chọn phương pháp phù hợp nhất (ví dụ: bài giảng có cấu trúc rõ → Cornell; tài liệu nghiên cứu dài → tóm tắt điều hành) — **không cần dừng lại hỏi user** trong phần lớn trường hợp, hiển thị rõ "AI đã chọn: [phương pháp]" trong bước xử lý để user biết lý do. Chỉ hỏi lại trong chat khi nội dung thật sự mơ hồ (kể cả AI cũng không đủ tin cậy để tự quyết) — đây là fallback hiếm gặp, không phải hành vi mặc định.
   - **Chống lách gói (Tier Bypass) — bắt buộc**: System Prompt của bộ điều hướng (Router Prompt) phải quy định: *"Chế độ Auto chỉ được phép tự động chọn trong phạm vi các template mà gói tài khoản hiện tại của user sở hữu. User Free chỉ Auto trong 3 template Free (Cornell/Outline/Tóm tắt tổng quan); User Pro Auto trong 9 template Free+Pro; User Ultra Auto trong toàn bộ 17 template."* Nếu nội dung phù hợp template trả phí mà user chưa sở hữu → Auto chọn template Free gần nhất + gợi ý nâng cấp, **không tự ý mở khoá trả phí**.

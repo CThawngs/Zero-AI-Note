@@ -635,7 +635,25 @@ Lý do:
 
 ---
 
-## 31. References
+## 31. MediaProcessor + Multipart upload + Keyframes (2026-08-23)
+
+### Quyết định
+1. **InngestFFmpegProcessor** là implementation DUY NHẤT của interface `MediaProcessor` (ADR-002) — không selection logic, giữ interface để mở rộng sau.
+2. **HTTP Range chunking: đọc từng 500MB/step.** Căn cứ: Vercel Fluid Compute step ≤300s; băng thông R2→Function thực tế ~5-15MB/s → 500MB an toàn trong ~35-100s, dư biên cho ffmpeg pipe. File >500MB tự động tách nhiều step fan-out.
+3. **Segment bằng stream copy (`-c:a copy`, `-segment_time 2700`)**: cắt theo keyframe nên không re-encode — nhanh gấp hàng chục lần, CPU gần 0. Segment thực tế 30-60p tuỳ vị trí keyframe; overlap/silence detection bỏ qua ở MVP vì ASR Gemini native chịu được ch overlap nhẹ.
+4. **Ngưỡng kích hoạt MediaProcessor vs extract.ts**: file audio/video ≥100MB (trùng ngưỡng multipart upload) → MediaProcessor; dưới ngưỡng → Gemini native multimodal đọc trực tiếp như hiện tại (`extract.ts` giữ nguyên cho PDF/DOCX/PPTX/ảnh/web/YouTube). Lý do: Gemini inline đã xử lý tốt file nhỏ; pipeline ffmpeg chỉ đáng bật khi file lớn mà Gemini từ chối/tốn kém.
+5. **Multipart upload >100MB**: dùng `@aws-sdk/lib-storage` Upload class (S3-compatible API, R2 hỗ trợ native) thay vì TUS protocol riêng — ít dependency hơn, client chỉ cần fetch chuẩn, part 10MB resume tự động. TUS defer (đã ghi TODO trước đó).
+6. **Keyframes per-segment**: scene detection chạy trên từng segment đã demux, KHÔNG chạy trên file gốc — mỗi segment 1 step, nằm trong 300s; timestamp = frame pts + offset cộng dồn.
+
+### Files kế hoạch
+- `lib/media/processor.ts` (interface MediaProcessor)
+- `lib/media/inngest-ffmpeg-processor.ts` (implementation)
+- Wire `lib/inngest/functions.ts` step mới TRƯỚC ASR cho audio/video ≥100MB
+- Upload: `app/api/upload/presign/route.ts` thêm nhánh multipart
+
+---
+
+## 32. References
 - [Neon Documentation](https://neon.tech/docs)
 - [Drizzle ORM](https://orm.drizzle.team)
 - [gitleaks](https://github.com/gitleaks/gitleaks)
