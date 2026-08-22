@@ -10,11 +10,11 @@
 - Mỗi mục CẤP 3 phải có ≥1 CẤP 4 con cụ thể.
 
 ## Tổng quan (audit trung thực 2026-08-22)
-- **Tổng mục CẤP 4**: 180
-- **Đã xong `[X]`**: 114 (63.3%)
-- **Đang làm dở `[~]`**: 1
-- **Chưa làm `[ ]`**: 65
-- **% Hoàn thành thực**: ~63% — audit: cha chỉ `[X]` khi 100% con `[X]`. Mới xong: security (BYOK AES/SSRF), template gating, retention + cron R2, atomic quota + safety valve + reconcile cron.
+- **Tổng mục CẤP 4**: 182
+- **Đã xong `[X]`**: 116 (63.7%)
+- **Đang làm dở `[~]`**: 2
+- **Chưa làm `[ ]`**: 64
+- **% Hoàn thành thực**: ~64% — MỚI NHẤT: file extraction thật (Gemini multimodal/mammoth/reader/YouTube) + agent tools (Google Search grounding + read_web_page) + chatOnly fallback. BLOCKER: GEMINI_API_KEY (local + Vercel) sai loại — cần AI Studio key AIza...
 
 ---
 
@@ -127,12 +127,15 @@
   - [X] CẤP 4: Không cần Groq client — đã bỏ theo quyết định đơn giản hoá
 - [X] CẤP 3: STT Map-Reduce
   - [X] CẤP 4: `lib/ai/map-reduce/stt-map-reduce.ts` (101 lines) — chunk 30-45p + overlap 30s
+- [X] CẤP 3: Wire extraction thật vào /api/notes/generate [2026-08-22]
+  - [X] CẤP 4: MỚI `lib/ai/extract.ts`: PDF/image/audio/video inline ≤18MB qua Gemini multimodal (cascade flash-latest→2.0→2.5-lite), YouTube fileData native, web r.jina.ai, DOCX mammoth; transcript LƯU sources.transcript cho pipeline/RAG; fail per-source không chết request [2026-08-22]
+  - [~] CẤP 4: E2E verify với file thật CHƯA chạy được — GEMINI_API_KEY local lẫn Vercel đều sai loại (OAuth token AQ.A... thay vì AI Studio AIza...) → production đang sống nhờ OpenRouter fallback; cần user tạo key mới aistudio.google.com/apikey [2026-08-22]
 - [ ] CẤP 3: Keyframes (scene-change detection)
   - [ ] CẤP 4: Chưa có ffmpeg scene detection integration
 
 ### [ ] CẤP 2: DOCX/PPTX parsers
-- [ ] CẤP 3: DOCX parser (giữ heading/list/table)
-  - [ ] CẤP 4: Chưa có — cần `mammoth` hoặc tương đương
+- [X] CẤP 3: DOCX parser (giữ heading/list/table) [2026-08-22]
+  - [X] CẤP 4: MỚI `mammoth` dep + wire trong `lib/ai/extract.ts` extractSource() — download R2 → extractRawText; PPTX vẫn [ ] (cần thư viện riêng) [2026-08-22]
 - [ ] CẤP 3: PPTX parser (slide-by-slide)
   - [ ] CẤP 4: Chưa có
 
