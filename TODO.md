@@ -11,10 +11,10 @@
 
 ## Tổng quan (audit trung thực 2026-08-23)
 - **Tổng mục CẤP 4**: 196
-- **Đã xong `[X]`**: 140 (71.4%)
+- **Đã xong `[X]`**: 144 (73.5%)
 - **Đang làm dở `[~]`**: 2
-- **Chưa làm `[ ]`**: 54
-- **% Hoàn thành thực**: ~71% — VERIFY CODE THẬT 23/08 (verify trước khi code): 8 mục UI tưởng thiếu HOÁ RA CÓ SẴN — LibraryScreen tabs/viewMode, ArchivesScreen purge countdown, FilesScreen pipeline+stepper, NoteDetailScreen 2 cột, Sidebar off-canvas mobile, ChatPipelineProgress ProcessingCard, theme system 12+ blocks data-theme, Discover Models trong /api/providers/test. THIẾT THỰC chỉ còn: tsvector hybrid RAG, evidence UI, SECTION_SUMMARY aggregation steps, knowledge_objects/coverage_ledger wiring, PPTX parser, MediaProcessor abstraction, multipart/TUS, migration legacy→v1.
+- **Chưa làm `[ ]`**: 50
+- **% Hoàn thành thực**: ~73% — MỚI NHẤT: Hierarchical Summarization map-reduce XONG (`lib/ai/summarize.ts`, threshold gate >24k chars/>3 nguồn, conflict detection 2 phía không chọn truth, test 11/11). Verify-before-code đã đóng 9 mục UI có sẵn. Còn mở chính: knowledge_objects/coverage_ledger wiring, PPTX parser, tsvector hybrid RAG.
 
 ---
 
@@ -233,15 +233,15 @@
 - [X] CẤP 3: Export orchestrator
   - [X] CẤP 4: `lib/export/index.ts` (65 lines) — exportNote() switch theo format
 
-### [ ] CẤP 2: Hierarchical Summarization (PRD mục 4.0.8, Phase 5)
-- [ ] CẤP 3: Section-level aggregation
-  - [ ] CẤP 4: Chưa có CREATE_SECTION_SUMMARY job step
-- [ ] CẤP 3: File-level aggregation
-  - [ ] CẤP 4: Chưa có
-- [ ] CẤP 3: Cross-file synthesis + conflict detection
-  - [ ] CẤP 4: Chưa có conflicts table usage
-- [ ] CẤP 3: Project-level summary
-  - [ ] CẤP 4: Chưa có
+### [X] CẤP 2: Hierarchical Summarization (PRD mục 4.0.8, Phase 5)
+- [X] CẤP 3: Section-level aggregation
+  - [X] CẤP 4: `lib/ai/summarize.ts` — MAP stage: mỗi source → section summary (dispatcher isInternalTask, giữ key quotes làm evidence theo 4.0.8); test 11/11 PASS [2026-08-23, commit e26e176]
+- [X] CẤP 3: File-level aggregation
+  - [X] CẤP 4: REDUCE stage: ghép section summaries + evidence quotes → synthesizedContext; wire vào generate route thay raw dump khi >24k chars hoặc >3 nguồn; dưới ngưỡng tự single-pass không tốn LLM [2026-08-23]
+- [X] CẤP 3: Cross-file synthesis + conflict detection
+  - [X] CẤP 4: Unicode-aware number-conflict heuristic (>20% lệch số liệu + word overlap) — liệt kê CẢ HAI phía nguồn, KHÔNG tự chọn truth (đúng 4.0.10); conflicts inject vào prompt tạo note với chỉ dẫn trung lập [2026-08-23]
+- [X] CẤP 3: Project-level summary (scope legacy schema)
+  - [X] CẤP 4: Synthesized context cấp batch N nguồn trong 1 request = tương đương project-level trên legacy `sources` (chưa có bảng projects); nâng cấp đầy đủ khi migrate v1 [2026-08-23]
 
 ### [ ] CẤP 2: Knowledge Objects + Coverage Ledger (PRD mục 4.0.7, 4.0.9)
 - [ ] CẤP 3: `knowledge_objects` table populated

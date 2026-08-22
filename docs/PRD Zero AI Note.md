@@ -168,6 +168,8 @@ Xử lý nặng chạy trên Inngest worker bất đồng bộ (không tại Ver
 - Stage 5: Cross-file Synthesis
 - Stage 6: Project Note Generation
 
+**Implementation Stage 3-5 (2026-08-23, `lib/ai/summarize.ts`)**: N nguồn >24k chars tổng hoặc >3 nguồn → MAP (summary per source, giữ key quotes làm evidence) → REDUCE (synthesis + conflict detection số liệu >20% giữa các nguồn — liệt kê cả 2 phía, không tự chọn truth theo 4.0.10). Dưới ngưỡng tự single-pass. Test `scripts/test-summarize.ts` 11/11 PASS.
+
 ### 3.2e RAG & pgvector Architecture
 - Vector embedding (pgvector Cosine similarity) + Keyword (tsvector) + Metadata + Hierarchy-aware.
 - Context window independence: RAG vẫn hoạt động với cả 1M context để giảm cost, latency và tăng evidence precision.

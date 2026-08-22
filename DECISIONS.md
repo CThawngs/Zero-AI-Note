@@ -565,7 +565,28 @@
 
 ---
 
-## 27. References
+## 27. Hierarchical Summarization Map-Reduce (2026-08-23)
+
+### Decision
+- N nguồn lớn (>24k chars tổng HOẶC >3 nguồn) → map-reduce 2 tầng thay vì nhét thẳng 400k chars vào prompt.
+- Dưới ngưỡng → single-pass như cũ: không tốn thêm LLM call, không đổi hành vi.
+
+### Thiết kế (PRD 4.0.8 + 3.2d Stage 3-5 + 4.0.10)
+- **MAP** (`mapSource`): mỗi source → summary tối đa 12 bullets qua `dispatchAgentResponse` với `isInternalTask: true` (bỏ agent-tools pass — tóm tắt nội bộ không cần web/weather). Fail chain: dispatcher → OpenRouter chatOnly → heuristic compression (cắt 3k chars đầu). Fail-soft: 1 nguồn chết không chết pipeline.
+- **Evidence giữ nguyên (4.0.8)**: mỗi section summary kèm `keyQuotes` trích CỤM GỐC (heuristic ưu tiên câu có số liệu/%/tiền) — summary luôn truy ngược được raw source, không flatten summary→summary.
+- **REDUCE conflict detection (4.0.10)**: heuristic unicode-aware — 2 câu từ KHÁC nguồn cùng chủ đề (word overlap ≥2 từ) nhưng số liệu lệch >20% → ghi nhận conflict, liệt kê CẢ HAI PHÍA vào prompt với chỉ dẫn "KHÔNG tự chọn bên đúng, trình bày trung lập". Cap 8 conflicts chống nhiễu.
+- **Project-level scope**: trên legacy schema `sources` (chưa có projects), synthesized context của batch N nguồn trong 1 request là mức tương đương; nâng cấp đầy đủ khi migrate v1 tables.
+
+### Files
+- `lib/ai/summarize.ts` (mới, ~230 lines): threshold gate, split sections (heading-aware, fallback 1800-char chunks), mapSource, detectConflicts, runHierarchicalSummarization.
+- `lib/ai/extract.ts`: `extractAllSources` trả thêm `perSource[]` để map riêng từng nguồn.
+- `app/api/notes/generate/route.ts`: hierarchical context inject thay raw dump khi active.
+- `lib/ai/dispatcher.ts`: `AIModelRequest.isInternalTask` — caller nội bộ bỏ qua agent pass.
+- Test: `scripts/test-summarize.ts` 11/11 PASS (threshold, split, quotes, conflict 2 phía, cùng-nguồn-không-conflict, single-pass path).
+
+---
+
+## 28. References
 - [Neon Documentation](https://neon.tech/docs)
 - [Drizzle ORM](https://orm.drizzle.team)
 - [gitleaks](https://github.com/gitleaks/gitleaks)
