@@ -551,11 +551,17 @@
 
 ### Fallback chain chat request (cập nhật 23/08 sau khi Gemini rate-limit kéo dài)
 1. Gemini agent-loop (tools đầy đủ) →
-2. **OpenRouter agent-loop với tools** (`model: openrouter/free`, format OpenAI-compatible FC) — identity khai báo trung thực "OpenRouter free fallback" →
+2. **OpenRouter agent-loop với tools** (`model: openrouter/free`, format OpenAI-compatible FC) — đặt ở CẢ 2 chỗ: dispatcher-level VÀ trong catch của `gemini.ts` (vì gemini.ts tự bắt lỗi agent pass trước khi ném lên dispatcher) — identity khai báo trung thực "OpenRouter free fallback" →
 3. OpenRouter chatOnly thuần (không tools, trung thực nói không tra cứu được) →
 4. Legacy engines (note JSON / autonomous local).
-Lý do tầng 2: Gemini rate-limit chờ reset không được để user mất luôn tính năng agent — free models OpenRouter nhận `tools` chuẩn OpenAI; nếu model free hiện tại không gọi tool tốt thì tự trả lời text, không crash.
-- Test: `scripts/test-tools.ts` 16/16 PASS (get_weather LIVE Hà Nội 25.2°C mưa phùn khớp curl trực tiếp; Tavily mock; 3 format schema); `scripts/test-chat-prompt.ts` 13/13 PASS; production curl xác nhận identity + weather trả đúng trọng tâm qua fallback.
+
+### E2E PRODUCTION VERIFIED (23/08 tối, qua OpenRouter free vì Gemini 401)
+- `get_weather`: "Thời tiết Hà Nội" → **25.1°C, mưa rào, gió 16.9 km/h, độ ẩm 94%** — khớp live Open-Meteo.
+- `web_search`: "Giá vàng hôm nay" → giá SJC thật (~146.6 triệu/lượng bán ra); usage row `tavily_search` 1 credit GHI THÀNH CÔNG vào Neon (verify bằng query trực tiếp).
+- Identity: trả lời trung thực "đang chạy OpenRouter free — chế độ dự phòng vì Gemini tạm thời không khả dụng".
+- ⚠️ Bảng `usage` CHƯA tồn tại trên DB legacy thật (schema-neon.sql là thiết kế v1 chưa migrate) — đã tạo bảng tối giản (provider/model/operation/tokens/timestamp + index) bằng migration runtime; recordTavilyUsage fail-soft nên trước đó im lặng bỏ qua.
+- Root cause Gemini: log production cho thấy **401 ACCESS_TOKEN_TYPE_UNSUPPORTED** (Google từ chối loại credential), KHÔNG phải 429 rate-limit như giả định trước — key hiện tại là OAuth token, không phải API key AIStudio (`AIza...`). User nắm quyết định xử lý key.
+- Test: `scripts/test-tools.ts` 16/16 PASS; `scripts/test-chat-prompt.ts` 13/13 PASS.
 
 ---
 

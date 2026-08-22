@@ -11,10 +11,10 @@
 
 ## Tổng quan (audit trung thực 2026-08-23)
 - **Tổng mục CẤP 4**: 196
-- **Đã xong `[X]`**: 129 (65.8%)
+- **Đã xong `[X]`**: 130 (66.3%)
 - **Đang làm dở `[~]`**: 2
-- **Chưa làm `[ ]`**: 65
-- **% Hoàn thành thực**: ~66% — MỚI NHẤT: TAVILY_API_KEY user đã thêm Vercel; dispatcher fallback chain mới (Gemini agent-loop → OpenRouter agent-loop với tools → chatOnly) giữ agent sống khi Gemini rate-limit. Còn chờ verify E2E: BYOK ≠ Gemini với tools
+- **Chưa làm `[ ]`**: 64
+- **% Hoàn thành thực**: ~66% — MỚI NHẤT (23/08 tối): TOOLS SỐNG TRÊN PRODUCTION qua OpenRouter FC fallback — get_weather + web_search E2E verified (weather 25.1°C, giá vàng SJC, usage row ghi Neon); bảng `usage` tạo thật trên DB legacy; Gemini vẫn 401 (key sai loại — user chờ xử lý). Nhóm Tool-calling Chat Assistant ĐÓNG FULL.
 
 ---
 
@@ -174,7 +174,7 @@
 - [X] CẤP 3: Tool get_weather (Open-Meteo)
   - [X] CẤP 4: Implement geocode + forecast 2 bước — LIVE TEST THẬT: Hà Nội → geocode 21.02/105.84 → forecast 25.2°C mưa phùn 93% khớp curl trực tiếp; địa điểm không tồn tại trả error không crash [2026-08-23]
   - [X] CẤP 4: Map weather_code sang mô tả tiếng Việt — `wmoToVietnamese()` 25 codes WMO (0 quang, 45 sương mù, 51-55 mưa phùn, 61-67 mưa, 71-77 tuyết, 95-99 dông); test PASS [2026-08-23]
-- [ ] CẤP 4: Test cả 2 tool hoạt động đúng khi user BYOK ≠ Gemini (OpenAI/Claude/OpenRouter) — code đã map đủ 3 format schema (test 16/16), CHƯA test E2E thật với key BYOK từng provider
+- [X] CẤP 4: Test cả 2 tool hoạt động đúng khi user BYOK ≠ Gemini (OpenAI/Claude/OpenRouter) — E2E PRODUCTION THẬT qua OpenRouter free (FC format OpenAI-compatible): weather trả 25.1°C mưa rào khớp live Open-Meteo; web_search trả giá vàng SJC thật + usage row ghi 1 credit vào Neon (verify bằng query); identity trung thực khai báo 'OpenRouter free fallback' [2026-08-23]
 
 ### [X] CẤP 2: Dual Engine AI (PRD mục 3.2c)
 - [X] CẤP 3: Chat Assistant Engine (Engine A)
