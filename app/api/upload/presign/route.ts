@@ -42,7 +42,8 @@ export async function POST(request: NextRequest) {
     const { uploadUrl, key } = await storageService.generatePresignedUploadUrl(
       session.sub,
       fileName,
-      contentType
+      contentType,
+      fileSize
     );
 
     // Public URL để client lưu metadata — KHÔNG import server module ở client

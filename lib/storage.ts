@@ -53,7 +53,7 @@ export class StorageService {
   /**
    * Generate presigned upload URL for a file
    */
-  async generatePresignedUploadUrl(userId: string, fileName: string, contentType: string): Promise<{ uploadUrl: string; key: string }> {
+  async generatePresignedUploadUrl(userId: string, fileName: string, contentType: string, fileSize?: number): Promise<{ uploadUrl: string; key: string }> {
     this.assertR2Configured();
     const { PutObjectCommand } = await import('@aws-sdk/client-s3');
     const { getSignedUrl } = await import('@aws-sdk/s3-request-presigner');
@@ -70,11 +70,11 @@ export class StorageService {
 
     const uploadUrl = await getSignedUrl(client, command, { expiresIn: 3600 });
 
-    // Track pending upload in DB
+    // Track pending upload in DB (ghi size_bytes để retention job >500MB hoạt động)
     const sql = getSql();
     await sql`
-      insert into uploads (id, user_id, file_key, file_name, content_type, status)
-      values (${uploadId}, ${userId}, ${key}, ${fileName}, ${contentType}, 'pending')
+      insert into uploads (id, user_id, file_key, file_name, content_type, size_bytes, status)
+      values (${uploadId}, ${userId}, ${key}, ${fileName}, ${contentType}, ${fileSize ?? null}, 'pending')
     `;
 
     return { uploadUrl, key };
@@ -113,6 +113,42 @@ export class StorageService {
       set status = 'deleted', deleted_at = now()
       where file_key = ${key}
     `;
+  }
+
+  /**
+   * Retention policy (PRD 4.0.4): xoá media >500MB đã processed khỏi R2.
+   * Transcript/note đã extract xong nên file gốc không còn giá trị — giải phóng R2.
+   * Trả về số file đã xoá.
+   */
+  async purgeLargeProcessedMedia(limit = 50): Promise<number> {
+    const sql = getSql();
+    const rows = (await sql`
+      select id, file_key from uploads
+      where status = 'completed'
+        and size_bytes is not null
+        and size_bytes > ${500 * 1024 * 1024}
+      order by completed_at asc
+      limit ${limit}
+    `) as unknown as { id: string; file_key: string }[];
+
+    let purged = 0;
+    for (const row of rows) {
+      try {
+        this.assertR2Configured();
+        const { DeleteObjectCommand } = await import('@aws-sdk/client-s3');
+        const client = await this.createR2Client();
+        await client.send(
+          new DeleteObjectCommand({ Bucket: this.r2Bucket, Key: row.file_key })
+        );
+        await sql`
+          update uploads set status = 'deleted', deleted_at = now() where id = ${row.id}
+        `;
+        purged++;
+      } catch (e) {
+        console.error(`[retention] purge failed for ${row.file_key}:`, e);
+      }
+    }
+    return purged;
   }
 
   /**

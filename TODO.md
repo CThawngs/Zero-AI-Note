@@ -10,11 +10,11 @@
 - Mỗi mục CẤP 3 phải có ≥1 CẤP 4 con cụ thể.
 
 ## Tổng quan (audit trung thực 2026-08-22)
-- **Tổng mục CẤP 4**: 179
-- **Đã xong `[X]`**: 109 (60.9%)
+- **Tổng mục CẤP 4**: 180
+- **Đã xong `[X]`**: 111 (61.7%)
 - **Đang làm dở `[~]`**: 1
-- **Chưa làm `[ ]`**: 69
-- **% Hoàn thành thực**: ~61% — audit: cha chỉ `[X]` khi 100% con `[X]`. Mới: verify lại quota/coupon enforcement (có thật), implement BYOK AES-256-GCM + SSRF guard + template gating runtime.
+- **Chưa làm `[ ]`**: 68
+- **% Hoàn thành thực**: ~62% — audit: cha chỉ `[X]` khi 100% con `[X]`. Mới: verify quota/coupon/Test-Connection có thật; implement BYOK AES-256-GCM + SSRF + template gating + retention >500MB.
 
 ---
 
@@ -45,8 +45,9 @@
   - [X] CẤP 4: API route `app/api/upload/put/route.ts` (45 lines)
 - [ ] CẤP 3: Multipart/Resumable upload (TUS)
   - [ ] CẤP 4: Chưa scaffold — cần cho file >4.5GB
-- [ ] CẤP 3: Retention policy tự động xoá file media >500MB sau STT
-  - [ ] CẤP 4: Chưa có cron/cleanup job
+- [~] CẤP 3: Retention policy tự động xoá file media >500MB sau STT
+  - [X] CẤP 4: `storageService.purgeLargeProcessedMedia()` (lib/storage.ts): select uploads completed >500MB → DeleteObjectCommand R2 → mark deleted; presign route giờ ghi `size_bytes` vào uploads (trước đây null nên retention không thể chạy) [2026-08-22]
+  - [ ] CẤP 4: Cron trigger chạy purge định kỳ (chưa wire — Inngest cron hoặc Vercel Cron)
 
 ### [X] CẤP 2: Authentication (JWT HS256)
 - [X] CẤP 3: JWT tự phát hành + HttpOnly cookie
@@ -260,8 +261,8 @@
   - [X] CẤP 4: Schema byok_providers chuẩn (đã xoá import_free_models/sync_enabled)
 - [ ] CẤP 3: "Discover Models" (GET {endpoint}/v1/models)
   - [ ] CẤP 4: Chưa có endpoint
-- [ ] CẤP 3: "Test Connection" fail-closed trước Save
-  - [ ] CẤP 4: Chưa có UI button + endpoint
+- [X] CẤP 3: "Test Connection" fail-closed trước Save [2026-08-22]
+  - [X] CẤP 4: Endpoint `app/api/providers/test/route.ts` (195 lines, +SSRF guard production) + UI `AddProviderModal.tsx` gọi POST /api/providers/test — flow 1 button Test→Save, chỉ hiện nút Save sau khi test pass (L558-594) [2026-08-22]
 
 ### [X] CẤP 2: Màn 5 — Pricing
 - [X] CẤP 3: 3 cột Free/Pro/Ultra đúng Master Pricing Matrix
