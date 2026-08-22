@@ -546,9 +546,16 @@
 - `lib/ai/tools/registry.ts` (mới): ToolDef interface, schema song song 3 format (Gemini functionDeclarations / OpenAI tools / Anthropic tools), executor JS thuần, `wmoToVietnamese()`, `checkTavilyQuota()`.
 - `lib/ai/tools/agent-loop.ts` (mới): vòng lặp max 3 rounds, hỗ trợ cả 3 backend (gemini SDK / openai-compatible fetch / anthropic messages), gate `onToolCall` cho quota.
 - `lib/ai/prompts/chat-assistant.ts`: viết lại toàn bộ theo nguyên tắc phần A (tự nhiên-first, dynamic identity, document-flow gating).
-- `lib/ai/dispatcher.ts`: agent-loop pass chạy TRƯỚC legacy engine khi câu hỏi không trông giống yêu cầu tạo note (regex heuristic); fail → rơi xuống engine cũ, không chết request.
-- Env mới: `TAVILY_API_KEY` (cần user đăng ký tavily.com rồi thêm Vercel).
-- Test: `scripts/test-tools.ts` 16/16 PASS (get_weather LIVE Hà Nội 25.2°C mưa phùn khớp curl trực tiếp; Tavily mock; 3 format schema); `scripts/test-chat-prompt.ts` 13/13 PASS (dynamic identity, tool khai báo, document-flow gating).
+- `lib/ai/dispatcher.ts`: agent-loop pass chạy TRƯỚC legacy engine khi câu hỏi không trông giống yêu cầu tạo note (regex heuristic).
+- Env: `TAVILY_API_KEY` — USER ĐÃ THÊM vào Vercel (23/08). Local `.env.local` không có key này (chỉ server cần — đúng nguyên tắc server-side).
+
+### Fallback chain chat request (cập nhật 23/08 sau khi Gemini rate-limit kéo dài)
+1. Gemini agent-loop (tools đầy đủ) →
+2. **OpenRouter agent-loop với tools** (`model: openrouter/free`, format OpenAI-compatible FC) — identity khai báo trung thực "OpenRouter free fallback" →
+3. OpenRouter chatOnly thuần (không tools, trung thực nói không tra cứu được) →
+4. Legacy engines (note JSON / autonomous local).
+Lý do tầng 2: Gemini rate-limit chờ reset không được để user mất luôn tính năng agent — free models OpenRouter nhận `tools` chuẩn OpenAI; nếu model free hiện tại không gọi tool tốt thì tự trả lời text, không crash.
+- Test: `scripts/test-tools.ts` 16/16 PASS (get_weather LIVE Hà Nội 25.2°C mưa phùn khớp curl trực tiếp; Tavily mock; 3 format schema); `scripts/test-chat-prompt.ts` 13/13 PASS; production curl xác nhận identity + weather trả đúng trọng tâm qua fallback.
 
 ---
 
