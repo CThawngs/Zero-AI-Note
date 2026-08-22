@@ -624,7 +624,18 @@
 
 ---
 
-## 30. References
+## 30. Chốt kiến trúc: KHÔNG migrate schema v1 trước deadline Tuần 10 (2026-08-23)
+
+**Chốt (2026-08-23): KHÔNG migrate sang schema v1 (projects/files/jobs) trước deadline Tuần 10.** Toàn bộ code tiếp tục dùng schema legacy (notebooks/sources) cho tới hết đồ án. Schema v1 (đã có DDL, RLS trong `docs/schema-neon.sql`) giữ nguyên làm nền cho Roadmap sau deadline (mục 9 Phase 7-8), KHÔNG động vào bây giờ.
+
+Lý do:
+1. Tránh vỡ code đang chạy giữa lúc gấp rút — mọi pipeline (generate, Inngest worker, batch email, KO/coverage) đang bám `sources`/`notebooks`.
+2. Migrate 12 bảng mới không mang lại giá trị chấm điểm trực tiếp (mục 8.5).
+3. Các tính năng mới đợt này (KO/coverage) đã tham chiếu legacy FK — chuyển v1 sau chỉ là đổi FK + query, chi phí thấp khi làm sau.
+
+---
+
+## 31. References
 - [Neon Documentation](https://neon.tech/docs)
 - [Drizzle ORM](https://orm.drizzle.team)
 - [gitleaks](https://github.com/gitleaks/gitleaks)

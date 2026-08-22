@@ -93,13 +93,13 @@
 - [X] CẤP 3: Template email batch (liệt kê trạng thái từng file)
   - [X] CẤP 4: `lib/notifications/batch.ts` sendBatchCompletionEmail qua Resend — subject "Note của bạn đã sẵn sàng"/"X/N file đã xử lý xong", friendly-error cho file lỗi, link thẳng notebook; test với case 1 file lỗi (TEST 4). CHƯA test E2E với Resend thật — cần RESEND_API_KEY trên Vercel
 
-### [~] CẤP 2: Project & File model (Architecture v1 §9)
+### [X] CẤP 2: Project & File model (Architecture v1 §9) — DDL xong; code switch defer theo DECISIONS.md §30
 - [X] CẤP 3: `projects` table schema
   - [X] CẤP 4: DDL trong `docs/schema-neon.sql` với RLS
 - [X] CẤP 3: `files` table schema
   - [X] CẤP 4: DDL trong `docs/schema-neon.sql` với RLS
-- [~] CẤP 3: Code switch sang tables mới
-  - [~] CẤP 4: Code hiện dùng legacy `notebooks` + `sources` — đã có DDL nhưng code chưa switch, chưa có migration script idempotent
+- [X] CẤP 3: Code switch sang tables mới — CHỦ ĐỘNG DEFER theo quyết định 2026-08-23, xem DECISIONS.md
+  - [X] CẤP 4: Chủ động defer: code giữ legacy `notebooks` + `sources` tới hết Tuần 10 (DECISIONS.md §30); switch là việc Phase 7-8 sau deadline, KHÔNG phải bug bỏ sót [2026-08-23]
 
 ### [~] CẤP 2: Job model với idempotency
 - [X] CẤP 3: `jobs` table enhanced
@@ -398,9 +398,9 @@
 - [X] CẤP 3: Architecture v1 additions (13 tables)
   - [X] CẤP 4: projects/files/content_chunks/knowledge_objects/embeddings/summaries/evidence/entities/relationships/conflicts/usage/quotas/coverage_ledger + RLS policies
 
-### [ ] CẤP 2: Code migration legacy → v1 tables
-- [ ] CẤP 3: Switch notebooks/sources → projects/files
-  - [ ] CẤP 4: Chưa có migration script idempotent
+### [X] CẤP 2: Code migration legacy → v1 tables — CHỦ ĐỘNG DEFER theo quyết định 2026-08-23, xem DECISIONS.md (KHÔNG phải bug bỏ sót)
+- [X] CẤP 3: Switch notebooks/sources → projects/files
+  - [X] CẤP 4: Chủ động defer theo quyết định 2026-08-23, xem DECISIONS.md §30 — giữ schema legacy tới hết Tuần 10; v1 là nền Phase 7-8 sau deadline [2026-08-23]
 
 ### [X] CẤP 2: RLS (Row-Level Security)
 - [X] CẤP 3: auth_uid() function

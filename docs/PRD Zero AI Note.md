@@ -737,6 +737,8 @@ create table profiles (
   created_at timestamptz default now()
 );
 
+> **Quyết định kiến trúc (2026-08-23, DECISIONS.md §30)**: production ĐANG CHẠY trên schema legacy dưới đây (notebooks/sources). Schema v1 (projects/files/jobs — cuối mục này) chỉ là thiết kế nền cho Phase 7-8 sau deadline, KHÔNG migrate trước Tuần 10.
+
 -- Notebook = tập hợp note, có thể do gộp nhiều file tự động
 create table notebooks (
   id uuid primary key default gen_random_uuid(),
