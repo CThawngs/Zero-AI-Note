@@ -586,7 +586,26 @@
 
 ---
 
-## 28. References
+## 28. PPTX Parser — jszip đọc OOXML trực tiếp (2026-08-23)
+
+### Decision
+- PPTX = ZIP chứa XML → dùng `jszip` (dep có sẵn) đọc trực tiếp, KHÔNG thêm thư viện mới (không pptxgenjs/unoffice).
+- Extract text runs `<a:t>` theo thứ tự; title qua placeholder `p:ph type="title|ctrTitle"`; speaker notes từ `ppt/notesSlides/notesSlideN.xml` giữ làm evidence (PRD 4.0.8 — không flatten).
+- Sort số học tên file: slide10 > slide3 (sort chuỗi thường sai thứ tự).
+- Decode entity chuẩn OOXML: &amp; &lt; &gt; &quot; &#39;.
+
+### Chi phí AI = 0 cho text extraction
+- Nhánh `.pptx` trong `lib/ai/extract.ts` chạy TRƯỚC Gemini fallback: file text-based parse local hết, chỉ khi toàn bộ slides rỗng (scan image) mới gửi Gemini OCR.
+- Khác DOCX (mammoth) cùng pattern: parser local trước, AI sau.
+
+### Files
+- `lib/ai/pptx.ts` (mới ~92 lines): `parsePptx(buf) → PptxSlide[]`, `renderPptxMarkdown(slides)` — '## Slide N: title' + [Ghi chú người trình bày].
+- `lib/ai/extract.ts`: nhánh isPptx.
+- Test: `scripts/test-pptx.ts` 13/13 PASS — build .pptx tối thiểu THẬT bằng jszip rồi parse ngược (title/body/notes/sort/entity/markdown).
+
+---
+
+## 29. References
 - [Neon Documentation](https://neon.tech/docs)
 - [Drizzle ORM](https://orm.drizzle.team)
 - [gitleaks](https://github.com/gitleaks/gitleaks)

@@ -249,7 +249,7 @@ EXTRACT_MEDIA            — MediaProcessor: video→audio hoặc chuẩn hoá a
 CREATE_AUDIO_CHUNKS      — Segment 30-60p + overlap
 TRANSCRIBE_CHUNK         — Whisper/Gemini STT
 PARSE_DOCX               — DOCX parser (giữ heading/list/table)
-PARSE_PPTX               — PPTX parser (slide-by-slide)
+PARSE_PPTX               — PPTX parser (slide-by-slide) [DONE 2026-08-23: lib/ai/pptx.ts, jszip OOXML + speaker notes, test 13/13]
 NORMALIZE_CONTENT        — Đưa về Normalized Content model
 EXTRACT_KNOWLEDGE        — Knowledge Object per chunk
 CREATE_EMBEDDING         — Vector embedding (pgvector)

@@ -11,10 +11,10 @@
 
 ## Tổng quan (audit trung thực 2026-08-23)
 - **Tổng mục CẤP 4**: 196
-- **Đã xong `[X]`**: 144 (73.5%)
+- **Đã xong `[X]`**: 146 (74.5%)
 - **Đang làm dở `[~]`**: 2
-- **Chưa làm `[ ]`**: 50
-- **% Hoàn thành thực**: ~73% — MỚI NHẤT: Hierarchical Summarization map-reduce XONG (`lib/ai/summarize.ts`, threshold gate >24k chars/>3 nguồn, conflict detection 2 phía không chọn truth, test 11/11). Verify-before-code đã đóng 9 mục UI có sẵn. Còn mở chính: knowledge_objects/coverage_ledger wiring, PPTX parser, tsvector hybrid RAG.
+- **Chưa làm `[ ]`**: 48
+- **% Hoàn thành thực**: ~74% — MỚI NHẤT: PPTX parser XONG (`lib/ai/pptx.ts`, jszip OOXML, speaker notes giữ evidence, 0 AI cost cho text extraction, test 13/13). Hierarchical Summarization map-reduce XONG trước đó cùng ngày. Verify-before-code đã đóng 9 mục UI có sẵn.
 
 ---
 
@@ -144,11 +144,11 @@
 - [ ] CẤP 3: Keyframes (scene-change detection)
   - [ ] CẤP 4: Chưa có ffmpeg scene detection integration
 
-### [ ] CẤP 2: DOCX/PPTX parsers
+### [X] CẤP 2: DOCX/PPTX parsers
 - [X] CẤP 3: DOCX parser (giữ heading/list/table) [2026-08-22]
   - [X] CẤP 4: MỚI `mammoth` dep + wire trong `lib/ai/extract.ts` extractSource() — download R2 → extractRawText; PPTX vẫn [ ] (cần thư viện riêng) [2026-08-22]
-- [ ] CẤP 3: PPTX parser (slide-by-slide)
-  - [ ] CẤP 4: Chưa có
+- [X] CẤP 3: PPTX parser (slide-by-slide)
+  - [X] CẤP 4: `lib/ai/pptx.ts` — jszip đọc OOXML trực tiếp: text runs theo thứ tự, title qua p:ph type=title, speaker notes per slide làm evidence, sort số học slide10 > slide3, entity decode; renderPptxMarkdown '## Slide N: title'. Wire extract.ts nhánh .pptx TRƯỚC Gemini fallback → extract text KHÔNG tốn AI call, chỉ fallback Gemini OCR khi slides rỗng. test-pptx.ts 13/13 PASS (build pptx thật bằng jszip rồi parse ngược) [2026-08-23, commit 7cfb57c]
 
 ### [~] CẤP 2: Tách luồng Chat thường vs Xử lý file (PRD mục 4.1b)
 - [~] CẤP 3: Luồng A — Chat thường (không đính kèm file)
