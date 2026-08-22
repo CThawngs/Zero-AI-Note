@@ -20,6 +20,9 @@ export interface AIModelRequest {
   endpointUrl?: string;
   apiKey?: string;
   userPlan?: 'free' | 'pro' | 'ultra';
+  /** Bật khi caller ĐÃ biết là việc xử lý nội bộ (tóm tắt map-reduce...):
+   *  bỏ qua agent-tools pass, đi thẳng engine text — tiết kiệm quota + latency. */
+  isInternalTask?: boolean;
 }
 
 const methodGuidance: Record<NoteMethod, string> = {
@@ -164,7 +167,7 @@ export async function dispatchAgentResponse(params: AIModelRequest): Promise<Age
   // ── AGENT-LOOP PASS (PRD 3.2c): hội thoại/câu hỏi chung → agent có tools
   // (web_search Tavily + get_weather Open-Meteo), prompt tự nhiên mới.
   // Chỉ nhảy qua khi trông giống yêu cầu tạo note (đính từ kho tổng hợp).
-  const looksLikeNoteRequest = /\b(tạo|làm|tổng hợp|phân tích|viết)\s+(note|ghi chú|bài|bản ghi|tóm tắt|summary|outline|cornell|mindmap|sơ đồ|flashcard|quiz)\b/i.test(inputText);
+  const looksLikeNoteRequest = params.isInternalTask === true || /\b(tạo|làm|tổng hợp|phân tích|viết)\s+(note|ghi chú|bài|bản ghi|tóm tắt|summary|outline|cornell|mindmap|sơ đồ|flashcard|quiz)\b/i.test(inputText);
   const tavilyQuota = looksLikeNoteRequest ? null : await checkTavilyQuota('system').catch(() => ({ ok: true, usedThisMonth: 0 }));
   const buildIdentity = () => ({
     activeProviderName: endpointUrl

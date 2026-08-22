@@ -90,9 +90,25 @@ export async function POST(request: NextRequest) {
     const { extractAllSources } = await import('@/lib/ai/extract');
     const extractKey = getGeminiApiKey();
     let extractedContent = '';
+    let hierarchicalContext = '';
     if (sources && sources.length > 0 && extractKey) {
       try {
         const ex = await extractAllSources(sources, extractKey);
+        // ── HIERARCHICAL SUMMARIZATION (PRD 4.0.8/3.2d): N nguồn lớn → map-reduce.
+        // Dưới ngưỡng → single-pass như cũ (summarize.ts tự quyết).
+        try {
+          const { runHierarchicalSummarization } = await import('@/lib/ai/summarize');
+          const hier = await runHierarchicalSummarization(
+            ex.perSource.map(ps => ({ sourceName: ps.sourceName, sourceType: ps.sourceType, content: ps.content })),
+            language === 'en' ? 'en' : 'vi'
+          );
+          if (hier.mode === 'hierarchical') {
+            hierarchicalContext = hier.synthesizedContext;
+            console.log(`[generate] hierarchical: ${hier.sectionSummaries.length} sections mapped, ${hier.conflicts.length} conflicts`);
+          }
+        } catch (hierErr) {
+          console.warn('[generate] hierarchical summarization failed, fallback single-pass:', hierErr);
+        }
         extractedContent = ex.combined;
       } catch (exErr) {
         console.error('[generate] source extraction failed:', exErr);
@@ -109,7 +125,9 @@ export async function POST(request: NextRequest) {
         if (s.url) {
           inputText += `- Đường dẫn/URL: ${s.url}\n`;
         }
-        if (extractedContent) {
+        if (hierarchicalContext) {
+          inputText += `- Phân tích tổng hợp theo nguồn (map-reduce):\n"""\n${hierarchicalContext}\n"""\n`;
+        } else if (extractedContent) {
           inputText += `- Nội dung trích xuất từ tệp:\n"""\n${extractedContent.slice(0, 400_000)}\n"""\n`;
         }
       });

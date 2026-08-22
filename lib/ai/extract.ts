@@ -180,8 +180,15 @@ export async function extractSource(
 export async function extractAllSources(
   sources: SourceInput[],
   apiKey: string
-): Promise<{ combined: string; extractedCount: number; failedCount: number }> {
+): Promise<{
+  combined: string;
+  extractedCount: number;
+  failedCount: number;
+  /** Per-source content — dùng cho hierarchical map-reduce (lib/ai/summarize.ts) */
+  perSource: Array<{ sourceName: string; sourceType: string; content: string }>;
+}> {
   const results: string[] = [];
+  const perSource: Array<{ sourceName: string; sourceType: string; content: string }> = [];
   let ok = 0;
   let failed = 0;
   for (const src of sources.slice(0, 5)) { // cap 5 nguồn/request chống abuse + timeout
@@ -189,6 +196,7 @@ export async function extractAllSources(
     if (r.text.startsWith('[') && r.text.includes('Không')) failed++;
     else ok++;
     results.push(r.text);
+    perSource.push({ sourceName: src.name, sourceType: src.type, content: r.text });
   }
-  return { combined: results.join('\n\n'), extractedCount: ok, failedCount: failed };
+  return { combined: results.join('\n\n'), extractedCount: ok, failedCount: failed, perSource };
 }
