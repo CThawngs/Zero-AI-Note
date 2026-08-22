@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { assertPublicUrl } from '@/lib/auth/crypto';
 
 export const runtime = 'nodejs';
 
@@ -16,6 +17,19 @@ export async function POST(request: NextRequest) {
         { success: false, error: 'Endpoint URL không được để trống' },
         { status: 400 }
       );
+    }
+
+    // SSRF guard (PRD 3.3): chặn localhost/private IP/metadata ở production.
+    // Dev giữ cho phép để test Ollama/local endpoints.
+    if (process.env.NODE_ENV === 'production') {
+      try {
+        assertPublicUrl(endpointUrl.trim());
+      } catch (ssrfErr: any) {
+        return NextResponse.json(
+          { success: false, error: ssrfErr instanceof Error ? ssrfErr.message : 'Endpoint bị chặn (SSRF)' },
+          { status: 400 }
+        );
+      }
     }
 
     const cleanEndpoint = endpointUrl.trim().replace(/\/+$/, '');

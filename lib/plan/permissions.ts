@@ -21,7 +21,7 @@ export interface PlanLimits {
 export type NoteMethod = 
   | 'cornell' | 'outline' | 'summary' 
   | 'meeting' | 'lecture' | 'analysis' | 'qa' | 'charting' | 'boxing'
-  | 'allinone' | 'mindmap' | 'flashcard' | 'deep-analysis' | 'feynman' 
+  | 'allinone' | 'mindmap' | 'flashcard' | 'deep-research' | 'feynman' 
   | 'first-principles' | 'syntopical' | '5w1h-action';
 
 const PLAN_LIMITS: Record<UserPlan, PlanLimits> = {
@@ -59,7 +59,7 @@ const PLAN_LIMITS: Record<UserPlan, PlanLimits> = {
     templates: [
       'cornell', 'outline', 'summary',
       'meeting', 'lecture', 'analysis', 'qa', 'charting', 'boxing',
-      'allinone', 'mindmap', 'flashcard', 'deep-analysis', 'feynman',
+      'allinone', 'mindmap', 'flashcard', 'deep-research', 'feynman',
       'first-principles', 'syntopical', '5w1h-action'
     ],
     canPreviewStaticHtml: true,
@@ -81,9 +81,9 @@ export function getPlanLimits(plan: UserPlan): PlanLimits {
 /**
  * Check if a template method is available for user's plan
  */
-export function isTemplateAllowed(method: NoteMethod, plan: UserPlan): boolean {
+export function isTemplateAllowed(method: string, plan: UserPlan): boolean {
   const limits = getPlanLimits(plan);
-  return limits.templates.includes(method);
+  return (limits.templates as string[]).includes(method);
 }
 
 /**

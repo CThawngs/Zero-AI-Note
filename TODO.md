@@ -11,10 +11,10 @@
 
 ## Tổng quan (audit trung thực 2026-08-22)
 - **Tổng mục CẤP 4**: 179
-- **Đã xong `[X]`**: 102 (57.0%)
+- **Đã xong `[X]`**: 109 (60.9%)
 - **Đang làm dở `[~]`**: 1
-- **Chưa làm `[ ]`**: 76
-- **% Hoàn thành thực**: ~57% — audit: mọi mục 'cần verify/chưa thấy/chưa có' đều `[ ]`; cha chỉ `[X]` khi 100% con `[X]`. Mới xong: tầng 4 OpenRouter free (text-only).
+- **Chưa làm `[ ]`**: 69
+- **% Hoàn thành thực**: ~61% — audit: cha chỉ `[X]` khi 100% con `[X]`. Mới: verify lại quota/coupon enforcement (có thật), implement BYOK AES-256-GCM + SSRF guard + template gating runtime.
 
 ---
 
@@ -162,8 +162,8 @@
 ### [~] CẤP 2: Config-Driven Template Registry (PRD mục 3.2f, 4.2)
 - [X] CẤP 3: 17 templates centralized
   - [X] CẤP 4: `lib/templates/registry.ts` (147 lines) — đủ 17 templates + tier free/pro/ultra
-- [ ] CẤP 3: Tier gating runtime (Auto chỉ chọn template trong gói user)
-  - [ ] CẤP 4: Registry có field tier nhưng chưa thấy logic chặn Auto chọn ngoài gói trong dispatcher — cần verify/implement
+- [X] CẤP 3: Tier gating runtime (Auto chỉ chọn template trong gói user) [2026-08-22]
+  - [X] CẤP 4: Free: dispatcher `freeTemplates` random 3 template Free khi method=auto; Pro/Ultra: generate route chặn `isTemplateAllowed(method, plan)` trước khi gọi AI → 403 kèm message nâng cấp. Fix lệch type `deep-analysis`→`deep-research` trong permissions.ts. Test pass (test-crypto-ssrf-gating.ts) [2026-08-22]
 
 ### [X] CẤP 2: Universal Block Schema + Zod Validator (PRD mục 3.2g, 4.3)
 - [X] CẤP 3: 7 block types
@@ -273,9 +273,9 @@
 - [X] CẤP 3: Coupon CRUD + admin auth
   - [X] CẤP 4: `app/api/admin/coupons/route.ts` (168 lines)
   - [X] CẤP 4: `lib/auth/admin.ts` (34 lines), `lib/billing/coupon.ts` (23 lines)
-- [~] CẤP 3: Ràng buộc 1 account = 1 coupon
+- [X] CẤP 3: Ràng buộc 1 account = 1 coupon [2026-08-22]
   - [X] CẤP 4: user_coupons PK = user_id (schema chặn mức DB)
-  - [ ] CẤP 4: Verify backend validateCouponForPlan từ chối user đã dùng mã
+  - [X] CẤP 4: `validateCouponForPlan` (queries.ts L350-355) check `user_coupons` theo userId → trả null; validate-coupon route phân biệt message 'Tài khoản này đã sử dụng mã coupon' [2026-08-22]
 
 ### [X] CẤP 2: Màn 7 — Đăng nhập/Đăng ký
 - [X] CẤP 3: Email/password flow
@@ -342,17 +342,17 @@
   - [X] CẤP 4: validate-coupon route (70 lines)
 - [X] CẤP 3: Apply coupon (100% → bill 0đ auto-paid)
   - [X] CẤP 4: apply route (57 lines) + create-invoice truyền finalAmount
-- [~] CẤP 3: 1 account = 1 coupon unique enforcement
+- [X] CẤP 3: 1 account = 1 coupon unique enforcement [2026-08-22]
   - [X] CẤP 4: user_coupons PK = user_id (DB level)
-  - [ ] CẤP 4: Verify app-level check validateCouponForPlan trả thông báo đúng
+  - [X] CẤP 4: App-level: validateCouponForPlan chặn user đã dùng (queries.ts L350-355) + message đúng (validate-coupon route L42-54) [2026-08-22]
 - [X] CẤP 3: Admin CRUD coupons
   - [X] CẤP 4: admin/coupons route (168 lines) + RLS admin
 
-### [ ] CẤP 2: Quota enforcement (PRD mục 5.1, 6.2)
-- [ ] CẤP 3: Notes count check server-side (20/50/∞)
-  - [ ] CẤP 4: Chưa thấy logic check count trước insert trong queries — cần verify rồi implement nếu thiếu
-- [ ] CẤP 3: Custom templates count check (5/25/∞)
-  - [ ] CẤP 4: Chưa thấy — cần verify
+### [~] CẤP 2: Quota enforcement (PRD mục 5.1, 6.2)
+- [X] CẤP 3: Notes count check server-side (20/50/∞) [2026-08-22]
+  - [X] CẤP 4: `checkNoteLimit` (queries.ts L65-96): count notes deleted_at IS NULL, plan từ profiles (ultra/admin=∞, pro=50, free=20), message đề xuất nâng cấp; `createNote` check trước insert; POST /api/notes trả 403 + code `NOTE_LIMIT_EXCEEDED` [2026-08-22]
+- [X] CẤP 3: Custom templates count check (5/25/∞) [2026-08-22]
+  - [X] CẤP 4: `checkCustomTemplateLimit` (queries.ts L154-185): 5/25/∞ + admin bypass, `createCustomTemplate` check trước insert, route trả 403 `TEMPLATE_LIMIT_EXCEEDED`; GET /api/templates trả kèm `limitInfo` [2026-08-22]
 - [ ] CẤP 3: Project file/duration/storage enforcement
   - [ ] CẤP 4: permissions.ts (207 lines) tồn tại — cần verify đủ check cho projects/files/duration/storage
   - [ ] CẤP 4: Trả lỗi rõ ràng khi vượt plan limit, đề xuất nâng gói
@@ -388,11 +388,11 @@
 - [X] CẤP 3: Middleware session check
   - [X] CẤP 4: middleware.ts (60 lines)
 
-### [ ] CẤP 2: BYOK Encryption + SSRF
-- [ ] CẤP 3: API key AES-256-GCM encrypt/decrypt helper
-  - [ ] CẤP 4: Column api_key_encrypted có; chưa thấy helper encrypt/decrypt trong code — cần verify
-- [ ] CẤP 3: SSRF validation (block private IPs)
-  - [ ] CẤP 4: lib/auth/http.ts chỉ 12 lines — cần verify có thật sự block private IP hay không
+### [X] CẤP 2: BYOK Encryption + SSRF
+- [X] CẤP 3: API key AES-256-GCM encrypt/decrypt helper [2026-08-22]
+  - [X] CẤP 4: MỚI `lib/auth/crypto.ts`: encryptApiKey/decryptApiKey AES-256-GCM (format v1.iv.tag.ct, scrypt derive từ BYOK_ENCRYPTION_KEY/ZERO_JWT_SECRET, fail-closed); test roundtrip + tamper-tag PASS [2026-08-22]
+- [X] CẤP 3: SSRF validation (block private IPs) [2026-08-22]
+  - [X] CẤP 4: MỚI `assertPublicUrl()` chặn localhost/.local/.internal + IPv4 private/reserved/metadata (0/10/127/100.64/169.254/172.16-31/192.168) + non-http(s); wire vào providers/test route (production-only, dev giữ cho Ollama). Test 7 case chặn + 3 case public PASS [2026-08-22]
 
 ### [X] CẤP 2: Webhook HMAC verification
 - [X] CẤP 3: Billing webhook signature verified
@@ -470,8 +470,11 @@
 - **Đã verify qua code**: mọi mục `[X]` đều có file thật + line count + path cụ thể trong repo
 - **Đã verify qua site**: landing + pricing 3 gói (web_extract) — CHƯA login/upload/test luồng thật
 - **Chưa verify (cần Chrome Remote Debugging, PRD mục 3.4)**: Stepper, ProcessingCard, ArtifactPanel, theme switcher, 11 màn UI chi tiết
-- **PRD ghi đã chốt nhưng chưa thấy trong code (đã hạ về `[ ]`)**:
-  - Auto Template gating runtime (tier trong registry có nhưng chưa thấy logic chặn trong dispatcher)
-  - 1 account = 1 coupon app-level check (DB constraint có, app check chưa verify)
-  - Notes/Templates count enforcement 20-50-∞ / 5-25-∞ (chưa thấy trong queries)
-  - BYOK AES-256-GCM helper + SSRF block (column có, helper chưa thấy)
+- **Đã verify CÓ trong code (2026-08-22 — audit trước kết luận sai do chỉ đọc đầu queries.ts)**:
+  - Notes/Templates count enforcement: checkNoteLimit + checkCustomTemplateLimit + 403 NOTE_LIMIT_EXCEEDED/TEMPLATE_LIMIT_EXCEEDED
+  - 1 account = 1 coupon: validateCouponForPlan chặn user đã dùng + message phân biệt
+  - Auto gating Free: generate route truyền userPlan → dispatcher freeTemplates random 3 template Free
+- **Vẫn chưa có trong code (giữ `[ ]`)**:
+  - ~~BYOK AES helper + SSRF~~ → ĐÃ IMPLEMENT 2026-08-22 (`lib/auth/crypto.ts` + wire providers/test)
+  - Auto gating Pro (chặn template ngoài danh sách 9 của Pro — hiện chỉ random cho Free)
+  - BYOK AES helper + SSRF: đã implement (lib/auth/crypto.ts, 2026-08-22)

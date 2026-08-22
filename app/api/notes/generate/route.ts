@@ -49,6 +49,20 @@ export async function POST(request: NextRequest) {
       return fail('Vui lòng nhập nội dung hoặc đính kèm tài liệu để trò chuyện hoặc tạo ghi chú.', 400);
     }
 
+    // Template gating runtime (PRD 3.2f / 4.2): chặn method ngoài gói TRƯỚC khi gọi AI.
+    // Free đã được random trong dispatcher (freeTemplates); Pro/Ultra chặn method ngoài danh sách.
+    if (session && method !== 'auto' && method !== 'custom') {
+      const plan = ((session.plan as string) || 'free') as 'free' | 'pro' | 'ultra';
+      const { isTemplateAllowed } = await import('@/lib/plan/permissions');
+      const allowed = isTemplateAllowed(method, plan);
+      if (!allowed) {
+        return fail(
+          `Phương pháp "${method}" chỉ khả dụng từ gói cao hơn. Gói hiện tại: ${plan}. Vui lòng nâng cấp hoặc chọn phương pháp khác.`,
+          403
+        );
+      }
+    }
+
     // Retrieve custom template prompt if templateId is provided
     let customTemplatePrompt = '';
     if (templateId) {
