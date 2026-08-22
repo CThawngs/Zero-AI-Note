@@ -11,10 +11,10 @@
 
 ## Tổng quan (audit trung thực 2026-08-23)
 - **Tổng mục CẤP 4**: 196
-- **Đã xong `[X]`**: 148 (75.5%)
-- **Đang làm dở `[~]`**: 2
-- **Chưa làm `[ ]`**: 46
-- **% Hoàn thành thực**: ~76% — MỚI NHẤT: Knowledge Objects + Coverage Ledger XONG (migration applied Neon thật, lib/ai/knowledge.ts, fire-and-forget wiring, fail-soft). Trước đó cùng ngày: PPTX parser, Hierarchical Summarization map-reduce.
+- **Đã xong `[X]`**: 155 (79.1%)
+- **Đang làm dở `[~]`**: 1
+- **Chưa làm `[ ]`**: 40
+- **% Hoàn thành thực**: ~79% — MỚI NHẤT: P0 chốt defer v1 migration + P1 MediaProcessor (ffmpeg thật 62.5p→2 segments) + multipart 1GB + keyframes scene detection. Trước đó cùng ngày: KO/Coverage, PPTX parser, Hierarchical Summarization.
 
 ---
 
@@ -43,8 +43,8 @@
 - [X] CẤP 3: Presigned URL upload
   - [X] CẤP 4: API route `app/api/upload/presign/route.ts` (65 lines)
   - [X] CẤP 4: API route `app/api/upload/put/route.ts` (45 lines)
-- [ ] CẤP 3: Multipart/Resumable upload (TUS)
-  - [ ] CẤP 4: Chưa scaffold — cần cho file >4.5GB
+- [X] CẤP 3: Multipart/Resumable upload (>100MB qua lib-storage; TUS protocol defer sau deadline)
+  - [X] CẤP 4: presign route mode=multipart + `app/api/upload/multipart/route.ts` (sign part/complete/abort, user-scoped key). Test lib-storage Upload stream 1GB giả lập → 103 parts tuần tự, peak RSS 245MB [2026-08-23 commit 722c289] — cần cho file >4.5GB
 - [X] CẤP 3: Retention policy tự động xoá file media >500MB sau STT [2026-08-22]
   - [X] CẤP 4: `storageService.purgeLargeProcessedMedia()` (lib/storage.ts): select uploads completed >500MB → DeleteObjectCommand R2 → mark deleted; presign route giờ ghi `size_bytes` vào uploads (trước đây null nên retention không thể chạy) [2026-08-22]
   - [X] CẤP 4: Cron trigger `r2-retention-purge` (Inngest cron 03:00 VN daily, register trong /api/inngest) gọi purgeLargeProcessedMedia(50)/lượt [2026-08-22]
@@ -119,16 +119,16 @@
   - [X] CẤP 4: `app/api/notes/generate/route.ts` (110 lines)
   - [X] CẤP 4: `app/api/notes/export/route.ts` (201 lines)
   - [X] CẤP 4: `app/api/notes/status/[jobId]/route.ts` (92 lines) — polling
-- [ ] CẤP 3: Multipart/Resumable upload (TUS)
-  - [ ] CẤP 4: Chưa scaffold
+- [X] CẤP 3: Multipart/Resumable upload (>100MB qua lib-storage; TUS protocol defer sau deadline)
+  - [X] CẤP 4: presign route mode=multipart + `app/api/upload/multipart/route.ts` (sign part/complete/abort, user-scoped key). Test lib-storage Upload stream 1GB giả lập → 103 parts tuần tự, peak RSS 245MB [2026-08-23 commit 722c289]
 
-### [ ] CẤP 2: MediaProcessor (PRD mục 4.0.4)
-- [ ] CẤP 3: `MediaProcessor` interface abstraction
-  - [ ] CẤP 4: Chưa có file `lib/media/processor.ts` (inspect/extractAudio/createSegments/getStatus/handleFailure)
-- [ ] CẤP 3: `InngestFFmpegProcessor` implementation
-  - [ ] CẤP 4: Chưa có — cần `ffmpeg -c:a copy` streaming, segment 30-60p, HTTP Range Request
-- [ ] CẤP 3: External FFmpeg fallback
-  - [ ] CẤP 4: Không cần (chỉ dùng Inngest worker) — đánh dấu để tránh nhầm là thiếu
+### [X] CẤP 2: MediaProcessor (PRD mục 4.0.4) — XONG 2026-08-23 (commit c617e19 + 511a3c6)
+- [X] CẤP 3: `MediaProcessor` interface abstraction
+  - [X] CẤP 4: `lib/media/processor.ts` — inspect/extractAudio/createSegments/getStatus/handleFailure + shouldUseMediaProcessor gate ≥100MB audio/video
+- [X] CẤP 3: `InngestFFmpegProcessor` implementation
+  - [X] CẤP 4: `lib/media/inngest-ffmpeg-processor.ts` — R2 HTTP Range 500MB/chunk, `-vn -c:a copy`, segment `-segment_time 2700 -c copy`, handleFailure taxonomy. TEST THẬT ffmpeg 9.0.1: video 62.5p → 2 segments (2700s+1050s), tổng khớp ±60s, offset đúng. Wire Inngest step `media-process` TRƯỚC extract-transcript, fail-soft về legacy path
+- [X] CẤP 3: External FFmpeg fallback
+  - [X] CẤP 4: Không cần (chỉ dùng Inngest worker)
 
 ### [~] CẤP 2: ASR / Transcription (PRD mục 3.2b step 4)
 - [X] CẤP 3: Gemini native audio transcription
