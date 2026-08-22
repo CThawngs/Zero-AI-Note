@@ -605,7 +605,24 @@
 
 ---
 
-## 29. References
+## 29. Knowledge Objects + Coverage Ledger wiring (2026-08-23)
+
+### Decision
+- Bảng v1 `knowledge_objects`/`coverage_ledger` chưa tồn tại trên DB legacy thật (verify to_regclass trước khi code) → migration idempotent `docs/migrations/add_knowledge_coverage.sql` APPLIED trên Neon: tham chiếu `sources`/`notebooks` (legacy) thay vì `projects`/`files` — migrate v1 sau sẽ đổi FK.
+- KO extraction chạy **fire-and-forget** trong generate route SAU khi userId resolve, KHÔNG chặn response note. Fail-soft toàn tuyến: dispatcher JSON fail → empty shell; DB insert fail → log-only. Note pipeline không bao giờ chết vì KO.
+- Parse JSON khoan dung: bóc markdown fence ```json, tìm `{...}` đầu-cuối; numbers chuẩn hoá `"value|context"`.
+- Re-extract INSERT version mới, không UPDATE đè — giữ lịch sử KO theo thời gian.
+- Coverage idempotent theo source_id (upsert on conflict do nothing); cờ `section_included`/`note_included` hook sẵn cho hierarchical/note pipeline đánh sau.
+
+### Files
+- `docs/migrations/add_knowledge_coverage.sql` + `scripts/run-ko-migration.mjs` (APPLIED, verify to_regclass).
+- `lib/ai/knowledge.ts` (~180 lines): extractKnowledgeObject / saveKnowledgeObject / upsertCoverage / markCoverage / getNotebookCoverage(%).
+- `app/api/notes/generate/route.ts`: fire-and-forget pass; sources type thêm optional `id`.
+- Test: `scripts/test-knowledge.ts` PASS (fail-soft shape 10 fields).
+
+---
+
+## 30. References
 - [Neon Documentation](https://neon.tech/docs)
 - [Drizzle ORM](https://orm.drizzle.team)
 - [gitleaks](https://github.com/gitleaks/gitleaks)

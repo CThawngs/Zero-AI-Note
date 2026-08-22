@@ -11,10 +11,10 @@
 
 ## Tổng quan (audit trung thực 2026-08-23)
 - **Tổng mục CẤP 4**: 196
-- **Đã xong `[X]`**: 146 (74.5%)
+- **Đã xong `[X]`**: 148 (75.5%)
 - **Đang làm dở `[~]`**: 2
-- **Chưa làm `[ ]`**: 48
-- **% Hoàn thành thực**: ~74% — MỚI NHẤT: PPTX parser XONG (`lib/ai/pptx.ts`, jszip OOXML, speaker notes giữ evidence, 0 AI cost cho text extraction, test 13/13). Hierarchical Summarization map-reduce XONG trước đó cùng ngày. Verify-before-code đã đóng 9 mục UI có sẵn.
+- **Chưa làm `[ ]`**: 46
+- **% Hoàn thành thực**: ~76% — MỚI NHẤT: Knowledge Objects + Coverage Ledger XONG (migration applied Neon thật, lib/ai/knowledge.ts, fire-and-forget wiring, fail-soft). Trước đó cùng ngày: PPTX parser, Hierarchical Summarization map-reduce.
 
 ---
 
@@ -243,11 +243,11 @@
 - [X] CẤP 3: Project-level summary (scope legacy schema)
   - [X] CẤP 4: Synthesized context cấp batch N nguồn trong 1 request = tương đương project-level trên legacy `sources` (chưa có bảng projects); nâng cấp đầy đủ khi migrate v1 [2026-08-23]
 
-### [ ] CẤP 2: Knowledge Objects + Coverage Ledger (PRD mục 4.0.7, 4.0.9)
-- [ ] CẤP 3: `knowledge_objects` table populated
-  - [ ] CẤP 4: Schema có nhưng code chưa insert/select
-- [ ] CẤP 3: `coverage_ledger` tracking
-  - [ ] CẤP 4: Chưa implement
+### [X] CẤP 2: Knowledge Objects + Coverage Ledger (PRD mục 4.0.7, 4.0.9)
+- [X] CẤP 3: `knowledge_objects` table populated
+  - [X] CẤP 4: Migration `add_knowledge_coverage.sql` APPLIED trên Neon thật (verify to_regclass); `lib/ai/knowledge.ts` extractKnowledgeObject qua dispatcher JSON nghiêm ngặt (bóc markdown fence, fail-soft empty shell) + saveKnowledgeObject insert; wire generate route fire-and-forget sau userId resolve; test-knowledge.ts PASS [2026-08-23, commit 51c7e1f]
+- [X] CẤP 3: `coverage_ledger` tracking
+  - [X] CẤP 4: coverage_ledger tạo trên Neon thật; upsertCoverage idempotent theo source_id + markCoverage knowledge_extracted sau mỗi KO + getNotebookCoverage % helper cho UI sau; section_included/note_included đánh khi hierarchical/note pipeline chạy (hook sẵn) [2026-08-23]
 
 ---
 

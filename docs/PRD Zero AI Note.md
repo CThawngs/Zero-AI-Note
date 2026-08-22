@@ -251,7 +251,7 @@ TRANSCRIBE_CHUNK         — Whisper/Gemini STT
 PARSE_DOCX               — DOCX parser (giữ heading/list/table)
 PARSE_PPTX               — PPTX parser (slide-by-slide) [DONE 2026-08-23: lib/ai/pptx.ts, jszip OOXML + speaker notes, test 13/13]
 NORMALIZE_CONTENT        — Đưa về Normalized Content model
-EXTRACT_KNOWLEDGE        — Knowledge Object per chunk
+EXTRACT_KNOWLEDGE        — Knowledge Object per chunk [DONE 2026-08-23 per-source: lib/ai/knowledge.ts + coverage_ledger, migration applied]
 CREATE_EMBEDDING         — Vector embedding (pgvector)
 CREATE_SECTION_SUMMARY   — Section-level aggregation
 CREATE_FILE_SUMMARY      — File-level aggregation
