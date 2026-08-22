@@ -102,7 +102,7 @@ Sinh viên/giáo viên xử lý bài giảng dài, người đi họp cần ghi 
 | AI — System Pool | **STT (transcribe)**: chỉ Gemini API (cascade 3.7→2.5→2.0 Flash), dùng CHUNG cho mọi user bất kể BYOK nào được chọn cho chat/note-generation. **Text (Chat Assistant + Note Generator)**: cascade Gemini 3.7→2.5→2.0 Flash → fallback cuối **OpenRouter free** (`openrouter/free` auto-router, KHÔNG hardcode model ID cụ thể vì roster free đổi liên tục) khi cả 3 tầng Gemini đều 429/quota hết | STT tách biệt hoàn toàn khỏi lựa chọn BYOK của user — transcribe là hạ tầng ngầm, xong mới chuyển text sạch cho model user chọn. OpenRouter free chỉ là van xả cuối cùng (20 RPM/50 req/ngày CHUNG toàn tài khoản) cho 2 engine text, không dùng cho STT vì OpenRouter free không có model Whisper |
 | AI — BYOK / Tự kết nối AI | 8 providers (Google, OpenAI, Anthropic Claude, OpenRouter, Groq, NVIDIA NIM, Local Ollama, Custom Endpoint OpenAI-compatible) | User API key riêng, BYOK bypass system quota. Dynamic runtime identity inject vào system prompt |
 | Billing | **Zero Tracking** (`zeroinvoice-silk.vercel.app`) — project riêng dùng Supabase | Tạo bill `POST /api/bills` (amount locked), QR render client-side `qrcode.react` (EMVCo VietQR payload), 30-min expiry. Polling `/api/billing/check-status` 2.5s + webhook HMAC-SHA256 verified (`x-webhook-signature`) |
-| Email | **Resend** (free tier 3.000 mail/tháng) | Notification khi Note xong |
+| Email | **Resend** (free tier 3.000 mail/tháng) | Gửi 1 lần/batch khi TẤT CẢ file trong 1 lượt đính kèm đạt trạng thái cuối + note sinh xong (không gửi riêng từng file). Ngưỡng chống spam: chỉ gửi nếu batch xử lý >2 phút. Xem chi tiết mục 3.2b |
 | Tools — Chat Assistant | Tavily (web_search, free 1.000 credit/tháng) + Open-Meteo (get_weather, free không cần key, 10k call/ngày) | Function-calling chuẩn, đồng nhất mọi BYOK provider qua dispatcher.ts |
 
 **Đã cân nhắc và loại bỏ**:
@@ -145,6 +145,7 @@ Xử lý nặng chạy trên Inngest worker bất đồng bộ (không tại Ver
 4. **ASR / Transcription**: Mọi transcribe — bất kể user chọn BYOK nào (Gemini/OpenAI/Claude/khác) để xử lý chat/note-generation phía sau — đều LUÔN chạy qua Gemini API key dùng chung của hệ thống ở bước STT này. Lý do: transcribe là hạ tầng ngầm tách biệt khỏi lựa chọn model của user, không cần khớp. Sau khi có transcript sạch, mới chuyển tiếp cho model user đã chọn xử lý cấu trúc hoá/chat (mục 3.2c).
 5. **Map-Reduce 2 tầng**: Ghép transcript có timestamp (Tầng 1) → Chia section 3k-5k từ → Note Generator sinh Local Blocks → Reduce gộp thành Global Note (Tầng 2).
 6. **RAG pgvector**: Chunk transcript (400 từ) → Embed → Lưu `source_embeddings`. Câu hỏi sau đó trong chat query Cosine similarity Top-K chunks đưa vào context Chat Assistant (tiết kiệm 95% token).
+7. **Email hoàn tất theo batch (2026-08-23)**: mỗi `source` khi chuyển trạng thái cuối (`processed`/`error`) trigger Inngest step `batch-email-check`. Nếu `batch_group_id` NULL → hành vi cũ (gửi ngay, file đơn lẻ). Nếu có `batch_group_id` (nhiều file đính kèm cùng 1 request, stamp lúc tạo `sources`) → kiểm tra toàn bộ file cùng nhóm đã về trạng thái cuối chưa; nếu còn file `pending`/`processing` → dừng. Khi đủ điều kiện → claim ATOMIC (`UPDATE notebooks SET notification_sent_at = now() WHERE notification_sent_at IS NULL RETURNING id`) để tránh 2 job cùng gửi trùng khi hoàn tất gần như đồng thời (đã test race condition, xem TODO.md). Chỉ thực sự gọi Resend nếu batch xử lý >2 phút (dưới ngưỡng này giả định user còn xem Processing Card trực tiếp). Nội dung email liệt kê trạng thái từng file (✅/❌ kèm lý do dễ hiểu nếu lỗi) + link mở thẳng notebook — implement tại `lib/notifications/batch.ts`.
 
 ### 3.2c Tách biệt tuyệt đối 2 Engine AI
 1. **Chat Assistant Engine (Engine A)**: Q&A, trò chuyện tự nhiên. Dynamic Identity (nhận diện động provider/model từ session/`byok_providers`, không hardcode).
@@ -745,6 +746,7 @@ create table notebooks (
   is_merged boolean default false,
   archived_at timestamptz,
   deleted_at timestamptz,
+  notification_sent_at timestamptz, -- Dedupe email hoàn tất, claim atomic tránh gửi trùng
   created_at timestamptz default now()
 );
 
@@ -761,6 +763,7 @@ create table sources (
   status text default 'pending' check (status in ('pending','processing','processed','error')),
   transcript text,
   retention_delete_at timestamptz,
+  batch_group_id uuid, -- Gom nhóm các file đính kèm cùng 1 request, phục vụ email hoàn tất theo batch
   created_at timestamptz default now()
 );
 
@@ -1001,6 +1004,7 @@ Tiêu chí chấm điểm không đòi hỏi billing thật/"Tự kết nối AI
 
 | Ngày | Nội dung |
 |---|---|
+| 2026-08-23 | **Email hoàn tất theo batch (đồng bộ tài liệu cho code đã build 2026-08-23)**: thêm `batch_group_id` (sources) + `notification_sent_at` (notebooks), Inngest step `batch-email-check` claim atomic chống gửi trùng, ngưỡng 2 phút chống spam, template liệt kê trạng thái từng file. Đã test race condition (13/13 PASS) + ngưỡng thời gian. Chưa test E2E với Resend thật (cần RESEND_API_KEY trên Vercel — xem TODO.md). Chi tiết: DECISIONS.md §25. |
 | 2026-08-22 | **Bỏ Groq khỏi STT pool + thêm OpenRouter free fallback cho text**: dồn toàn bộ transcribe về Gemini duy nhất (dùng chung key hệ thống cho mọi user bất kể BYOK nào chọn cho chat/note-generation); OpenRouter free qua alias `openrouter/free` làm tầng fallback thứ 4 CHỈ cho Chat Assistant + Note Generator (KHÔNG cho STT — catalog free OpenRouter không có model Whisper/STT). Lý do bỏ Groq: Zero không lấy được API key (không phải vấn đề kỹ thuật). **Đã implement**: `lib/ai/openrouter-fallback.ts` + wire vào `gemini.ts`/`dispatcher.ts`; test mock pass (`scripts/test-openrouter-fallback.ts`). Chi tiết verify free-tier limits xem DECISIONS.md §24. |
 | 2026-08-22 | **Đơn giản hoá hạ tầng pipeline (rollback Cloudflare Workers/Workflows/Queues/Stream)**: quay về kiến trúc đơn-cloud Vercel+Inngest+R2(storage-only)+Gemini+Groq đã validate. Lý do: (1) quy mô 2-cloud (Vercel + Cloudflare Workers/Workflows) vượt khả năng hoàn thành trong 9 tuần còn lại tới deadline Tuần 10, mâu thuẫn mục 8.5; (2) Cloudflare Stream tốn phí thật, mâu thuẫn mục tiêu free 100%; (3) Cloudflare Workers free tier chỉ 10ms CPU/request — quá chặt cho vai trò API layer; (4) số liệu free tier Cloudflare Workflows/Queues chưa verify được, rủi ro lặp lại lỗi đã từng mắc với Stream; (5) bỏ Workers AI Whisper, rút STT pool về 2 nguồn (Gemini + Groq) cho gọn. Giữ nguyên toàn bộ logic ứng dụng: Dual-Engine AI, Map-Reduce 2 tầng, RAG pgvector, Template Registry, Export Engine (mục 3.2c-g) — không đổi. |
 | **2026-08-22** | **Architecture v1 Lock + Documentation Alignment Pass.** Gộp toàn bộ kiến trúc vào file PRD duy nhất (`docs/PRD Zero AI Note.md`). Đã tạo tạm thời các file canonical `docs/ARCHITECTURE_V1.md` + 7 ADRs (`docs/adr/ADR-001..007.md`) + 4 technical specs (`AI_PIPELINE.md`, `MEDIA_PROCESSING.md`, `QUOTA_AND_BILLING.md`, `SECURITY.md`); sau đó đã xoá gộp vào PRD để giữ single-file. Schema canonical bổ sung: `projects`, `files`, `jobs` (idempotency_key), `content_chunks`, `knowledge_objects`, `embeddings`, `summaries`, `evidence`, `entities`, `relationships`, `conflicts`, `usage`, `quotas`, `coverage_ledger`. **10 nguyên tắc bất biến**: server-side AI, multi-file, async/durable, resumable/retryable, idempotent, RAG+hierarchical, evidence-first, model-agnostic, quota-aware, free-tier honest. Xóa song song kiến trúc cũ: chunk 5 phút (myth), "free 100% vận hành" (không tồn tại), Stream 10GB free (sai — $5/1k minutes stored). Migration path document inline tại mục 6 PRD. |
