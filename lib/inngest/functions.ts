@@ -46,6 +46,48 @@ export const processNotePipeline = inngest.createFunction(
       return true;
     });
 
+    // Bước [0.5] MediaProcessor (PRD 4.0.4, DECISIONS.md §31): file audio/video ≥100MB
+    // → ffmpeg stream copy + segment 45p TRƯỚC khi ASR; dưới ngưỡng đi extract.ts như cũ.
+    await step.run('media-process', async () => {
+      try {
+        const srcRows = (await sql`
+          select type, file_url from sources
+          where id = ${sourceKey} or file_url = ${sourceKey}
+          limit 1
+        `) as unknown as Array<{ type: string; file_url: string | null }>;
+        const srcType = srcRows[0]?.type ?? '';
+        const fileUrl = srcRows[0]?.file_url;
+        if (!['audio', 'video'].includes(srcType) || !fileUrl) return { skipped: 'not-large-media' };
+
+        const { shouldUseMediaProcessor } = await import('@/lib/media/processor');
+        // size từ HEAD object R2 — key chính là file_url nếu storage key
+        let head: { sizeBytes: number } | null = null;
+        try {
+          const { storageService } = await import('@/lib/storage');
+          const client = await (storageService as any).getClient();
+          const bucket = (storageService as any).bucketName ?? process.env.R2_BUCKET_NAME;
+          const { HeadObjectCommand } = await import('@aws-sdk/client-s3');
+          const h = await client.send(new HeadObjectCommand({ Bucket: bucket, Key: fileUrl }));
+          head = { sizeBytes: h.ContentLength ?? 0 };
+        } catch {
+          return { skipped: 'head-failed' };
+        }
+        if (!head || !shouldUseMediaProcessor(head.sizeBytes, srcType)) {
+          return { skipped: 'below-threshold' };
+        }
+
+        const { inngestFFmpegProcessor } = await import('@/lib/media/inngest-ffmpeg-processor');
+        const { audioKey, durationSeconds } = await inngestFFmpegProcessor.extractAudio(fileUrl);
+        const segments = await inngestFFmpegProcessor.createSegments(audioKey);
+        // Lưu danh sách segment vào sources.transcript marker — ASR step đọc được
+        await sql`update sources set transcript = ${'__SEGMENTS__:' + JSON.stringify(segments)} where id = ${sourceKey}`;
+        return { segments: segments.length, durationSeconds };
+      } catch (mediaErr) {
+        console.warn('[pipeline] media-process failed, fallback to legacy path:', mediaErr);
+        return { skipped: 'processor-error' };
+      }
+    });
+
     // Bước [1] Trích Transcript — lấy nội dung nguồn
     const inputText = await step.run('extract-transcript', async () => {
       const sourceRows = (await sql`
